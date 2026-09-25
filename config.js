@@ -57,7 +57,7 @@ window.CONFIG_JUEGO = {
 
 window.NPCS = [
   {
-    nombre: "Don Ernesto",
+    nombre: "Don Javi",
     posicion: 0.12,
     apariencia: { piel: "#c99468", ropa: "#8d8f91", pantalon: "#4e5054", pelo: "#dcdcdc", sombrero: null },
     dialogo: [
@@ -68,9 +68,9 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Lucía",
+    nombre: "Keidy",
     posicion: 0.30,
-    apariencia: { piel: "#8d5a3b", ropa: "#b07bd6", pantalon: "#5a4a7a", pelo: "#2b1a12", sombrero: null },
+    apariencia: { piel: "#ddbfac", ropa: "#6592fd", pantalon: "#5a4a7a", pelo: "#2b1a12", sombrero: null },
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 2
       "¡Hola! ¿Viste? La lluvia ya casi se fue.",
@@ -78,7 +78,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Doña Marta",
+    nombre: "Mario",
     posicion: 0.50,
     apariencia: { piel: "#d8a47f", ropa: "#e0664f", pantalon: "#6b4b3a", pelo: "#6e6e6e", sombrero: "#e8c872" },
     dialogo: [
@@ -88,7 +88,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Guardabosques Iván",
+    nombre: "Guardabosques Allan",
     posicion: 0.70,
     apariencia: { piel: "#b98458", ropa: "#3f8f4f", pantalon: "#5b4a2e", pelo: "#3a2616", sombrero: "#6b8e23" },
     dialogo: [
@@ -98,7 +98,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Sofía, la guía",
+    nombre: "Carlos",
     posicion: 0.88,
     apariencia: { piel: "#e2b08a", ropa: "#2fa3d6", pantalon: "#2d4f7c", pelo: "#a0522d", sombrero: null },
     dialogo: [
