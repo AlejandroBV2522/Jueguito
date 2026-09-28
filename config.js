@@ -17,8 +17,8 @@ window.CONFIG_JUEGO = {
   textos: {
     titulo: "Camino a Celaque",
     subtitulo: "Camina, conoce a quienes encuentres y devuélvele el color al mundo.",
-    victoriaTitulo: "¡Llegaste a Celaque!",
-    victoriaTexto: "El camino gris quedó atrás. Todo florece a tu alrededor.",
+    victoriaTitulo: "¡Felicidades!",
+    victoriaTexto: "Bienvenido a Celaque.",
     contadorNpcs: "Personas conocidas",
   },
 
@@ -104,7 +104,91 @@ window.NPCS = [
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 5
       "¡Lo lograste! Solo un poco más.",
-      "Allá adelante está el letrero de Celaque. ¡Ve!",
+      "Pero antes de llegar, hay una cueva por cruzar. Ten cuidado.",
     ],
+  },
+];
+
+/* ---------------------------------------------------------------------
+   La Cueva
+   ---------------------------------------------------------------------
+   Después del camino, el jugador entra a una cueva con 5 enemigos. Cada
+   uno hace una pregunta de opción múltiple: acertar lo derrota y deja
+   seguir avanzando; fallar resta una vida (hay 3) y repite la misma
+   pregunta. El último es el "jefe final".
+
+   - nombre:    aparece en la caja de diálogo, igual que los NPCs.
+   - posicion:  dónde aparece (0 a 1 = dentro de la cueva, sin repetir).
+                El primer enemigo puede llevar un valor negativo (ej. -0.05)
+                para quedar afuera, justo antes de la entrada — bloquea el
+                paso desde el camino normal, antes de cruzar a la cueva.
+   - apariencia: mismos campos que los NPCs (colores en "#RRGGBB").
+   - pregunta:  el texto de la pregunta.
+   - opciones:  lista de respuestas posibles.
+   - correcta:  índice (0, 1, 2...) de la respuesta correcta en "opciones".
+
+   Las preguntas del enemigo 4 y el jefe final son genéricas — reemplázalas
+   con el contenido real de la capacitación cuando lo tengas listo.
+   --------------------------------------------------------------------- */
+
+window.PREGUNTAS_CUEVA = [
+  {
+    nombre: "Guardián de la Entrada",
+    posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
+    // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
+    apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
+    pregunta: "¿Cuál es la misión de Celaque?",
+    opciones: [
+      "Vender productos sin calidad.",
+      "Brindar productos y servicios con calidad.",
+      "Competir con los clientes.",
+    ],
+    correcta: 1,
+  },
+  {
+    nombre: "Murciélago de la Cueva",
+    posicion: 0.30,
+    apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
+    pregunta: "¿Cuál es uno de los valores de Celaque?",
+    opciones: ["Trabajo en equipo.", "Desorden.", "Irresponsabilidad."],
+    correcta: 0,
+  },
+  {
+    nombre: "Guerrero Esqueleto",
+    posicion: 0.50,
+    apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
+    pregunta: "¿Qué debes usar para protegerte en el trabajo?",
+    opciones: [
+      "Equipo de protección personal.",
+      "Nada.",
+      "Solo un casco de juguete.",
+    ],
+    correcta: 0,
+  },
+  {
+    // ✏️ Marcador de posición: reemplazar con contenido real de la capacitación
+    nombre: "Golem de Piedra",
+    posicion: 0.70,
+    apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
+    pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
+    opciones: [
+      "Preguntar y seguir el proceso establecido.",
+      "Improvisar sin avisar a nadie.",
+      "Ignorarlo si nadie se da cuenta.",
+    ],
+    correcta: 0,
+  },
+  {
+    // ✏️ Marcador de posición: jefe final, combina temas anteriores
+    nombre: "Guardián de Celaque",
+    posicion: 0.90,
+    apariencia: { piel: "#c9a876", ropa: "#7a2f3f", pantalon: "#2e2e2e", pelo: "#1a1a1a", sombrero: null },
+    pregunta: "¿Qué valor y qué norma de seguridad son importantes en Celaque?",
+    opciones: [
+      "Trabajo en equipo y equipo de protección personal.",
+      "Desorden y ningún equipo.",
+      "Irresponsabilidad e improvisar.",
+    ],
+    correcta: 0,
   },
 ];

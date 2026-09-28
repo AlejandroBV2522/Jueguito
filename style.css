@@ -217,6 +217,13 @@ body {
 	animation: aparecer 0.25s ease-out;
 }
 
+/* Las preguntas de pelea van arriba, para que se vea la pelea en el canvas.
+   Queda debajo de la barra de progreso (#hud), no encima. */
+#dialogo.arriba {
+	top: 84px;
+	bottom: auto;
+}
+
 #dialogo-retrato {
 	flex: 0 0 auto;
 	width: 64px;
@@ -258,6 +265,20 @@ body {
 	text-align: right;
 	font-size: 0.9rem;
 	color: #6aa56f;
+}
+
+.dialogo-opciones {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.opcion-respuesta {
+	width: 100%;
+	text-align: left;
+	font-size: 1rem;
+	padding: 8px 14px;
 }
 
 /* ---------- Controles táctiles ---------- */
@@ -312,6 +333,11 @@ body.con-dialogo #controles-tactiles {
 		bottom: 16px;
 		padding: 14px;
 		gap: 12px;
+	}
+
+	#dialogo.arriba {
+		top: 76px;
+		bottom: auto;
 	}
 
 	#dialogo-retrato {

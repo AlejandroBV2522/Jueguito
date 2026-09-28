@@ -1,12 +1,30 @@
 /* Camino a Celaque — lógica del juego.
-   100% código propio: sin librerías, sin imágenes ni fuentes externas.
-   Todo se dibuja con <canvas>. Para editar textos y NPCs usa config.js. */
+   100% código propio: sin librerías ni fuentes externas. Casi todo se dibuja
+   con <canvas>; la llegada a Celaque (al salir de la Cueva) usa unas pocas
+   imágenes PNG locales propias (assets/edificios/). Para editar textos y
+   NPCs usa config.js. */
 (function () {
 	"use strict";
 
 	const CFG = window.CONFIG_JUEGO;
 	const LARGO = CFG.largoDelCamino;
 	const INICIO_X = 80;
+	const LARGO_CUEVA = 1600; // tramo de la Cueva, después del camino
+	const LARGO_TOTAL = LARGO + LARGO_CUEVA;
+	const LARGO_META = LARGO_TOTAL + 500; // tramo urbano: se camina un poco más hasta el letrero
+
+	// ---------- Física del salto (real: gravedad + colisión contra los tubos) ----------
+	// Unidades de mundo (iguales a heroe.x), independientes de S — se multiplican
+	// por S solo al dibujar. ALTO_TUBO_MUNDO se calculó para que los pies del
+	// héroe queden justo en el borde superior dibujado por dibujarTubo():
+	// pie = SUELO + 38*S (parado normal) y el borde del tubo queda en
+	// SUELO - 88*S (con base=SUELO+44*S, alto=110*S, borde=22*S) →
+	// 38 - ALTO_TUBO_MUNDO = -88 → ALTO_TUBO_MUNDO = 126.
+	const ALTO_TUBO_MUNDO = 126;
+	const ANCHO_TUBO_MUNDO = 70;
+	const GRAVEDAD = 3300;
+	const IMPULSO_SALTO = 1000;
+	let vidas = 3;
 
 	// ---------- Utilidades ----------
 	const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -91,6 +109,122 @@
 		.map((d) => ({ ...d, x: d.posicion * LARGO, hablado: false }))
 		.sort((a, b) => a.x - b.x);
 
+	const enemigos = window.PREGUNTAS_CUEVA
+		.map((d) => ({ ...d, x: LARGO + d.posicion * LARGO_CUEVA, derrotado: false, atacando: false, atacandoT: 0, cayendo: 0 }))
+		.sort((a, b) => a.x - b.x);
+
+	// Edificios de la ciudad: se ven DESPUÉS del letrero de meta (LARGO_META),
+	// como el skyline al que llegaste. "Atlas" y "Lirios" son los 2 edificios
+	// que se deben poder identificar; los demás son copias más chicas/tenues
+	// de esos mismos dos, solo para dar sensación de más ciudad de fondo.
+	const RUTA_EDIFICIOS = "assets/edificios/";
+
+	// Las fotos traen fondo de cielo liso (son .jpg, sin transparencia real).
+	// Esta función lo recorta a mano: por cada fila de píxeles, toma el color
+	// del borde izquierdo como "cielo" y vuelve transparente lo que se le
+	// parezca, para que la foto se integre con el cielo dibujado del juego.
+	function cargarEdificioSinCielo(ruta) {
+		const estado = { elemento: null };
+		const img = new Image();
+		img.onload = () => {
+			// Si el juego se abre con doble clic (file://) en vez de con un
+			// servidor local, el navegador bloquea leer los píxeles de la
+			// imagen por seguridad (getImageData lanza SecurityError). En ese
+			// caso no se puede quitar el cielo, pero igual hay que mostrar el
+			// edificio (con su recuadro de cielo) en vez de no mostrar nada.
+			try {
+				procesar();
+			} catch (err) {
+				estado.elemento = img;
+			}
+		};
+		img.src = ruta;
+
+		function procesar() {
+			const w = img.naturalWidth;
+			const h = img.naturalHeight;
+			const c = document.createElement("canvas");
+			c.width = w;
+			c.height = h;
+			const cctx = c.getContext("2d");
+			cctx.drawImage(img, 0, 0);
+			const datos = cctx.getImageData(0, 0, w, h);
+			const d = datos.data;
+
+			// "Relleno por inundación" desde el borde: el cielo no es un color
+			// parejo (es un degradado con ruido de jpg), así que en vez de
+			// comparar cada píxel contra un solo color de referencia, se
+			// compara cada píxel contra su VECINO ya marcado como cielo. Así
+			// el recorte sigue el degradado completo y se detiene justo en el
+			// contorno del edificio (donde el color salta de golpe).
+			const UMBRAL2 = 900; // qué tan parecido debe ser un vecino para seguir siendo "cielo"
+			const visitado = new Uint8Array(w * h);
+			const esFondo = new Uint8Array(w * h);
+			const colaX = [];
+			const colaY = [];
+			for (let x = 0; x < w; x++) {
+				colaX.push(x, x);
+				colaY.push(0, h - 1);
+			}
+			for (let y = 0; y < h; y++) {
+				colaX.push(0, w - 1);
+				colaY.push(y, y);
+			}
+
+			let cabeza = 0;
+			while (cabeza < colaX.length) {
+				const x = colaX[cabeza];
+				const y = colaY[cabeza];
+				cabeza++;
+				if (x < 0 || x >= w || y < 0 || y >= h) continue;
+				const idx = y * w + x;
+				if (visitado[idx]) continue;
+				visitado[idx] = 1;
+				esFondo[idx] = 1;
+				const i = idx * 4;
+				const r = d[i];
+				const g = d[i + 1];
+				const b = d[i + 2];
+
+				const vecinos = [
+					[x + 1, y],
+					[x - 1, y],
+					[x, y + 1],
+					[x, y - 1],
+				];
+				for (const [nx, ny] of vecinos) {
+					if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+					const nidx = ny * w + nx;
+					if (visitado[nidx]) continue;
+					const ni = nidx * 4;
+					const dr = d[ni] - r;
+					const dg = d[ni + 1] - g;
+					const db = d[ni + 2] - b;
+					if (dr * dr + dg * dg + db * db < UMBRAL2) {
+						colaX.push(nx);
+						colaY.push(ny);
+					}
+				}
+			}
+
+			for (let idx = 0; idx < w * h; idx++) {
+				if (esFondo[idx]) d[idx * 4 + 3] = 0;
+			}
+			cctx.putImageData(datos, 0, 0);
+			estado.elemento = c;
+		}
+
+		return estado;
+	}
+
+	const EDIFICIOS_SALIDA_DATOS = [{ nombre: "Atlas.jpg", x: LARGO_META + 220, altoBase: 430, alfa: 1 }];
+	const edificiosSalida = EDIFICIOS_SALIDA_DATOS.map((d) => ({
+		cargando: cargarEdificioSinCielo(RUTA_EDIFICIOS + d.nombre),
+		x: d.x,
+		altoBase: d.altoBase,
+		alfa: d.alfa,
+	}));
+
 	const azar = crearAzar(20260925);
 
 	const arboles = [];
@@ -134,17 +268,53 @@
 		gotas.push({ x: azar(), y: azar(), vel: 0.9 + azar() * 0.5 });
 	}
 
+	// Edificios de relleno: formas geométricas simples (nada de fotos), solo
+	// para dar sensación de más ciudad alrededor de Atlas y Lirios sin
+	// competir con ellos. Posiciones/colores al azar pero deterministas.
+	const PALETA_EDIFICIOS_SIMPLES = ["#9aa5ad", "#b7c4cc", "#8b98a3", "#c9a97a", "#a9b4bd"];
+	const edificiosSimples = [];
+	for (let i = 0; i < 6; i++) {
+		edificiosSimples.push({
+			x: LARGO_META + 20 + i * 150 + (azar() - 0.5) * 60,
+			// Tienen que subir bien por encima del horizonte (SUELO), si no
+			// quedan enterrados en la franja de pavimento y no se ven.
+			alto: 260 + azar() * 220,
+			ancho: 70 + azar() * 50,
+			color: PALETA_EDIFICIOS_SIMPLES[Math.floor(azar() * PALETA_EDIFICIOS_SIMPLES.length)],
+		});
+	}
+
 	let petalos = [];
 
 	// ---------- Estado ----------
-	let estado = "inicio"; // inicio | jugando | dialogo | victoria
-	const heroe = { x: INICIO_X, dir: 1, fase: 0, moviendo: false, corriendo: false };
+	let estado = "inicio"; // inicio | jugando | dialogo | cueva | pregunta | transicion | victoria
+	// Controla el fondo (afuera vs. cueva oscura): solo se activa al cruzar el
+	// tubo de entrada, no con solo llegar caminando a x = LARGO (el clamp deja
+	// al héroe justo ahí antes de agacharse, y aún debe verse el mundo de afuera).
+	let dentroCueva = false;
+	// Se activa al salir de la Cueva por el tubo de salida: el paisaje vuelve,
+	// pero ahora urbano (con los edificios), no el camino rural de antes.
+	let vistaUrbana = false;
+	// Pantalla negra al cruzar un tubo (ver entrarPorTubo/actualizar).
+	let transicion = null;
+	const heroe = {
+		x: INICIO_X,
+		dir: 1,
+		fase: 0,
+		moviendo: false,
+		corriendo: false,
+		y: 0, // altura sobre el suelo (0 = piso), física real de salto
+		velY: 0,
+		agachado: false,
+		atacando: false,
+		atacandoT: 0,
+	};
 	const CLAVES_PERSONAJE = Object.keys(CFG.personajes);
 	let personaje = CLAVES_PERSONAJE[0];
 	let camara = 0;
 	let tiempo = 0;
 	const entrada = { izq: false, der: false, correr: false, rueda: 0, ruedaHasta: 0 };
-	const dlg = { npc: null, linea: 0, visibles: 0, mostradas: -1 };
+	const dlg = { npc: null, linea: 0, visibles: 0, mostradas: -1, enemigo: null, sistema: false };
 
 	// ---------- Interfaz (HTML) ----------
 	const $ = (id) => document.getElementById(id);
@@ -157,6 +327,7 @@
 		nombre: $("dialogo-nombre"),
 		texto: $("dialogo-texto"),
 		pista: $("dialogo-pista"),
+		opciones: $("dialogo-opciones"),
 		inicio: $("pantalla-inicio"),
 		victoria: $("pantalla-victoria"),
 		tactiles: $("controles-tactiles"),
@@ -175,6 +346,12 @@
 		ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
 		const conocidos = npcs.filter((n) => n.hablado).length;
 		ui.hudTexto.textContent = `${CFG.textos.contadorNpcs}: ${conocidos} / ${npcs.length}`;
+	}
+
+	function actualizarHudCueva() {
+		const derrotados = enemigos.filter((e) => e.derrotado).length;
+		ui.hudRelleno.style.width = ((derrotados / enemigos.length) * 100).toFixed(1) + "%";
+		ui.hudTexto.textContent = `Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}  ·  Enemigos vencidos: ${derrotados} / ${enemigos.length}`;
 	}
 
 	// ---------- Selector de personaje ----------
@@ -230,6 +407,21 @@
 		heroe.dir = 1;
 		camara = 0;
 		npcs.forEach((n) => (n.hablado = false));
+		enemigos.forEach((e) => {
+			e.derrotado = false;
+			e.atacando = false;
+			e.atacandoT = 0;
+			e.cayendo = 0;
+		});
+		vidas = 3;
+		dentroCueva = false;
+		vistaUrbana = false;
+		transicion = null;
+		heroe.y = 0;
+		heroe.velY = 0;
+		heroe.agachado = false;
+		heroe.atacando = false;
+		heroe.atacandoT = 0;
 		petalos = [];
 		ui.victoria.hidden = true;
 	}
@@ -249,6 +441,7 @@
 
 	function ganar() {
 		estado = "victoria";
+		vistaUrbana = true; // el paisaje vuelve, ahora urbano (con los edificios)
 		heroe.moviendo = heroe.corriendo = false;
 		ui.tactiles.hidden = true;
 		for (let i = 0; i < 90; i++) {
@@ -276,6 +469,7 @@
 		ui.retrato.textContent = npc.nombre.charAt(0).toUpperCase();
 		ui.retrato.style.background = npc.apariencia.ropa;
 		ui.dialogo.hidden = false;
+		ui.dialogo.classList.remove("arriba"); // el diálogo normal de NPC va abajo
 		document.body.classList.add("con-dialogo");
 		actualizarPista();
 	}
@@ -290,6 +484,10 @@
 	}
 
 	function avanzarDialogo() {
+		if (dlg.sistema) {
+			reiniciarCueva();
+			return;
+		}
 		if (dlg.visibles < lineaActual().length) {
 			dlg.visibles = lineaActual().length; // completar la frase de golpe
 			return;
@@ -317,6 +515,206 @@
 		return npcs.find((n) => Math.abs(n.x - heroe.x) < CFG.distanciaParaHablar * 1.3);
 	}
 
+	// ---------- La Cueva ----------
+	function entrarCueva() {
+		estado = "cueva";
+		dentroCueva = true;
+		actualizarHudCueva();
+	}
+
+	// ---------- Tubos (entrada/salida de la Cueva) ----------
+	function puedeUsarTuboEntrada() {
+		return (
+			estado === "jugando" &&
+			!enemigos.find((en) => !en.derrotado && en.x <= LARGO) &&
+			Math.abs(heroe.x - LARGO) < CFG.distanciaParaHablar
+		);
+	}
+
+	function puedeUsarTuboSalida() {
+		return (
+			estado === "cueva" &&
+			!enemigos.find((en) => !en.derrotado) &&
+			Math.abs(heroe.x - LARGO_TOTAL) < CFG.distanciaParaHablar
+		);
+	}
+
+	// Los tubos son los únicos "objetos sólidos": si x cae dentro de su ancho,
+	// el suelo efectivo ahí es la altura del tubo en vez de 0.
+	function alturaTuboEn(x) {
+		// Cada tubo solo es "sólido" mientras sigue siendo relevante: el de
+		// entrada antes de cruzar, el de salida ya adentro de la Cueva. Así,
+		// al entrar/salir el héroe cae naturalmente del borde del tubo al
+		// suelo normal, en vez de quedar flotando parado sobre uno viejo.
+		if (!dentroCueva && Math.abs(x - LARGO) < ANCHO_TUBO_MUNDO / 2) return ALTO_TUBO_MUNDO;
+		if (dentroCueva && !vistaUrbana && Math.abs(x - LARGO_TOTAL) < ANCHO_TUBO_MUNDO / 2) return ALTO_TUBO_MUNDO;
+		return 0;
+	}
+
+	// "Parado" en general: sirve para saltar, sea desde el piso normal o
+	// desde encima de un tubo (no exige estar en el tubo específicamente).
+	function heroeEnSuelo() {
+		if (heroe.velY !== 0) return false;
+		return heroe.y === 0 || heroe.y === alturaTuboEn(heroe.x);
+	}
+
+	// Estricto: solo es verdad si de verdad estás parado ARRIBA de un tubo
+	// (llegaste ahí saltando), no con solo estar parado en el piso normal
+	// junto a él.
+	function estaSobreTubo() {
+		const alturaTubo = alturaTuboEn(heroe.x);
+		return alturaTubo > 0 && heroe.velY === 0 && heroe.y === alturaTubo;
+	}
+
+	// El tubo es sólido: caminando por el suelo, el límite de avance es su
+	// cara frontal (no el centro), para que no se pueda atravesar por dentro.
+	// Ya arriba (saltó y aterrizó encima), sí puede seguir hasta el centro,
+	// igual que antes.
+	function limiteFrenteATubo(cx, heroeY) {
+		return heroeY >= ALTO_TUBO_MUNDO ? cx : cx - ANCHO_TUBO_MUNDO / 2;
+	}
+
+	function saltarAccion() {
+		if ((estado !== "jugando" && estado !== "cueva" && estado !== "urbano") || !heroeEnSuelo()) return;
+		heroe.velY = IMPULSO_SALTO;
+	}
+
+	function agacharAccion() {
+		if (heroe.agachado || !estaSobreTubo()) return;
+		if (puedeUsarTuboEntrada()) entrarPorTubo(entrarCueva);
+		else if (puedeUsarTuboSalida()) entrarPorTubo(salirACiudad);
+	}
+
+	// Al cruzar el tubo de salida no se gana de inmediato: hay que caminar un
+	// poco más por la ciudad hasta el letrero (LARGO_META).
+	function salirACiudad() {
+		estado = "urbano";
+		vistaUrbana = true;
+	}
+
+	// Pantalla negra de 3s al cruzar un tubo (ver el bloque "transicion" en
+	// actualizar(dt) y dibujar(dt)).
+	function entrarPorTubo(luego) {
+		heroe.agachado = true;
+		heroe.moviendo = heroe.corriendo = false;
+		estado = "transicion";
+		transicion = { t: 0, luego };
+	}
+
+	function abrirPregunta(enemigo) {
+		estado = "pregunta";
+		heroe.moviendo = heroe.corriendo = false;
+		dlg.enemigo = enemigo;
+		ui.nombre.textContent = enemigo.nombre;
+		ui.retrato.textContent = enemigo.nombre.charAt(0).toUpperCase();
+		ui.retrato.style.background = enemigo.apariencia.ropa;
+		ui.texto.textContent = enemigo.pregunta;
+		ui.pista.textContent = `Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}`;
+		ui.opciones.innerHTML = "";
+		ui.opciones.hidden = false;
+		enemigo.opciones.forEach((texto, i) => {
+			const btn = document.createElement("button");
+			btn.className = "boton opcion-respuesta";
+			btn.textContent = texto;
+			btn.addEventListener("click", (e) => {
+				e.stopPropagation(); // no debe disparar el click-to-advance de #dialogo
+				responder(i, enemigo);
+			});
+			ui.opciones.appendChild(btn);
+		});
+		ui.dialogo.hidden = false;
+		ui.dialogo.classList.add("arriba"); // para que se vea la pelea abajo, en el canvas
+		document.body.classList.add("con-dialogo");
+	}
+
+	function responder(indice, enemigo) {
+		if (indice === enemigo.correcta) {
+			// Cierra la caja ya, para que se vea la pelea en el canvas
+			ui.opciones.hidden = true;
+			ui.opciones.innerHTML = "";
+			ui.dialogo.hidden = true;
+			document.body.classList.remove("con-dialogo");
+
+			heroe.atacando = true;
+			heroe.atacandoT = 0;
+			enemigo.cayendo = 0.001; // arranca la animación de caída (ver actualizar)
+
+			setTimeout(() => {
+				enemigo.derrotado = true;
+				cerrarPregunta(enemigo);
+			}, 550);
+		} else {
+			enemigo.atacando = true;
+			enemigo.atacandoT = 0;
+			vidas--;
+			if (vidas <= 0) setTimeout(perderCueva, 350);
+			else ui.pista.textContent = `Incorrecto, intenta de nuevo. Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}`;
+		}
+	}
+
+	function cerrarPregunta(enemigo) {
+		dlg.enemigo = null;
+		ui.opciones.hidden = true;
+		ui.opciones.innerHTML = "";
+		ui.dialogo.hidden = true;
+		ui.dialogo.classList.remove("arriba");
+		document.body.classList.remove("con-dialogo");
+		if (enemigo.x <= LARGO) {
+			// Era el Guardián, afuera: sigues caminando el camino normal
+			estado = "jugando";
+			actualizarHud();
+		} else {
+			estado = "cueva";
+			actualizarHudCueva();
+		}
+	}
+
+	function perderCueva() {
+		ui.opciones.hidden = true;
+		ui.opciones.innerHTML = "";
+		const esGuardian = dlg.enemigo && dlg.enemigo.x <= LARGO;
+		ui.texto.textContent = esGuardian
+			? "Te quedaste sin vidas. Vuelves a intentarlo con el Guardián."
+			: "Te quedaste sin vidas. Vuelves a la entrada de la cueva.";
+		ui.pista.textContent = "Reintentar ▸";
+		dlg.sistema = true; // avanzarDialogo() lo revisa primero
+	}
+
+	function reiniciarCueva() {
+		const enemigo = dlg.enemigo;
+		vidas = 3;
+		heroe.y = 0;
+		heroe.velY = 0;
+		heroe.atacando = false;
+		heroe.atacandoT = 0;
+		enemigos.forEach((e) => {
+			e.atacando = false;
+			e.atacandoT = 0;
+		});
+		if (enemigo && enemigo.x <= LARGO) {
+			// Perdiste con el Guardián: sigues afuera, antes de la entrada
+			heroe.x = Math.max(40, enemigo.x - 90);
+			estado = "jugando";
+			dentroCueva = false;
+		} else {
+			// Perdiste con un enemigo de adentro: reinicia solo la Cueva
+			enemigos.forEach((e) => {
+				if (e.x > LARGO) {
+					e.derrotado = false;
+					e.cayendo = 0;
+				}
+			});
+			heroe.x = LARGO + 10;
+			estado = "cueva";
+		}
+		dlg.enemigo = null;
+		dlg.sistema = false;
+		ui.dialogo.hidden = true;
+		document.body.classList.remove("con-dialogo");
+		if (estado === "jugando") actualizarHud();
+		else actualizarHudCueva();
+	}
+
 	function accion() {
 		if (estado === "inicio") comenzar();
 		else if (estado === "dialogo") avanzarDialogo();
@@ -331,6 +729,8 @@
 	const TECLAS_DER = ["ArrowRight", "d", "D"];
 	const TECLAS_ACCION = [" ", "Enter", "e", "E"];
 	const TECLAS_CORRER = ["q", "Q"];
+	const TECLAS_SALTAR = ["ArrowUp", "w", "W"];
+	const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 	window.addEventListener("keydown", (e) => {
 		if (TECLAS_IZQ.includes(e.key) || TECLAS_DER.includes(e.key)) {
@@ -349,6 +749,12 @@
 			if (e.target.tagName === "BUTTON") return; // el botón ya maneja su clic
 			e.preventDefault();
 			if (!e.repeat) accion();
+		} else if (TECLAS_SALTAR.includes(e.key)) {
+			e.preventDefault();
+			if (!e.repeat) saltarAccion();
+		} else if (TECLAS_AGACHAR.includes(e.key)) {
+			e.preventDefault();
+			if (!e.repeat) agacharAccion();
 		}
 	});
 
@@ -365,7 +771,7 @@
 	window.addEventListener(
 		"wheel",
 		(e) => {
-			if (estado !== "jugando") return;
+			if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano") return;
 			const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
 			if (delta === 0) return;
 			entrada.rueda = delta > 0 ? 1 : -1;
@@ -391,19 +797,75 @@
 	botonTactil("btn-der", () => (entrada.der = true), () => (entrada.der = false));
 	botonTactil("btn-correr", () => (entrada.correr = true), () => (entrada.correr = false));
 	botonTactil("btn-hablar", accion, () => {});
+	botonTactil("btn-saltar", saltarAccion, () => {});
+	botonTactil("btn-agachar", agacharAccion, () => {});
 
 	// ---------- Actualización ----------
 	function actualizar(dt) {
+		// Física real del salto: gravedad + colisión contra los tubos (el
+		// único "objeto sólido" del juego). Corre siempre, sin importar el
+		// estado, para que nunca se quede flotando a medio salto.
+		const alturaAntes = heroe.y;
+		heroe.velY -= GRAVEDAD * dt;
+		heroe.y += heroe.velY * dt;
+		const alturaTubo = alturaTuboEn(heroe.x);
+		// El tubo solo te sostiene arriba si ya venías cayendo desde encima de
+		// él (saltando). Si vas caminando por el piso normal, no te empuja
+		// hacia arriba solo por acercarte — el suelo real (0) sigue mandando.
+		const suelo = alturaAntes >= alturaTubo ? alturaTubo : 0;
+		if (heroe.y <= suelo) {
+			heroe.y = suelo;
+			heroe.velY = 0;
+		}
+
+		// Animaciones de pelea: puñetazo del héroe, y de cada enemigo (lanzar
+		// golpe si respondiste mal, o caer si respondiste bien).
+		if (heroe.atacando) {
+			heroe.atacandoT += dt;
+			if (heroe.atacandoT >= 0.35) {
+				heroe.atacando = false;
+				heroe.atacandoT = 0;
+			}
+		}
+		for (const en of enemigos) {
+			if (en.atacando) {
+				en.atacandoT += dt;
+				if (en.atacandoT >= 0.35) {
+					en.atacando = false;
+					en.atacandoT = 0;
+				}
+			}
+			if (en.cayendo > 0 && en.cayendo < 1) {
+				en.cayendo = Math.min(1, en.cayendo + dt / 0.5);
+			}
+		}
+
+		if (estado === "transicion") {
+			transicion.t += dt;
+			if (transicion.t >= 3) {
+				heroe.agachado = false;
+				const luego = transicion.luego;
+				transicion = null;
+				luego();
+			}
+		}
+
 		if (estado === "jugando") {
 			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
 			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
 
 			heroe.moviendo = dir !== 0;
 			heroe.corriendo = heroe.moviendo && entrada.correr;
+
+			// El Guardián de la Entrada vive afuera (x <= LARGO) y bloquea el
+			// paso antes de que puedas cruzar hacia la Cueva.
+			const guardian = enemigos.find((en) => !en.derrotado && en.x <= LARGO);
+			const limite = guardian ? guardian.x : limiteFrenteATubo(LARGO, heroe.y);
+
 			if (heroe.moviendo) {
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
-				heroe.x = clamp(heroe.x + dir * velocidad * dt, 40, LARGO);
+				heroe.x = clamp(heroe.x + dir * velocidad * dt, 40, limite);
 				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
 				actualizarHud();
 			}
@@ -411,7 +873,45 @@
 			// Los NPCs saludan solos la primera vez que te acercas
 			const nuevo = npcs.find((n) => !n.hablado && Math.abs(n.x - heroe.x) < CFG.distanciaParaHablar);
 			if (nuevo) abrirDialogo(nuevo);
-			else if (heroe.x >= LARGO) ganar();
+			else if (guardian && Math.abs(guardian.x - heroe.x) < CFG.distanciaParaHablar) abrirPregunta(guardian);
+			// Cruzar el tubo de entrada ahora requiere agacharse (agacharAccion)
+		}
+
+		if (estado === "cueva") {
+			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
+			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
+			heroe.moviendo = dir !== 0;
+			heroe.corriendo = heroe.moviendo && entrada.correr;
+
+			const bloqueante = enemigos.find((en) => !en.derrotado);
+			const limite = bloqueante ? bloqueante.x : limiteFrenteATubo(LARGO_TOTAL, heroe.y);
+
+			if (heroe.moviendo) {
+				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
+				heroe.dir = dir;
+				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO, limite);
+				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
+			}
+
+			if (bloqueante && Math.abs(bloqueante.x - heroe.x) < CFG.distanciaParaHablar) abrirPregunta(bloqueante);
+			// Cruzar el tubo de salida ahora requiere agacharse (agacharAccion)
+			actualizarHudCueva();
+		}
+
+		if (estado === "urbano") {
+			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
+			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
+			heroe.moviendo = dir !== 0;
+			heroe.corriendo = heroe.moviendo && entrada.correr;
+
+			if (heroe.moviendo) {
+				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
+				heroe.dir = dir;
+				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO_TOTAL, LARGO_META);
+				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
+			}
+
+			if (heroe.x >= LARGO_META) ganar();
 		}
 
 		if (estado === "dialogo") {
@@ -527,6 +1027,55 @@
 		ctx.fill();
 	}
 
+	// Tubo estilo Mario Bros: se para justo sobre el sendero. Agacharse cerca
+	// de él (agacharAccion) dispara la transición correspondiente.
+	function dibujarTubo(sx, base) {
+		const ancho = 70 * S;
+		const alto = 110 * S;
+		const borde = 22 * S;
+
+		ctx.fillStyle = "#2fa33f";
+		ctx.fillRect(sx - ancho / 2, base - alto, ancho, alto);
+		ctx.fillStyle = "#1f7a2c";
+		ctx.fillRect(sx - ancho / 2, base - alto, 10 * S, alto);
+
+		ctx.fillStyle = "#3fc456";
+		ctx.fillRect(sx - ancho * 0.62, base - alto - borde, ancho * 1.24, borde);
+		ctx.fillStyle = "#1f7a2c";
+		ctx.fillRect(sx - ancho * 0.62, base - alto - borde, 12 * S, borde);
+
+		ctx.fillStyle = "#0c0c10";
+		ctx.fillRect(sx - ancho * 0.5, base - alto - borde + 6 * S, ancho, borde - 10 * S);
+	}
+
+	// Muestra "Saltar" o "Agachar" según en qué paso de la secuencia vas
+	// (primero saltar encima del tubo, luego agacharte para entrar).
+	function dibujarPistaTubo(sx, disponible) {
+		if (!disponible) return;
+		const texto = estaSobreTubo()
+			? esTactil
+				? "Toca Agachar"
+				: "↓ · Agachar"
+			: esTactil
+			? "Toca Saltar"
+			: "↑ · Saltar";
+		dibujarGlobo(sx, SUELO - (90 + heroe.y) * S, texto, "#c9f7d1");
+	}
+
+	function dibujarTuboEntrada() {
+		const sx = LARGO - camara;
+		if (sx < -300 || sx > W + 300) return;
+		dibujarTubo(sx, SUELO + 44 * S);
+		dibujarPistaTubo(sx, puedeUsarTuboEntrada());
+	}
+
+	function dibujarTuboSalida() {
+		const sx = LARGO_TOTAL - camara;
+		if (sx < -300 || sx > W + 300) return;
+		dibujarTubo(sx, SUELO + 44 * S);
+		dibujarPistaTubo(sx, puedeUsarTuboSalida());
+	}
+
 	function dibujarMontanas(t) {
 		ctx.fillStyle = color("montanaLejana", t);
 		ctx.beginPath();
@@ -636,6 +1185,160 @@
 		ctx.fillRect(0, SUELO + 24 * S, W, 20 * S);
 	}
 
+	// ---------- Dibujo: la Cueva (versión simple, foco en la lógica) ----------
+	function dibujarFondoCueva() {
+		const cielo = ctx.createLinearGradient(0, 0, 0, SUELO);
+		cielo.addColorStop(0, "#0c0c10");
+		cielo.addColorStop(1, "#2a2630");
+		ctx.fillStyle = cielo;
+		ctx.fillRect(0, 0, W, SUELO);
+
+		// Estalactitas (con leve parallax)
+		ctx.fillStyle = "#1a1720";
+		const paso = 140 * S;
+		const desfase = (camara * 0.3) % paso;
+		for (let sx = -paso + desfase; sx < W + paso; sx += paso) {
+			const alto = (60 + 40 * Math.sin(sx * 0.01)) * S;
+			ctx.beginPath();
+			ctx.moveTo(sx - paso * 0.22, 0);
+			ctx.lineTo(sx + paso * 0.22, 0);
+			ctx.lineTo(sx, alto);
+			ctx.closePath();
+			ctx.fill();
+		}
+
+		// Antorchas junto a cada enemigo sin vencer
+		for (const e of enemigos) {
+			if (e.derrotado) continue;
+			const sx = e.x - camara;
+			if (sx < -140 * S || sx > W + 140 * S) continue;
+			const brillo = ctx.createRadialGradient(sx, SUELO - 60 * S, 5, sx, SUELO - 60 * S, 140 * S);
+			brillo.addColorStop(0, "rgba(255,170,80,0.45)");
+			brillo.addColorStop(1, "rgba(255,170,80,0)");
+			ctx.fillStyle = brillo;
+			ctx.fillRect(sx - 140 * S, SUELO - 200 * S, 280 * S, 280 * S);
+		}
+
+		// Claridad de la salida: se ve luz al acercarse al final de la cueva
+		const cercaSalida = suave(LARGO_TOTAL - 500, LARGO_TOTAL, heroe.x);
+		if (cercaSalida > 0) {
+			const sx = LARGO_TOTAL - camara;
+			const luz = ctx.createRadialGradient(sx, SUELO - 80 * S, 10, sx, SUELO - 80 * S, 480 * S);
+			luz.addColorStop(0, `rgba(255,250,220,${0.85 * cercaSalida})`);
+			luz.addColorStop(1, "rgba(255,250,220,0)");
+			ctx.fillStyle = luz;
+			ctx.fillRect(0, 0, W, H);
+		}
+	}
+
+	function dibujarSueloCueva() {
+		ctx.fillStyle = "#1c1a22";
+		ctx.fillRect(0, SUELO, W, H - SUELO);
+		ctx.fillStyle = "#242030";
+		ctx.fillRect(0, SUELO - 2 * S, W, 10 * S);
+	}
+
+	// Cielo urbano al salir de la Cueva: mismo cielo diurno, sin la montaña ni
+	// el paisaje rural (los edificios ya dan el fondo).
+	function dibujarFondoUrbano(t) {
+		dibujarCielo(t);
+		dibujarNubes(t);
+	}
+
+	// Piso urbano: acera/pavimento gris en vez de pasto, para que se sienta
+	// de ciudad justo al salir de la Cueva (no un campo con edificios encima).
+	function dibujarSueloUrbano() {
+		ctx.fillStyle = "#9aa0a6";
+		ctx.fillRect(0, SUELO, W, H - SUELO);
+		ctx.fillStyle = "#c7ccd1";
+		ctx.fillRect(0, SUELO - 2 * S, W, 18 * S);
+
+		// Sendero (igual que el camino normal)
+		ctx.fillStyle = "rgba(255,255,255,0.25)";
+		ctx.fillRect(0, SUELO + 24 * S, W, 20 * S);
+
+		// Juntas de las baldosas de la acera
+		ctx.strokeStyle = "rgba(255,255,255,0.18)";
+		ctx.lineWidth = 2 * S;
+		const paso = 90 * S;
+		const desfase = camara % paso;
+		for (let sx = -desfase; sx < W; sx += paso) {
+			linea(sx, SUELO + 62 * S, sx, H);
+		}
+	}
+
+	// Edificios de Celaque, visibles al salir de la cueva (junto a la meta)
+	function dibujarEdificiosSalida() {
+		const baseY = SUELO + 20 * S; // encima de la carretera, como fondo
+		for (const e of edificiosSalida) {
+			const el = e.cargando.elemento;
+			if (!el) continue; // todavía procesando (quitando el fondo de cielo)
+
+			const sx = e.x - camara;
+			const altoPx = e.altoBase * S;
+			const anchoPx = altoPx * (el.width / el.height);
+			if (sx + anchoPx / 2 < -60 || sx - anchoPx / 2 > W + 60) continue;
+
+			ctx.globalAlpha = e.alfa;
+			ctx.drawImage(el, sx - anchoPx / 2, baseY - altoPx, anchoPx, altoPx);
+			ctx.globalAlpha = 1;
+		}
+	}
+
+	// Relleno de ciudad: bloques planos con ventanitas, dibujados a mano
+	// (nada de fotos) para no competir con Atlas/Lirios.
+	function dibujarEdificiosSimples() {
+		const baseY = SUELO + 20 * S; // encima de la carretera, como fondo
+		for (const e of edificiosSimples) {
+			const sx = e.x - camara;
+			const altoPx = e.alto * S;
+			const anchoPx = e.ancho * S;
+			if (sx + anchoPx / 2 < -60 || sx - anchoPx / 2 > W + 60) continue;
+
+			ctx.fillStyle = e.color;
+			ctx.fillRect(sx - anchoPx / 2, baseY - altoPx, anchoPx, altoPx);
+
+			ctx.fillStyle = "rgba(255,255,255,0.55)";
+			const filas = Math.max(2, Math.floor(altoPx / (16 * S)));
+			const columnas = Math.max(2, Math.floor(anchoPx / (14 * S)));
+			for (let f = 0; f < filas; f++) {
+				for (let c = 0; c < columnas; c++) {
+					const vx = sx - anchoPx / 2 + (c + 0.5) * (anchoPx / columnas);
+					const vy = baseY - altoPx + (f + 0.5) * (altoPx / filas);
+					ctx.fillRect(vx - 2.5 * S, vy - 4 * S, 5 * S, 8 * S);
+				}
+			}
+		}
+	}
+
+	function dibujarEnemigos() {
+		const pie = SUELO + 36 * S;
+		for (const e of enemigos) {
+			if (e.x > LARGO && !dentroCueva) continue; // los de adentro no se ven desde afuera
+			if (e.cayendo >= 1) continue; // ya cayó del todo, no se dibuja más
+			const sx = e.x - camara;
+			if (sx < -60 || sx > W + 60) continue;
+			const a = e.apariencia;
+			dibujarPersona(sx, pie, {
+				piel: a.piel,
+				ropa: a.ropa,
+				pantalon: a.pantalon,
+				pelo: a.pelo,
+				sombrero: a.sombrero,
+				dir: heroe.x >= e.x ? 1 : -1,
+				fase: 0,
+				moviendo: false,
+				atacando: e.atacando,
+				cayendo: e.cayendo,
+			});
+
+			const arriba = pie - 110 * S + Math.sin(tiempo * 3 + e.x) * 3 * S;
+			if (!e.derrotado && e.cayendo === 0) {
+				dibujarGlobo(sx, arriba, esTactil ? "Toca para pelear" : "E · Pelear", "#ffb3b3");
+			}
+		}
+	}
+
 	function dibujarMatas(delante) {
 		ctx.lineCap = "round";
 		for (const m of matas) {
@@ -669,7 +1372,8 @@
 	}
 
 	function dibujarMeta() {
-		const sx = LARGO - camara;
+		// El destino real: se camina un poco desde el tubo de salida hasta aquí
+		const sx = LARGO_META - camara;
 		if (sx < -300 || sx > W + 300) return;
 		const pie = SUELO + 22 * S;
 
@@ -729,7 +1433,13 @@
 
 		ctx.translate(0, -rebote);
 		ctx.scale(o.dir, 1);
-		if (o.corriendo) ctx.rotate(0.12); // se inclina hacia adelante al correr
+		if (o.agachado) ctx.scale(1, 0.55); // se agacha para entrar al tubo
+		if (o.cayendo) {
+			// El enemigo derrotado se desploma hacia atrás y se desvanece
+			ctx.rotate(-Math.PI * 0.42 * o.cayendo);
+			ctx.globalAlpha = Math.max(0, 1 - o.cayendo);
+		}
+		if (o.corriendo || o.atacando) ctx.rotate(0.12); // se inclina hacia adelante
 		ctx.lineCap = "round";
 		const amplitud = o.corriendo ? 0.9 : 0.55;
 
@@ -778,13 +1488,14 @@
 			ctx.fill();
 		}
 
-		// Brazo
+		// Brazo (puñetazo si está atacando)
 		ctx.strokeStyle = o.ropa;
 		ctx.lineWidth = 5 * s;
-		const brazo = -paso * (o.corriendo ? 1.1 : 0.6);
-		linea(0, -46 * s, Math.sin(brazo) * 18 * s, -46 * s + Math.cos(brazo) * 18 * s);
+		const brazo = o.atacando ? -1.35 : -paso * (o.corriendo ? 1.1 : 0.6);
+		const largoBrazo = o.atacando ? 26 * s : 18 * s;
+		linea(0, -46 * s, Math.sin(brazo) * largoBrazo, -46 * s + Math.cos(brazo) * largoBrazo);
 		ctx.fillStyle = o.piel;
-		circulo(Math.sin(brazo) * 19 * s, -46 * s + Math.cos(brazo) * 19 * s, 3 * s);
+		circulo(Math.sin(brazo) * (largoBrazo + s), -46 * s + Math.cos(brazo) * (largoBrazo + s), 3 * s);
 
 		// Cabeza
 		ctx.fillStyle = o.piel;
@@ -875,7 +1586,11 @@
 	}
 
 	function dibujarHeroe(t) {
-		dibujarPersona(heroe.x - camara, SUELO + 38 * S, aparienciaHeroe(personaje, t, heroe));
+		dibujarPersona(heroe.x - camara, SUELO + 38 * S - heroe.y * S, {
+			...aparienciaHeroe(personaje, t, heroe),
+			agachado: heroe.agachado,
+			atacando: heroe.atacando,
+		});
 	}
 
 	// Colores del personaje elegido: grises al inicio (t = 0), vivos al final (t = 1)
@@ -958,29 +1673,61 @@
 	}
 
 	function dibujar(dt) {
+		if (estado === "transicion") {
+			// Pantalla negra mientras cruzas un tubo (ver actualizar(dt))
+			ctx.fillStyle = "#000";
+			ctx.fillRect(0, 0, W, H);
+			return;
+		}
+
 		const t = tono(heroe.x / LARGO);
+		// afuera (camino rural) | cueva (oscura) | urbano (al salir, con edificios)
+		const modo = vistaUrbana ? "urbano" : dentroCueva ? "cueva" : "afuera";
 
-		dibujarCielo(t);
-		dibujarNubes(t);
-		dibujarCelaque(t);
-		dibujarMontanas(t);
-		dibujarColinas(t);
-		dibujarArbolesLejanos();
-		dibujarSuelo();
-		dibujarMatas(false);
-		dibujarArboles();
-		dibujarMeta();
+		if (modo === "cueva") {
+			dibujarFondoCueva();
+		} else if (modo === "urbano") {
+			dibujarFondoUrbano(t);
+		} else {
+			dibujarCielo(t);
+			dibujarNubes(t);
+			dibujarCelaque(t);
+			dibujarMontanas(t);
+			dibujarColinas(t);
+			dibujarArbolesLejanos();
+		}
+
+		if (modo === "cueva") dibujarSueloCueva();
+		else if (modo === "urbano") dibujarSueloUrbano();
+		else dibujarSuelo();
+
+		if (modo === "afuera") {
+			dibujarTuboEntrada(); // se pinta sobre el sendero, no antes
+			dibujarMatas(false);
+			dibujarArboles();
+		} else if (modo === "cueva") {
+			dibujarTuboSalida();
+		} else if (modo === "urbano") {
+			dibujarEdificiosSimples(); // relleno gris detrás
+			dibujarEdificiosSalida(); // Atlas al frente
+		}
+
+		if (modo === "urbano") dibujarMeta(); // el letrero solo se ve ya afuera
 		dibujarNpcs();
+		if (modo !== "urbano") dibujarEnemigos(); // el Guardián vive afuera, antes de LARGO
 		dibujarHeroe(t);
-		dibujarMatas(true);
-		dibujarMariposas();
-		dibujarLluvia(dt, t);
 
-		// Neblina gris al inicio y luz cálida al final
-		ctx.fillStyle = `rgba(125,129,135,${0.35 * (1 - t)})`;
-		ctx.fillRect(0, 0, W, H);
-		ctx.fillStyle = `rgba(255,250,215,${0.08 * t})`;
-		ctx.fillRect(0, 0, W, H);
+		if (modo === "afuera") {
+			dibujarMatas(true);
+			dibujarMariposas();
+			dibujarLluvia(dt, t);
+
+			// Neblina gris al inicio y luz cálida al final
+			ctx.fillStyle = `rgba(125,129,135,${0.35 * (1 - t)})`;
+			ctx.fillRect(0, 0, W, H);
+			ctx.fillStyle = `rgba(255,250,215,${0.08 * t})`;
+			ctx.fillRect(0, 0, W, H);
+		}
 
 		dibujarPetalos(dt);
 	}

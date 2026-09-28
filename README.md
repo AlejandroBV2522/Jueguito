@@ -4,9 +4,11 @@ Juego de navegador: el protagonista camina desde un mundo gris y lluvioso hasta
 **Celaque**, conociendo personas (NPC) en el camino. A medida que avanza, el
 paisaje se vuelve verde, luminoso y lleno de flores.
 
-Todo el código es propio: no usa librerías, imágenes, fuentes ni enlaces de
-terceros. Todo se dibuja con `<canvas>`, y la página bloquea cualquier carga
-externa (Content-Security-Policy en `index.html`).
+Todo el código es propio: no usa librerías, fuentes ni enlaces de terceros.
+Casi todo se dibuja con `<canvas>`; la llegada a Celaque (al salir de la
+Cueva) usa unas pocas imágenes PNG propias (`assets/edificios/`). La página
+bloquea cualquier carga externa (Content-Security-Policy en `index.html`),
+así que solo se cargan archivos del propio proyecto.
 
 ## Cómo ejecutarlo
 
@@ -59,3 +61,5 @@ Todo lo editable está en **`config.js`**:
 - `style.css`: estilos de la interfaz.
 - `config.js`: configuración, textos y NPCs.
 - `main.js`: lógica y dibujo del juego.
+- `assets/edificios/`: imágenes PNG que se ven al salir de la Cueva, junto
+  al letrero de llegada a Celaque.

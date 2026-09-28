@@ -26,6 +26,7 @@
         <div class="dialogo-cuerpo">
             <p id="dialogo-nombre"></p>
             <p id="dialogo-texto"></p>
+            <div id="dialogo-opciones" class="dialogo-opciones" hidden></div>
             <p id="dialogo-pista"></p>
         </div>
     </div>
@@ -39,7 +40,7 @@
             <button class="opcion" data-personaje="chica" role="radio"><canvas></canvas><span></span></button>
         </div>
         <button id="btn-comenzar" class="boton">Comenzar</button>
-        <p class="ayuda">Camina con ← → (o A / D, o la rueda del mouse). Mantén Q para correr.<br>Habla y avanza los diálogos con E, Enter o Espacio.</p>
+        <p class="ayuda">Camina con ← → (o A / D, o la rueda del mouse). Mantén Q para correr.<br>Habla y avanza los diálogos con E, Enter o Espacio.<br>Salta con ↑ y agáchate con ↓ (frente a un tubo, para entrar).</p>
     </div>
 
     <!-- Pantalla de victoria -->
@@ -61,6 +62,8 @@
         <div class="grupo">
             <button id="btn-correr" class="tactil texto" aria-label="Correr">Correr</button>
             <button id="btn-hablar" class="tactil texto" aria-label="Hablar">Hablar</button>
+            <button id="btn-saltar" class="tactil texto" aria-label="Saltar">Saltar</button>
+            <button id="btn-agachar" class="tactil texto" aria-label="Agachar">Agachar</button>
         </div>
     </div>
 </body>
