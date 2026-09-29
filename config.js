@@ -135,6 +135,7 @@ window.PREGUNTAS_CUEVA = [
   {
     nombre: "Guardián de la Entrada",
     posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
+    escala: 1, // tamaño base: el primer reto, ni el más débil ni el más grande
     // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
     apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
     pregunta: "¿Cuál es la misión de Celaque?",
@@ -148,6 +149,7 @@ window.PREGUNTAS_CUEVA = [
   {
     nombre: "Murciélago de la Cueva",
     posicion: 0.30,
+    escala: 0.6, // el más débil: el más chico
     apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
     pregunta: "¿Cuál es uno de los valores de Celaque?",
     opciones: ["Trabajo en equipo.", "Desorden.", "Irresponsabilidad."],
@@ -156,6 +158,7 @@ window.PREGUNTAS_CUEVA = [
   {
     nombre: "Guerrero Esqueleto",
     posicion: 0.50,
+    escala: 1.05,
     apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
     pregunta: "¿Qué debes usar para protegerte en el trabajo?",
     opciones: [
@@ -169,6 +172,7 @@ window.PREGUNTAS_CUEVA = [
     // ✏️ Marcador de posición: reemplazar con contenido real de la capacitación
     nombre: "Golem de Piedra",
     posicion: 0.70,
+    escala: 1.3,
     apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
     pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
     opciones: [
@@ -179,16 +183,24 @@ window.PREGUNTAS_CUEVA = [
     correcta: 0,
   },
   {
-    // ✏️ Marcador de posición: jefe final, combina temas anteriores
+    // ✏️ Marcador de posición: jefe final, combina temas anteriores.
+    // Trae 2 preguntas ("preguntas" en vez de "pregunta") — hay que
+    // responder las 2 en orden para vencerlo, una tras otra.
     nombre: "Guardián de Celaque",
     posicion: 0.90,
+    escala: 2.2, // jefe final: el gigante de la Cueva
     apariencia: { piel: "#c9a876", ropa: "#7a2f3f", pantalon: "#2e2e2e", pelo: "#1a1a1a", sombrero: null },
-    pregunta: "¿Qué valor y qué norma de seguridad son importantes en Celaque?",
-    opciones: [
-      "Trabajo en equipo y equipo de protección personal.",
-      "Desorden y ningún equipo.",
-      "Irresponsabilidad e improvisar.",
+    preguntas: [
+      {
+        pregunta: "¿Cuál es uno de los valores de Celaque?",
+        opciones: ["Trabajo en equipo.", "Individualismo.", "Competencia interna."],
+        correcta: 0,
+      },
+      {
+        pregunta: "¿Qué debes usar para protegerte en el trabajo?",
+        opciones: ["Equipo de protección personal.", "Nada, no hace falta.", "Solo si alguien te ve."],
+        correcta: 0,
+      },
     ],
-    correcta: 0,
   },
 ];
