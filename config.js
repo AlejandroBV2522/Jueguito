@@ -148,7 +148,7 @@ window.PREGUNTAS_CUEVA = [
   },
   {
     nombre: "Murciélago de la Cueva",
-    posicion: 0.30,
+    posicion: 0.22,
     escala: 0.6, // el más débil: el más chico
     apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
     pregunta: "¿Cuál es uno de los valores de Celaque?",
@@ -157,7 +157,7 @@ window.PREGUNTAS_CUEVA = [
   },
   {
     nombre: "Guerrero Esqueleto",
-    posicion: 0.50,
+    posicion: 0.39,
     escala: 1.05,
     apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
     pregunta: "¿Qué debes usar para protegerte en el trabajo?",
@@ -171,8 +171,9 @@ window.PREGUNTAS_CUEVA = [
   {
     // ✏️ Marcador de posición: reemplazar con contenido real de la capacitación
     nombre: "Golem de Piedra",
-    posicion: 0.70,
+    posicion: 0.645,
     escala: 1.3,
+    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
     apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
     pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
     opciones: [
@@ -187,8 +188,9 @@ window.PREGUNTAS_CUEVA = [
     // Trae 2 preguntas ("preguntas" en vez de "pregunta") — hay que
     // responder las 2 en orden para vencerlo, una tras otra.
     nombre: "Guardián de Celaque",
-    posicion: 0.90,
+    posicion: 0.865,
     escala: 2.2, // jefe final: el gigante de la Cueva
+    factorFrente: 0.5, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
     apariencia: { piel: "#c9a876", ropa: "#7a2f3f", pantalon: "#2e2e2e", pelo: "#1a1a1a", sombrero: null },
     preguntas: [
       {

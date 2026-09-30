@@ -9,7 +9,7 @@
 	const CFG = window.CONFIG_JUEGO;
 	const LARGO = CFG.largoDelCamino;
 	const INICIO_X = 80;
-	const LARGO_CUEVA = 2400; // tramo de la Cueva, después del camino (más largo = enemigos más separados)
+	const LARGO_CUEVA = 5200; // tramo de la Cueva, después del camino (más largo = enemigos más separados)
 	const LARGO_TOTAL = LARGO + LARGO_CUEVA;
 	const LARGO_META = LARGO_TOTAL + 500; // tramo urbano: se camina un poco más hasta el letrero
 
@@ -32,7 +32,37 @@
 	// ~73px. ANCHO_HUECO=90 exige correr para pasarlo cómodo (caminando se
 	// queda corto y cae).
 	const ANCHO_HUECO = 70;
-	const HUECOS_CUEVA = [0.4, 0.8].map((frac) => ({ x: LARGO + frac * LARGO_CUEVA }));
+	// Posiciones ABSOLUTAS (no fracciones): así se pueden acomodar a mano,
+	// lejos de enemigos y obstáculos, sin que un cambio de LARGO_CUEVA las
+	// recorra todas por igual (ver nota de márgenes más abajo).
+	const HUECOS_CUEVA = [1550, 3820].map((off) => ({ x: LARGO + off }));
+
+	// ---------- Obstáculos sólidos de la Cueva (rocas y cajas de madera) ----------
+	// Bloques duros que hay que SALTAR: caminando de frente el héroe se frena
+	// contra la cara (no los atraviesa); saltando cae ENCIMA y los recorre por
+	// arriba, o -corriendo- los pasa de un brinco.
+	//   - alto: altura de la cara superior EN LAS MISMAS UNIDADES que heroe.y
+	//     (el borde del tubo es 126; un salto normal llega a ~150, así que con
+	//     alto <= 80 hasta un salto caminando cae encima).
+	//   - medioAncho: medio ancho en unidades de mundo (se escala por S al medir
+	//     la colisión y al dibujar, así calzan exacto).
+	//
+	// MÁRGENES: un enemigo con foto no es un punto — su "zona de frenado"
+	// (ver anchoFrenteEnemigo) puede medir varios cientos de px en el jefe
+	// (escala 2.2). Si un obstáculo o un hueco queda demasiado cerca de un
+	// enemigo, se solapan visualmente (el enemigo aparece encima de la roca)
+	// o, peor, la zona de frenado cae DENTRO de un hueco y el héroe queda
+	// atrapado. Estas posiciones se calcularon con margen de sobra incluso
+	// en el caso más ancho (pantallas muy altas, S hasta 1.4):
+	//   caja1(750) · Murciélago(1150) · hueco1(1550) · Esqueleto(2050) ·
+	//   caja2(2500) · roca2(2820) · Golem(3354) · hueco2(3820) ·
+	//   Jefe(4498) · tubo de salida(5200)
+	const OBSTACULOS_CUEVA = [
+		{ x: LARGO + 400, tipo: "roca", medioAncho: 40, alto: 78 },
+		{ x: LARGO + 750, tipo: "caja", medioAncho: 33, alto: 62 },
+		{ x: LARGO + 2500, tipo: "caja", medioAncho: 33, alto: 62 },
+		{ x: LARGO + 2820, tipo: "roca", medioAncho: 42, alto: 82 },
+	];
 
 	// ---------- Utilidades ----------
 	const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -464,13 +494,27 @@
 		SPRITES_GOLEM[clave].cargando = cargarImagen(RUTA_ENEMIGOS + SPRITES_GOLEM[clave].archivo);
 	}
 
+	// El jefe final: dragón-bestia de cristal de la cueva. Trae las 2 fotos
+	// (quieto y golpe lanzando una ráfaga de energía de cristal). anclaX de la
+	// pose de golpe se midió SOLO sobre el cuerpo (sin la ráfaga, que sale
+	// hacia adelante y corre el centro), para que el cuerpo del dragón quede
+	// clavado en el mismo lugar que en la pose quieta y no "salte" al atacar.
+	const SPRITES_JEFE = {
+		quieto: { archivo: "JefeFinalParado.png", anclaX: 570 / 1408, arriba: 43 / 768, abajo: 746 / 768 },
+		golpe: { archivo: "JefeFinalGolpe.png", anclaX: 567 / 1408, arriba: 34 / 768, abajo: 746 / 768 },
+	};
+	for (const clave in SPRITES_JEFE) {
+		SPRITES_JEFE[clave].cargando = cargarImagen(RUTA_ENEMIGOS + SPRITES_JEFE[clave].archivo);
+	}
+
 	// Qué foto usar según el nombre del enemigo (los que no aparecen acá
-	// -como el Guardián de la Entrada y el jefe final- se dibujan con el
-	// personaje vectorial de siempre).
+	// -como el Guardián de la Entrada- se dibujan con el personaje vectorial
+	// de siempre).
 	const SPRITES_POR_ENEMIGO = {
 		"Murciélago de la Cueva": SPRITES_MURCIELAGO,
 		"Guerrero Esqueleto": SPRITES_ESQUELETO,
 		"Golem de Piedra": SPRITES_GOLEM,
+		"Guardián de Celaque": SPRITES_JEFE,
 	};
 
 	const azar = crearAzar(20260925);
@@ -537,7 +581,7 @@
 	// el mismo azar() determinista, DESPUÉS de todo lo de afuera para no
 	// correrle la secuencia a los árboles/nubes/etc.
 	const murcielagosFondo = [];
-	for (let i = 0; i < 15; i++) {
+	for (let i = 0; i < 32; i++) {
 		murcielagosFondo.push({
 			x: LARGO + 120 + azar() * (LARGO_CUEVA - 240),
 			y: 0.12 + azar() * 0.4, // fracción de la altura hasta SUELO
@@ -549,7 +593,7 @@
 	}
 
 	const cristales = [];
-	for (let i = 0; i < 21; i++) {
+	for (let i = 0; i < 45; i++) {
 		cristales.push({
 			x: LARGO + 80 + azar() * (LARGO_CUEVA - 160),
 			tam: 0.6 + azar() * 0.8,
@@ -559,7 +603,7 @@
 	}
 
 	const estalagmitas = [];
-	for (let i = 0; i < 24; i++) {
+	for (let i = 0; i < 52; i++) {
 		estalagmitas.push({
 			x: LARGO + 60 + azar() * (LARGO_CUEVA - 120),
 			alto: 20 + azar() * 40,
@@ -850,11 +894,44 @@
 		return HUECOS_CUEVA.some((h) => Math.abs(x - h.x) < ANCHO_HUECO / 2);
 	}
 
+	// Altura de la cara superior del obstáculo (roca/caja) que haya en x, o 0.
+	// El medio ancho se escala por S para que la zona "pisable" coincida con el
+	// dibujo (el mundo es 1:1 con la pantalla en horizontal).
+	function alturaObstaculoEn(x) {
+		if (!dentroCueva || vistaUrbana) return 0;
+		let top = 0;
+		for (const o of OBSTACULOS_CUEVA) {
+			if (Math.abs(x - o.x) < o.medioAncho * S && o.alto > top) top = o.alto;
+		}
+		return top;
+	}
+
+	// Cualquier superficie sólida sobre la que se pueda aterrizar/pararse:
+	// los tubos o los obstáculos de la cueva. La usa la física del salto.
+	function alturaSolidaEn(x) {
+		return Math.max(alturaTuboEn(x), alturaObstaculoEn(x));
+	}
+
+	// Choque lateral con los obstáculos: si los pies van por debajo de la cara
+	// superior, no se puede atravesar y se queda pegado a la cara. Si va por
+	// encima (saltó lo suficiente), pasa y recorre el techo sin frenar. Devuelve
+	// la x corregida. `semi` = medio obstáculo + medio héroe (12*S, igual que
+	// el tope frente al tubo).
+	function frenarEnObstaculos(viejoX, nuevoX, dir, heroeY) {
+		for (const o of OBSTACULOS_CUEVA) {
+			if (heroeY >= o.alto - 3) continue; // por encima: puede pasar/recorrer
+			const semi = (o.medioAncho + 12) * S;
+			if (dir > 0 && viejoX <= o.x - semi && nuevoX > o.x - semi) return o.x - semi;
+			if (dir < 0 && viejoX >= o.x + semi && nuevoX < o.x + semi) return o.x + semi;
+		}
+		return nuevoX;
+	}
+
 	// "Parado" en general: sirve para saltar, sea desde el piso normal o
 	// desde encima de un tubo (no exige estar en el tubo específicamente).
 	function heroeEnSuelo() {
 		if (heroe.velY !== 0) return false;
-		return heroe.y === 0 || heroe.y === alturaTuboEn(heroe.x);
+		return heroe.y === 0 || heroe.y === alturaSolidaEn(heroe.x);
 	}
 
 	// Estricto: solo es verdad si de verdad estás parado ARRIBA de un tubo
@@ -872,6 +949,33 @@
 	// (saltó y aterrizó encima), sí puede llegar al centro.
 	function limiteFrenteATubo(cx, heroeY) {
 		return heroeY >= ALTO_TUBO_MUNDO ? cx : cx - 47 * S;
+	}
+
+	// Igual que con el tubo: un enemigo con foto no es un punto sin ancho.
+	// Frenar justo en su x (como se hacía antes) mete al héroe en medio del
+	// dibujo — apenas se nota en un enemigo chico, pero es muy visible en el
+	// jefe (gigante, escala 2.2). Se calcula cuánto sobresale el sprite hacia
+	// el lado por donde se acerca el héroe (siempre desde la izquierda), con
+	// la MISMA fórmula de tamaño que usa dibujarEnemigoSprite, y se le suma
+	// el medio ancho del héroe (12*S, igual que en limiteFrenteATubo).
+	function anchoFrenteEnemigo(en) {
+		const sprites = SPRITES_POR_ENEMIGO[en.nombre];
+		const meta = sprites && sprites.quieto;
+		const el = meta && meta.cargando.elemento;
+		if (!el) return 16 * S; // sin foto (vectorial) o la imagen aún no cargó
+		const w = el.naturalWidth || el.width;
+		const h = el.naturalHeight || el.height;
+		const s = S * 1.15 * (en.escala || 1);
+		const altoContenido = (meta.abajo - meta.arriba) * h;
+		const dw = w * ((100 * s) / altoContenido);
+		// El enemigo se voltea para mirar al héroe que se acerca por la
+		// izquierda: el lado que sobresale hacia él es (1 - anclaX) del ancho.
+		// En los enemigos anchos (Golem, Jefe) esa mitad incluye brazos/cola
+		// extendidos que no son el "cuerpo" real — factorFrente (en config.js,
+		// por defecto 1) la recorta para que el héroe se acerque más, como con
+		// los enemigos más chicos.
+		const factorFrente = en.factorFrente ?? 1;
+		return (1 - meta.anclaX) * dw * factorFrente + 12 * S;
 	}
 
 	function saltarAccion() {
@@ -1151,11 +1255,13 @@
 		const alturaAntes = heroe.y;
 		heroe.velY -= GRAVEDAD * dt;
 		heroe.y += heroe.velY * dt;
-		const alturaTubo = alturaTuboEn(heroe.x);
-		// El tubo solo te sostiene arriba si ya venías cayendo desde encima de
-		// él (saltando). Si vas caminando por el piso normal, no te empuja
-		// hacia arriba solo por acercarte — el suelo real (0) sigue mandando.
-		const suelo = alturaAntes >= alturaTubo ? alturaTubo : 0;
+		const alturaSolida = alturaSolidaEn(heroe.x);
+		// Una superficie sólida (tubo u obstáculo) solo te sostiene arriba si ya
+		// venías cayendo desde encima (saltando). Si vas caminando por el piso
+		// normal, no te empuja hacia arriba solo por acercarte — el suelo real
+		// (0) sigue mandando, y el choque lateral (frenarEnObstaculos) evita que
+		// te metas dentro del obstáculo.
+		const suelo = alturaAntes >= alturaSolida ? alturaSolida : 0;
 		if (hayHuecoEn(heroe.x) && heroe.y <= suelo) {
 			// No hay piso: si no lo saltaste, sigues cayendo hasta perder.
 			if (estado === "cueva" && heroe.y < -70) perderPorHueco();
@@ -1212,7 +1318,7 @@
 			// El Guardián de la Entrada vive afuera (x <= LARGO) y bloquea el
 			// paso antes de que puedas cruzar hacia la Cueva.
 			const guardian = enemigos.find((en) => !en.derrotado && en.x <= LARGO);
-			const limite = guardian ? guardian.x : limiteFrenteATubo(LARGO, heroe.y);
+			const limite = guardian ? guardian.x - anchoFrenteEnemigo(guardian) : limiteFrenteATubo(LARGO, heroe.y);
 
 			if (heroe.moviendo) {
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
@@ -1225,7 +1331,7 @@
 			// Los NPCs saludan solos la primera vez que te acercas
 			const nuevo = npcs.find((n) => !n.hablado && Math.abs(n.x - heroe.x) < CFG.distanciaParaHablar);
 			if (nuevo) abrirDialogo(nuevo);
-			else if (guardian && Math.abs(guardian.x - heroe.x) < CFG.distanciaParaHablar) abrirPregunta(guardian);
+			else if (guardian && heroe.x >= limite) abrirPregunta(guardian);
 			// Cruzar el tubo de entrada ahora requiere agacharse (agacharAccion)
 		}
 
@@ -1236,16 +1342,18 @@
 			heroe.corriendo = heroe.moviendo && entrada.correr;
 
 			const bloqueante = enemigos.find((en) => !en.derrotado);
-			const limite = bloqueante ? bloqueante.x : limiteFrenteATubo(LARGO_TOTAL, heroe.y);
+			const limite = bloqueante ? bloqueante.x - anchoFrenteEnemigo(bloqueante) : limiteFrenteATubo(LARGO_TOTAL, heroe.y);
 
 			if (heroe.moviendo) {
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
-				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO, limite);
+				const viejoX = heroe.x;
+				const tentativo = clamp(viejoX + dir * velocidad * dt, LARGO, limite);
+				heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
 				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
 			}
 
-			if (bloqueante && Math.abs(bloqueante.x - heroe.x) < CFG.distanciaParaHablar) abrirPregunta(bloqueante);
+			if (bloqueante && heroe.x >= limite) abrirPregunta(bloqueante);
 			// Cruzar el tubo de salida ahora requiere agacharse (agacharAccion)
 			actualizarHudCueva();
 		}
@@ -1766,6 +1874,139 @@
 		}
 	}
 
+	// Obstáculos sólidos de la Cueva (rocas y cajas). Se apoyan en la línea de
+	// pies del héroe (SUELO + 38*S = heroe.y 0) y suben `alto*S`, así la cara
+	// superior coincide exacto con donde quedan los pies al pararse encima.
+	function dibujarObstaculosCueva() {
+		const baseY = SUELO + 38 * S;
+		for (const o of OBSTACULOS_CUEVA) {
+			const sx = o.x - camara;
+			const w = o.medioAncho * S;
+			if (sx + w < -20 || sx - w > W + 20) continue;
+			const topY = baseY - o.alto * S;
+
+			// Sombra en el piso
+			ctx.fillStyle = "rgba(0,0,0,0.33)";
+			ctx.beginPath();
+			ctx.ellipse(sx, baseY + 4 * S, w * 1.12, 6 * S, 0, 0, Math.PI * 2);
+			ctx.fill();
+
+			if (o.tipo === "roca") dibujarRoca(sx, baseY, topY, w);
+			else dibujarCaja(sx, baseY, topY, w);
+		}
+	}
+
+	// Roca sólida: bloque de piedra irregular con la misma paleta de la cueva,
+	// canto superior más claro y un par de cristales que hacen juego con la
+	// decoración. Silueta ancha y maciza para que se lea como "duro".
+	function dibujarRoca(sx, baseY, topY, w) {
+		const izq = sx - w;
+		const der = sx + w;
+		ctx.beginPath();
+		ctx.moveTo(izq, baseY);
+		ctx.lineTo(izq + w * 0.12, topY + (baseY - topY) * 0.28);
+		ctx.lineTo(sx - w * 0.45, topY + 4 * S);
+		ctx.lineTo(sx - w * 0.1, topY);
+		ctx.lineTo(sx + w * 0.4, topY + 3 * S);
+		ctx.lineTo(der - w * 0.1, topY + (baseY - topY) * 0.22);
+		ctx.lineTo(der, baseY);
+		ctx.closePath();
+		const g = ctx.createLinearGradient(0, topY, 0, baseY);
+		g.addColorStop(0, "#4a4356");
+		g.addColorStop(0.5, "#342f3e");
+		g.addColorStop(1, "#211d28");
+		ctx.fillStyle = g;
+		ctx.fill();
+
+		// Canto superior iluminado (por las lámparas del techo)
+		ctx.strokeStyle = "rgba(210,198,225,0.5)";
+		ctx.lineWidth = 3 * S;
+		ctx.beginPath();
+		ctx.moveTo(sx - w * 0.45, topY + 4 * S);
+		ctx.lineTo(sx - w * 0.1, topY);
+		ctx.lineTo(sx + w * 0.4, topY + 3 * S);
+		ctx.stroke();
+
+		// Grietas
+		ctx.strokeStyle = "rgba(0,0,0,0.4)";
+		ctx.lineWidth = 2 * S;
+		ctx.beginPath();
+		ctx.moveTo(sx - w * 0.2, topY + 10 * S);
+		ctx.lineTo(sx - w * 0.05, baseY - 12 * S);
+		ctx.moveTo(sx + w * 0.3, topY + 12 * S);
+		ctx.lineTo(sx + w * 0.15, baseY - 8 * S);
+		ctx.stroke();
+
+		// Cristalitos que hacen juego con la cueva
+		for (const [dx, dyFrac, tam, tono] of [
+			[-w * 0.5, 0.86, 6, "#9a7fe0"],
+			[w * 0.62, 0.9, 5, "#5fd6e0"],
+		]) {
+			const cx = sx + dx;
+			const cy = baseY - (baseY - topY) * (1 - dyFrac);
+			ctx.fillStyle = tono;
+			ctx.beginPath();
+			ctx.moveTo(cx, cy - tam * S);
+			ctx.lineTo(cx + tam * 0.5 * S, cy);
+			ctx.lineTo(cx, cy + tam * 0.4 * S);
+			ctx.lineTo(cx - tam * 0.5 * S, cy);
+			ctx.closePath();
+			ctx.fill();
+		}
+	}
+
+	// Caja de madera: tablones verticales, marco, aspa en X y herrajes en las
+	// esquinas. Se ve firme y apoyada, como un cajón de carga de ferrocarril.
+	function dibujarCaja(sx, baseY, topY, w) {
+		const izq = sx - w;
+		const alto = baseY - topY;
+
+		// Cuerpo con veta de madera (gradiente vertical)
+		const g = ctx.createLinearGradient(0, topY, 0, baseY);
+		g.addColorStop(0, "#8a5f34");
+		g.addColorStop(1, "#5e3f22");
+		ctx.fillStyle = g;
+		ctx.fillRect(izq, topY, w * 2, alto);
+
+		// Tablones verticales (líneas oscuras)
+		ctx.strokeStyle = "rgba(60,38,20,0.6)";
+		ctx.lineWidth = 2 * S;
+		for (let i = 1; i < 4; i++) {
+			const lx = izq + (w * 2 * i) / 4;
+			ctx.beginPath();
+			ctx.moveTo(lx, topY + 3 * S);
+			ctx.lineTo(lx, baseY - 3 * S);
+			ctx.stroke();
+		}
+
+		// Cara superior más clara (le da volumen)
+		ctx.fillStyle = "#9a6c3e";
+		ctx.fillRect(izq, topY, w * 2, 5 * S);
+
+		// Marco del borde
+		ctx.strokeStyle = "#4a3016";
+		ctx.lineWidth = 4 * S;
+		ctx.strokeRect(izq + 2 * S, topY + 2 * S, w * 2 - 4 * S, alto - 4 * S);
+
+		// Aspa en X
+		ctx.strokeStyle = "rgba(120,84,48,0.9)";
+		ctx.lineWidth = 5 * S;
+		ctx.beginPath();
+		ctx.moveTo(izq + 5 * S, topY + 5 * S);
+		ctx.lineTo(izq + w * 2 - 5 * S, baseY - 5 * S);
+		ctx.moveTo(izq + w * 2 - 5 * S, topY + 5 * S);
+		ctx.lineTo(izq + 5 * S, baseY - 5 * S);
+		ctx.stroke();
+
+		// Herrajes metálicos en las 4 esquinas
+		ctx.fillStyle = "#3a3a42";
+		const h = 7 * S;
+		ctx.fillRect(izq, topY, h, h);
+		ctx.fillRect(izq + w * 2 - h, topY, h, h);
+		ctx.fillRect(izq, baseY - h, h, h);
+		ctx.fillRect(izq + w * 2 - h, baseY - h, h, h);
+	}
+
 	// Murciélagos de fondo: siluetas que aletean y derivan en el aire oscuro
 	// de la cueva. Son decorativos (no el enemigo Murciélago), van detrás de
 	// todo, en la zona media del "cielo" de roca.
@@ -2003,10 +2244,18 @@
 		const embestida = o.atacando && sinPoseDeGolpe ? 1.18 : 1;
 
 		const s = S * 1.15 * (o.escala || 1);
+		// El vaivén de reposo NO debe escalar con "escala": es una animación de
+		// vida sutil, no parte del tamaño del cuerpo. Si escalara, un enemigo
+		// gigante (el jefe) se movería muchos más píxeles que uno chico y se
+		// vería como si flotara en vez de estar parado. Se usa una escala fija
+		// (equivalente a escala=1) solo para este vaivén.
+		const sVaiven = S * 1.15;
 		// Flotar en reposo: la fase se toma de la posición de MUNDO (x + camara),
 		// no de la de pantalla. Si se usa la de pantalla, al mover la cámara la
 		// fase salta cada cuadro y el enemigo tiembla mientras el héroe camina.
-		const rebote = o.moviendo ? Math.abs(Math.cos(o.fase)) * 2 * s : Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
+		const rebote = o.moviendo
+			? Math.abs(Math.cos(o.fase)) * 2 * sVaiven
+			: Math.sin(tiempo * 2 + x + camara) * 0.8 * sVaiven;
 		const altoDeseado = 100 * s * embestida;
 
 		ctx.save();
@@ -2447,6 +2696,7 @@
 			dibujarEstalagmitas(); // picos de roca detrás de todo
 			dibujarCristales(); // gemas que brillan sobre el camino
 			dibujarHuecos();
+			dibujarObstaculosCueva(); // rocas y cajas sólidas (se saltan/recorren)
 			dibujarTuboSalida();
 		} else if (modo === "urbano") {
 			dibujarEdificiosSimples(); // relleno gris detrás
