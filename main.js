@@ -517,6 +517,53 @@
 		"Guardián de Celaque": SPRITES_JEFE,
 	};
 
+	// ---------- Sprite del héroe (constructor) ----------
+	// A diferencia de los enemigos (quietos en un lugar), el héroe camina por
+	// toda la pantalla, así que una sola foto fija "patinaría". Se cubre con
+	// 6 poses -quieto/caminando/caminando2/saltando/golpe/agachado- elegidas
+	// según el estado del héroe en cada cuadro (ver dibujarHeroeSprite).
+	// anclaX de cada una se midió sobre el TORSO/cadera (no la silueta
+	// completa), para que el cuerpo no "salte" de lado al cambiar de pose (el
+	// martillo/los brazos se abren distinto en cada una, pero el torso queda
+	// clavado en el mismo lugar). "caminando"/"caminando2" son las 2 zancadas
+	// (pierna izq. y der. adelante) que se alternan con la fase de pasos —
+	// mismo ciclo que ya usa el rebote— para caminar Y correr.
+	const RUTA_PERSONAJE = "assets/personaje/";
+	const SPRITES_HEROE_CHICO = {
+		quieto: { archivo: "PersonajeHDePie.png", anclaX: 0.4585, arriba: 0.0163, abajo: 0.9831 },
+		caminando: { archivo: "PersonajeHCaminando.png", anclaX: 0.4576, arriba: 0.0365, abajo: 0.9674 },
+		caminando2: { archivo: "PersonajeHCaminando2.png", anclaX: 0.4679, arriba: 0.1185, abajo: 0.8919 },
+		saltando: { archivo: "PersonajeHSalta.png", anclaX: 0.5139, arriba: 0.0215, abajo: 0.875 },
+		golpe: { archivo: "PersonajeHGolpe.png", anclaX: 0.4845, arriba: 0.042, abajo: 0.9665 },
+		agachado: { archivo: "PersonajeHAgachado.png", anclaX: 0.4878, arriba: 0.0977, abajo: 0.9212 },
+	};
+	for (const clave in SPRITES_HEROE_CHICO) {
+		SPRITES_HEROE_CHICO[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICO[clave].archivo);
+	}
+
+	// La Chica: ya tiene de pie/caminando/saltando propias. Golpe y agachado
+	// siguen sin foto propia -se reusa "quieto" con los mismos trucos del
+	// dibujo vectorial: se agranda un poco al atacar y se achica verticalmente
+	// al agacharse (ver sinFotoPropia en dibujarHeroeSprite)-, hasta que se
+	// agreguen esas 2 fotos igual que con el Chico.
+	const SPRITES_HEROE_CHICA = {
+		quieto: { archivo: "PersonajeMDePie.png", anclaX: 0.4737, arriba: 0.0254, abajo: 0.9772 },
+		caminando: { archivo: "PersonajeMCaminando.png", anclaX: 0.47, arriba: 0.0293, abajo: 0.974 },
+		saltando: { archivo: "PersonajeMSalta.png", anclaX: 0.4892, arriba: 0.0153, abajo: 0.9825 },
+	};
+	SPRITES_HEROE_CHICA.golpe = SPRITES_HEROE_CHICA.quieto;
+	SPRITES_HEROE_CHICA.agachado = SPRITES_HEROE_CHICA.quieto;
+	for (const clave of ["quieto", "caminando", "saltando"]) {
+		SPRITES_HEROE_CHICA[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICA[clave].archivo);
+	}
+
+	// Qué set de fotos usar según el personaje elegido en la pantalla de
+	// inicio.
+	const SPRITES_POR_PERSONAJE = {
+		chico: SPRITES_HEROE_CHICO,
+		chica: SPRITES_HEROE_CHICA,
+	};
+
 	const azar = crearAzar(20260925);
 
 	const arboles = [];
@@ -702,13 +749,16 @@
 	});
 	elegirPersonaje(personaje);
 
-	// Dibuja a cada personaje en su tarjeta; el elegido camina en su lugar
+	// Dibuja a cada personaje en su tarjeta; el elegido camina en su lugar.
+	// Usa la foto (constructor) si ese personaje ya tiene sprites cargados,
+	// igual que el héroe dentro del juego; si no, cae al dibujo vectorial
+	// (mismo respaldo que dibujarHeroe).
 	function dibujarVistasPrevias() {
 		const sAnterior = S;
 		const dpr = Math.min(window.devicePixelRatio || 1, 2);
 		for (const btn of opciones) {
 			const lienzo = btn.querySelector("canvas");
-			const ancho = 110, alto = 130;
+			const ancho = 150, alto = 180;
 			if (lienzo.width !== ancho * dpr) {
 				lienzo.width = ancho * dpr;
 				lienzo.height = alto * dpr;
@@ -716,13 +766,21 @@
 			ctx = lienzo.getContext("2d");
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			ctx.clearRect(0, 0, ancho, alto);
-			S = 1.2;
-			const elegido = btn.dataset.personaje === personaje;
-			dibujarPersona(ancho / 2, alto - 10, aparienciaHeroe(btn.dataset.personaje, 1, {
-				dir: 1,
-				fase: tiempo * 9,
-				moviendo: elegido,
-			}));
+			const clave = btn.dataset.personaje;
+			const sprites = SPRITES_POR_PERSONAJE[clave];
+			// Las fotos quedan más altas que el vector a la misma S (su "alto
+			// de contenido" cabeza-a-pie es proporcionalmente mayor), así que
+			// con foto se usa una S más chica para que entre completo en la
+			// tarjeta (casco y botas incluidos). Siempre quieto -sin caminar-
+			// para que no se corte ninguna pose en movimiento.
+			S = sprites ? 1.4 : 1.7;
+			const o = {
+				...aparienciaHeroe(clave, 1, { dir: 1, fase: 0, moviendo: false }),
+				agachado: false,
+				atacando: false,
+			};
+			const yaDibujado = sprites && dibujarHeroeSprite(ancho / 2, alto - 10, o, sprites, 1);
+			if (!yaDibujado) dibujarPersona(ancho / 2, alto - 10, o);
 		}
 		ctx = ctxJuego;
 		S = sAnterior;
@@ -2571,12 +2629,107 @@
 		}
 	}
 
+	// Dibuja al héroe con fotos (constructor) en vez de vector, eligiendo la
+	// pose según su estado actual. Si la foto todavía no cargó, devuelve
+	// false y dibujarHeroe cae al vectorial como respaldo (igual que los
+	// enemigos con dibujarEnemigoSprite).
+	function dibujarHeroeSprite(x, pie, o, sprites, t) {
+		// Caminando/corriendo: si hay 2da zancada (caminando2, distinta de la
+		// primera), se alterna con la misma fase que ya marca el rebote de
+		// pasos -Math.cos(o.fase)-, así las piernas ciclan de verdad en vez de
+		// quedar fijas con una sola foto.
+		const hayZancada2 = sprites.caminando2 && sprites.caminando2 !== sprites.caminando;
+		const pose = o.agachado
+			? "agachado"
+			: o.atacando
+			? "golpe"
+			: !heroeEnSuelo()
+			? "saltando"
+			: o.moviendo
+			? hayZancada2 && Math.cos(o.fase) < 0
+				? "caminando2"
+				: "caminando"
+			: "quieto";
+		const meta = sprites[pose];
+		const el = meta.cargando.elemento;
+		if (!el) return false;
+
+		// Si el personaje todavía no tiene foto propia para esta pose (p.ej.
+		// la Chica, que por ahora solo tiene "de pie"), se reusa la de
+		// "quieto" con los mismos trucos del dibujo vectorial: un poco más
+		// grande al atacar (como la embestida del murciélago) y achicada
+		// verticalmente al agacharse (como el squash de dibujarPersona).
+		const sinFotoPropia = pose !== "quieto" && meta === sprites.quieto;
+		const embestida = pose === "golpe" && sinFotoPropia ? 1.18 : 1;
+		// Agachado con foto propia (no el squash de la Chica): además de
+		// quedar más bajo por su propio alto de contenido, se reduce un poco
+		// más para que se vea claramente más chico/compacto, no solo bajito.
+		const factorAgachado = pose === "agachado" && !sinFotoPropia ? 0.78 : 1;
+		// caminando2 vino dibujada más chica dentro de su propio cuadro (más
+		// alejada de cámara que las demás fotos), así que con la MISMA escala
+		// de referencia (quieto) se ve más chica. Se compensa agrandándola.
+		const factorCaminando2 = pose === "caminando2" ? 1.25 : 1;
+
+		const s = S * 1.15;
+		// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
+		// tiemble con la cámara al moverse — ver nota en dibujarEnemigoSprite).
+		// Caminando, el mismo rebote marca el golpeteo de los pasos.
+		const rebote = o.moviendo
+			? Math.abs(Math.cos(o.fase)) * 2 * s
+			: Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
+		const altoDeseado = 100 * s * embestida * factorAgachado * factorCaminando2;
+
+		ctx.save();
+		ctx.translate(x, pie);
+		ctx.fillStyle = "rgba(40,40,40,0.18)";
+		ctx.beginPath();
+		ctx.ellipse(0, 0, 14 * s, 4 * s, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.translate(0, -rebote);
+		ctx.scale(o.dir, 1);
+		if (pose === "agachado" && sinFotoPropia) ctx.scale(1, 0.55);
+
+		// Gris al inicio del camino, colores vivos al llegar a Celaque — mismo
+		// efecto que el dibujo vectorial (aparienciaHeroe), aplicado como
+		// filtro sobre la foto en vez de mezclar colores por canal.
+		if (t < 1) ctx.filter = `grayscale(${Math.round((1 - t) * 100)}%)`;
+
+		// Escala común: se deriva SIEMPRE de la foto "quieto", no de cada pose
+		// por separado. Si cada una normalizara su propio alto de contenido a
+		// la misma altura final, una pose más compacta (agachado: rodillas
+		// dobladas; saltando: piernas recogidas) se estiraría para alcanzar
+		// esa altura completa y terminaría viéndose MÁS GRANDE -en vez de más
+		// baja/corta, como debería verse un cuerpo agachado o en el aire-.
+		// Con una sola escala de referencia, el ancho ya no se infla.
+		const metaQuieto = sprites.quieto;
+		const elQuieto = metaQuieto.cargando.elemento;
+		const refMeta = elQuieto ? metaQuieto : meta;
+		const refEl = elQuieto || el;
+		const hRef = refEl.naturalHeight || refEl.height;
+		const altoContenidoRef = (refMeta.abajo - refMeta.arriba) * hRef;
+		const k = altoDeseado / altoContenidoRef;
+
+		const w = el.naturalWidth || el.width;
+		const h = el.naturalHeight || el.height;
+		const dw = w * k;
+		const dh = h * k;
+		ctx.drawImage(el, -meta.anclaX * dw, -meta.abajo * dh, dw, dh);
+
+		ctx.restore();
+		return true;
+	}
+
 	function dibujarHeroe(t) {
-		dibujarPersona(heroe.x - camara, SUELO + 38 * S - heroe.y * S, {
+		const o = {
 			...aparienciaHeroe(personaje, t, heroe),
 			agachado: heroe.agachado,
 			atacando: heroe.atacando,
-		});
+		};
+		const x = heroe.x - camara;
+		const pie = SUELO + 38 * S - heroe.y * S;
+		const sprites = SPRITES_POR_PERSONAJE[personaje];
+		const yaDibujado = sprites && dibujarHeroeSprite(x, pie, o, sprites, t);
+		if (!yaDibujado) dibujarPersona(x, pie, o);
 	}
 
 	// Colores del personaje elegido: grises al inicio (t = 0), vivos al final (t = 1)

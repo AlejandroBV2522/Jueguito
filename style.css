@@ -135,8 +135,8 @@ body {
 }
 
 .opcion canvas {
-	width: 110px;
-	height: 130px;
+	width: 150px;
+	height: 180px;
 }
 
 .opcion:hover {
