@@ -24,7 +24,20 @@
 	const ANCHO_TUBO_MUNDO = 70;
 	const GRAVEDAD = 3300;
 	const IMPULSO_SALTO = 1000;
-	let vidas = 3;
+	// Niveles: cada NPC con el que hablas por PRIMERA vez te sube un nivel
+	// (máximo NIVEL_MAX) y cada nivel te da un corazón más para la Cueva.
+	const NIVEL_MAX = 5;
+	const VIDAS_BASE = 3;
+	let nivel = 0;
+	let vidas = VIDAS_BASE;
+	const vidasMax = () => VIDAS_BASE + nivel;
+	const corazones = () => "♥".repeat(vidas) + "♡".repeat(Math.max(0, vidasMax() - vidas));
+	let avisos = []; // textos flotantes sobre el héroe ("¡Nivel 2! +1 ♥")
+
+	// Zona de planos del inicio: termina en la puerta de luz (en x)
+	const FIN_PLANOS = 2200; // largo a propósito: las ideas toman tiempo
+	let cruzoPlanos = false;
+	let destello = 0; // fogonazo blanco al cruzar la puerta (1 → 0)
 
 	// ---------- Huecos en la Cueva (hay que saltarlos, si no te caes) ----------
 	// Con IMPULSO_SALTO/GRAVEDAD de arriba, un salto completo dura ~0.6s: a
@@ -62,6 +75,16 @@
 		{ x: LARGO + 750, tipo: "caja", medioAncho: 33, alto: 62 },
 		{ x: LARGO + 2500, tipo: "caja", medioAncho: 33, alto: 62 },
 		{ x: LARGO + 2820, tipo: "roca", medioAncho: 42, alto: 82 },
+	];
+
+	// ---------- Barreras de concreto en la calle (afuera) ----------
+	// Igual que los obstáculos de la Cueva: sólidas, hay que saltarlas. Lejos
+	// de los andamios de los NPC y del Guardián de la Entrada (LARGO - 260).
+	const OBSTACULOS_AFUERA = [
+		{ x: 3050, tipo: "barrera", medioAncho: 38, alto: 60 },
+		{ x: 3950, tipo: "barrera", medioAncho: 38, alto: 60 },
+		{ x: 4850, tipo: "barrera", medioAncho: 38, alto: 70 },
+		{ x: 6450, tipo: "barrera", medioAncho: 38, alto: 70 },
 	];
 
 	// ---------- Utilidades ----------
@@ -110,20 +133,24 @@
 	const PALETA = {
 		cieloArriba: ["#5b5f66", "#3db4f2"],
 		cieloAbajo: ["#8a8e94", "#dff9d0"],
-		montanaLejana: ["#6c7076", "#7cc6a4"],
 		celaque: ["#63676d", "#2f9e62"],
-		colinas: ["#5e6267", "#58c86e"],
-		tierra: ["#56585b", "#8a6a42"],
+		asfalto: ["#4a4c50", "#50545c"],
+		acera: ["#6d7074", "#d4d7dc"],
+		bordillo: ["#7d7f83", "#ffcc1f"],
+		marca: ["#76787c", "#fff3b0"],
 		pasto: ["#6a6d70", "#5fdc4c"],
-		tronco: ["#4f5053", "#7b5231"],
-		hojas: ["#6c6f73", "#2fb64e"],
-		hojasLuz: ["#7c7f83", "#8ff06b"],
+		humo: ["#3f4246", "#f4f6f8"],
+		ventana: ["#4b5058", "#fff2b3"],
+		vidrio: ["#555b63", "#9fdcff"],
 		nube: ["#9a9ca0", "#ffffff"],
 		heroeMochila: ["#66686b", "#2e9e5b"],
 	};
 	const color = (clave, t, alfa) => mezclar(PALETA[clave][0], PALETA[clave][1], t, alfa);
 	// Qué tan "coloreado" está un punto del camino (0 = gris, 1 = colorido)
-	const tono = (p) => suave(0.02, 0.92, p);
+	// En la zona de planos todo es gris (0); al cruzar la puerta de luz el
+	// mundo arranca ya con algo de color y sigue subiendo hasta Celaque.
+	const P_PUERTA = FIN_PLANOS / LARGO;
+	const tono = (p) => 0.45 * suave(P_PUERTA, P_PUERTA + 0.02, p) + 0.55 * suave(P_PUERTA, 0.92, p);
 
 	const COLORES_FLOR = ["#ff6f91", "#ffd23f", "#ffffff", "#c77dff", "#ff9f1c"];
 	const COLORES_MARIPOSA = ["#ffd54f", "#ff8a80", "#b388ff", "#80d8ff"];
@@ -151,6 +178,51 @@
 	const npcs = window.NPCS
 		.map((d) => ({ ...d, x: d.posicion * LARGO, hablado: false }))
 		.sort((a, b) => a.x - b.x);
+
+	// ---------- Andamios: cada NPC espera arriba de uno ----------
+	// Plataformas de un solo sentido (como en Mario): se atraviesan saltando
+	// desde abajo y se aterriza encima. Un salto sube ~150 de altura, así que
+	// cada escalón sube 100 y se solapa un poco con el siguiente en x para
+	// poder subir saltando casi en vertical. La escalera alterna de lado: a
+	// veces sube por la izquierda y otras por la derecha (hay que pasar por
+	// debajo del NPC y regresar). El alto se escala por S como en los
+	// obstáculos; el medioAncho NO, para que los saltos entre escalones midan
+	// lo mismo en cualquier pantalla (el mundo es 1:1 en horizontal).
+	// Escalones de cada NPC (en orden): d = distancia al NPC, alto = altura.
+	// Algunos son DINÁMICOS: "eje" x (viga colgada de una grúa que va y viene)
+	// o y (elevador que sube y baja), con amplitud "amp" y velocidad "vel".
+	// Si hay más NPCs que diseños, se repite el último.
+	const DISENO_ANDAMIOS = [
+		[{ d: 150, alto: 100 }],
+		[{ d: 230, alto: 100 }, { d: 150, alto: 200 }],
+		[{ d: 135, alto: 180, eje: "y", amp: 80, vel: 1.1 }],
+		[{ d: 300, alto: 100 }, { d: 200, alto: 200, eje: "x", amp: 80, vel: 0.9 }],
+		[{ d: 290, alto: 100, eje: "x", amp: 60, vel: 1 }, { d: 150, alto: 200, eje: "y", amp: 50, vel: 1.3 }],
+	];
+	const PLATAFORMAS = [];
+	npcs.forEach((n, i) => {
+		const escalones = DISENO_ANDAMIOS[Math.min(i, DISENO_ANDAMIOS.length - 1)];
+		const lado = i % 2 === 0 ? -1 : 1; // lado por donde se sube
+		n.alto = i === 0 ? 200 : 300; // el primero más fácil
+		PLATAFORMAS.push({ x: n.x, x0: n.x, alto: n.alto, alto0: n.alto, medioAncho: 85, principal: true, dx: 0 });
+		escalones.forEach((e, k) => {
+			const x = n.x + lado * e.d;
+			PLATAFORMAS.push({ x, x0: x, alto: e.alto, alto0: e.alto, medioAncho: 50, eje: e.eje, amp: e.amp, vel: e.vel, fase: i * 1.7 + k, dx: 0 });
+		});
+	});
+
+	// Mueve las plataformas dinámicas según el tiempo (dx = cuánto se movió
+	// en x este cuadro, para arrastrar al héroe que va parado encima).
+	function moverPlataformas() {
+		for (const pl of PLATAFORMAS) {
+			if (!pl.eje) continue;
+			const onda = Math.sin(tiempo * pl.vel + pl.fase) * pl.amp;
+			const x = pl.eje === "x" ? pl.x0 + onda : pl.x0;
+			pl.dx = x - pl.x;
+			pl.x = x;
+			if (pl.eje === "y") pl.alto = pl.alto0 + onda;
+		}
+	}
 
 	const enemigos = window.PREGUNTAS_CUEVA
 		.map((d) => ({
@@ -564,17 +636,102 @@
 		chica: SPRITES_HEROE_CHICA,
 	};
 
-	const azar = crearAzar(20260925);
+	// ---------- NPCs con la misma ilustración del héroe ----------
+	// Cada NPC usa la foto "de pie" del Chico o la Chica, recoloreando casco,
+	// chaleco, pantalón y pelo con sus propios colores. Las máscaras de cada
+	// zona (assets/personaje/mascaras/) se generaron aparte, porque abriendo
+	// el juego con doble clic (file://) el navegador no deja leer píxeles.
+	// "lum" es el brillo medio de cada zona en la foto original: se usa para
+	// aclararla antes de teñirla, así el color final sale parejo.
+	const RUTA_MASCARAS = RUTA_PERSONAJE + "mascaras/";
+	const ZONAS_NPC = { casco: "Casco", chaleco: "Chaleco", pantalon: "Pantalon", pelo: "Pelo" };
+	const CUERPOS_NPC = {
+		chico: { letra: "H", meta: SPRITES_HEROE_CHICO.quieto, lum: { casco: 0.295, chaleco: 0.532, pantalon: 0.16, pelo: 0.129 } },
+		chica: { letra: "M", meta: SPRITES_HEROE_CHICA.quieto, lum: { casco: 0.266, chaleco: 0.5, pantalon: 0.141, pelo: 0.121 } },
+	};
+	for (const c of Object.values(CUERPOS_NPC)) {
+		c.mascaras = {};
+		for (const z in ZONAS_NPC) c.mascaras[z] = cargarImagen(RUTA_MASCARAS + "Personaje" + c.letra + ZONAS_NPC[z] + ".png");
+	}
+	const ALTO_FOTO_NPC = 420; // resolución del lienzo teñido (sobra para su tamaño en pantalla)
 
-	const arboles = [];
-	for (let x = 220; x < LARGO - 250; x += 170 + azar() * 200) {
-		if (npcs.some((n) => Math.abs(n.x - x) < 90)) continue;
-		arboles.push({ x, tam: 0.75 + azar() * 0.5 });
+	// Devuelve (y guarda en el NPC) el lienzo con la foto ya teñida, o null
+	// si las imágenes todavía no terminan de cargar.
+	function fotoNpc(n) {
+		if (n.foto) return n.foto;
+		const cuerpo = CUERPOS_NPC[n.apariencia.cuerpo] || CUERPOS_NPC.chico;
+		const base = cuerpo.meta.cargando.elemento;
+		if (!base) return null;
+		for (const z in ZONAS_NPC) if (!cuerpo.mascaras[z].elemento) return null;
+
+		const h = ALTO_FOTO_NPC;
+		const w = Math.round((h * base.naturalWidth) / base.naturalHeight);
+		const lienzo = document.createElement("canvas");
+		lienzo.width = w;
+		lienzo.height = h;
+		const g = lienzo.getContext("2d");
+		g.drawImage(base, 0, 0, w, h);
+
+		const capa = document.createElement("canvas");
+		capa.width = w;
+		capa.height = h;
+		const c = capa.getContext("2d");
+		for (const z in ZONAS_NPC) {
+			const tinte = n.apariencia[z];
+			if (!tinte) continue;
+			c.globalCompositeOperation = "source-over";
+			c.clearRect(0, 0, w, h);
+			// La foto en escala de grises y aclarada (conserva sombras y brillos)...
+			c.filter = `grayscale(1) brightness(${(0.85 / cuerpo.lum[z]).toFixed(2)})`;
+			c.drawImage(base, 0, 0, w, h);
+			c.filter = "none";
+			// ...multiplicada por el color del NPC y recortada a la zona
+			c.globalCompositeOperation = "multiply";
+			c.fillStyle = tinte;
+			c.fillRect(0, 0, w, h);
+			c.globalCompositeOperation = "destination-in";
+			c.drawImage(cuerpo.mascaras[z].elemento, 0, 0, w, h);
+			g.drawImage(capa, 0, 0);
+		}
+		n.foto = { lienzo, meta: cuerpo.meta };
+		return n.foto;
 	}
 
-	const arbolesLejanos = [];
-	for (let x = 100; x < LARGO * 0.75; x += 120 + azar() * 160) {
-		arbolesLejanos.push({ x, tam: 0.45 + azar() * 0.2 });
+	const azar = crearAzar(20260925);
+
+	// ---------- Zona industrial (el camino de afuera) ----------
+	// Fábricas, bodegas, tanques, torres y grúas: al inicio todo es gris y a
+	// medida que avanzas cada edificio recupera su color propio (color +
+	// acento). Las grúas siempre son amarillas, como las de construcción.
+	const TIPOS_INDUSTRIA = ["fabrica", "bodega", "tanques", "torre", "grua"];
+	const COLORES_INDUSTRIA = ["#ff6b35", "#ffc93c", "#2ec4b6", "#ef476f", "#3a86ff", "#8ac926", "#9b5de5", "#ff9f1c"];
+	function crearEdificioIndustrial(x) {
+		const i = Math.floor(azar() * COLORES_INDUSTRIA.length);
+		return {
+			x,
+			tipo: TIPOS_INDUSTRIA[Math.floor(azar() * TIPOS_INDUSTRIA.length)],
+			v: azar(), // variación de tamaño dentro de su tipo
+			color: COLORES_INDUSTRIA[i],
+			acento: COLORES_INDUSTRIA[(i + 3) % COLORES_INDUSTRIA.length],
+		};
+	}
+
+	// Primer plano: edificios grandes justo detrás de la acera
+	const fabricas = [];
+	for (let x = 240; x < LARGO - 340; x += 330 + azar() * 230) {
+		fabricas.push(crearEdificioIndustrial(x));
+	}
+
+	// Plano medio: más chicos y con parallax (como antes los árboles lejanos)
+	const fabricasMedias = [];
+	for (let x = 60; x < LARGO * 0.68; x += 230 + azar() * 180) {
+		fabricasMedias.push(crearEdificioIndustrial(x));
+	}
+
+	// Conos y barriles de obra sobre la acera
+	const conos = [];
+	for (let x = 150; x < LARGO - 150; x += 160 + azar() * 340) {
+		conos.push({ x, barril: azar() < 0.35 });
 	}
 
 	const matas = [];
@@ -610,15 +767,15 @@
 	// Edificios de relleno: formas geométricas simples (nada de fotos), solo
 	// para dar sensación de más ciudad alrededor de Atlas y Lirios sin
 	// competir con ellos. Posiciones/colores al azar pero deterministas.
-	const PALETA_EDIFICIOS_SIMPLES = ["#9aa5ad", "#b7c4cc", "#8b98a3", "#c9a97a", "#a9b4bd"];
+	const PALETA_EDIFICIOS_SIMPLES = ["#ff6b6b", "#ffc93c", "#2ec4b6", "#3a86ff", "#9b5de5", "#ff9f1c"];
 	const edificiosSimples = [];
 	for (let i = 0; i < 6; i++) {
 		edificiosSimples.push({
 			x: LARGO_META + 20 + i * 150 + (azar() - 0.5) * 60,
-			// Más bajos que Atlas (altoBase 560) para que el Atlas destaque
-			// como el edificio principal, pero bien por encima del horizonte.
-			alto: 210 + azar() * 150,
-			ancho: 70 + azar() * 50,
+			// Grandes, pero un poco más bajos que Atlas (altoBase 450) para que
+			// el Atlas siga destacando como el edificio principal.
+			alto: 300 + azar() * 140,
+			ancho: 95 + azar() * 55,
 			color: PALETA_EDIFICIOS_SIMPLES[Math.floor(azar() * PALETA_EDIFICIOS_SIMPLES.length)],
 		});
 	}
@@ -726,13 +883,13 @@
 		const progreso = clamp((heroe.x - INICIO_X) / (LARGO - INICIO_X), 0, 1);
 		ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
 		const conocidos = npcs.filter((n) => n.hablado).length;
-		ui.hudTexto.textContent = `${CFG.textos.contadorNpcs}: ${conocidos} / ${npcs.length}`;
+		ui.hudTexto.textContent = `Nivel ${nivel} / ${NIVEL_MAX}  ·  ${corazones()}  ·  ${CFG.textos.contadorNpcs}: ${conocidos} / ${npcs.length}`;
 	}
 
 	function actualizarHudCueva() {
 		const derrotados = enemigos.filter((e) => e.derrotado).length;
 		ui.hudRelleno.style.width = ((derrotados / enemigos.length) * 100).toFixed(1) + "%";
-		ui.hudTexto.textContent = `Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}  ·  Enemigos vencidos: ${derrotados} / ${enemigos.length}`;
+		ui.hudTexto.textContent = `Nivel ${nivel}  ·  Vidas: ${corazones()}  ·  Enemigos vencidos: ${derrotados} / ${enemigos.length}`;
 	}
 
 	// ---------- Selector de personaje ----------
@@ -806,7 +963,12 @@
 			e.cayendo = 0;
 			e.preguntaActual = 0;
 		});
-		vidas = 3;
+		nivel = 0;
+		vidas = VIDAS_BASE;
+		avisos = [];
+		cruzoPlanos = false;
+		destello = 0;
+		heroe.sobre = null;
 		dentroCueva = false;
 		vistaUrbana = false;
 		transicion = null;
@@ -860,7 +1022,7 @@
 		dlg.mostradas = -1;
 		ui.nombre.textContent = npc.nombre;
 		ui.retrato.textContent = npc.nombre.charAt(0).toUpperCase();
-		ui.retrato.style.background = npc.apariencia.ropa;
+		ui.retrato.style.background = npc.apariencia.chaleco || npc.apariencia.ropa;
 		ui.dialogo.hidden = false;
 		ui.dialogo.classList.remove("arriba"); // el diálogo normal de NPC va abajo
 		document.body.classList.add("con-dialogo");
@@ -895,7 +1057,17 @@
 		}
 	}
 
+	// Solo la PRIMERA charla con cada NPC sube de nivel (volver a hablarle
+	// con E no da nada, así no se puede repetir para subir).
+	function subirNivel() {
+		if (nivel >= NIVEL_MAX) return;
+		nivel++;
+		vidas = vidasMax();
+		avisos.push({ texto: `¡Nivel ${nivel}! +1 ♥`, t: 0 });
+	}
+
 	function cerrarDialogo() {
+		if (!dlg.npc.hablado) subirNivel();
 		dlg.npc.hablado = true;
 		dlg.npc = null;
 		ui.dialogo.hidden = true;
@@ -904,8 +1076,13 @@
 		actualizarHud();
 	}
 
+	// Para hablar hay que estar cerca Y parado en el mismo andamio que el NPC
+	function alAlcance(n, distancia) {
+		return Math.abs(n.x - heroe.x) < distancia && heroeEnSuelo() && Math.abs(heroe.y - (n.alto || 0)) < 1;
+	}
+
 	function npcCercano() {
-		return npcs.find((n) => Math.abs(n.x - heroe.x) < CFG.distanciaParaHablar * 1.3);
+		return npcs.find((n) => alAlcance(n, CFG.distanciaParaHablar * 1.3));
 	}
 
 	// ---------- La Cueva ----------
@@ -955,10 +1132,14 @@
 	// Altura de la cara superior del obstáculo (roca/caja) que haya en x, o 0.
 	// El medio ancho se escala por S para que la zona "pisable" coincida con el
 	// dibujo (el mundo es 1:1 con la pantalla en horizontal).
+	function obstaculosActivos() {
+		if (vistaUrbana) return [];
+		return dentroCueva ? OBSTACULOS_CUEVA : OBSTACULOS_AFUERA;
+	}
+
 	function alturaObstaculoEn(x) {
-		if (!dentroCueva || vistaUrbana) return 0;
 		let top = 0;
-		for (const o of OBSTACULOS_CUEVA) {
+		for (const o of obstaculosActivos()) {
 			if (Math.abs(x - o.x) < o.medioAncho * S && o.alto > top) top = o.alto;
 		}
 		return top;
@@ -970,13 +1151,30 @@
 		return Math.max(alturaTuboEn(x), alturaObstaculoEn(x));
 	}
 
+	// Alturas de los andamios que hay en x (solo afuera)
+	function alturasPlataformaEn(x) {
+		if (dentroCueva || vistaUrbana) return [];
+		return PLATAFORMAS.filter((pl) => Math.abs(x - pl.x) < pl.medioAncho).map((pl) => pl.alto);
+	}
+
+	// El piso que te sostiene: la superficie más alta en x que quede por
+	// DEBAJO de donde venías (así se atraviesan los andamios desde abajo y se
+	// aterriza encima), o el suelo (0).
+	function sueloBajo(x, desde) {
+		let suelo = 0;
+		for (const a of [alturaSolidaEn(x), ...alturasPlataformaEn(x)]) {
+			if (a <= desde + 0.5 && a > suelo) suelo = a;
+		}
+		return suelo;
+	}
+
 	// Choque lateral con los obstáculos: si los pies van por debajo de la cara
 	// superior, no se puede atravesar y se queda pegado a la cara. Si va por
 	// encima (saltó lo suficiente), pasa y recorre el techo sin frenar. Devuelve
 	// la x corregida. `semi` = medio obstáculo + medio héroe (12*S, igual que
 	// el tope frente al tubo).
 	function frenarEnObstaculos(viejoX, nuevoX, dir, heroeY) {
-		for (const o of OBSTACULOS_CUEVA) {
+		for (const o of obstaculosActivos()) {
 			if (heroeY >= o.alto - 3) continue; // por encima: puede pasar/recorrer
 			const semi = (o.medioAncho + 12) * S;
 			if (dir > 0 && viejoX <= o.x - semi && nuevoX > o.x - semi) return o.x - semi;
@@ -989,7 +1187,7 @@
 	// desde encima de un tubo (no exige estar en el tubo específicamente).
 	function heroeEnSuelo() {
 		if (heroe.velY !== 0) return false;
-		return heroe.y === 0 || heroe.y === alturaSolidaEn(heroe.x);
+		return heroe.y === 0 || heroe.y === alturaSolidaEn(heroe.x) || alturasPlataformaEn(heroe.x).includes(heroe.y);
 	}
 
 	// Estricto: solo es verdad si de verdad estás parado ARRIBA de un tubo
@@ -1072,7 +1270,7 @@
 		ui.retrato.textContent = enemigo.nombre.charAt(0).toUpperCase();
 		ui.retrato.style.background = enemigo.apariencia.ropa;
 		ui.texto.textContent = p.pregunta;
-		const vidasTexto = `Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}`;
+		const vidasTexto = `Vidas: ${corazones()}`;
 		ui.pista.textContent =
 			enemigo.preguntas.length > 1
 				? `Pregunta ${enemigo.preguntaActual + 1}/${enemigo.preguntas.length} · ${vidasTexto}`
@@ -1125,7 +1323,7 @@
 			enemigo.atacandoT = 0;
 			vidas--;
 			if (vidas <= 0) setTimeout(perderCueva, 350);
-			else ui.pista.textContent = `Incorrecto, intenta de nuevo. Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}`;
+			else ui.pista.textContent = `Incorrecto, intenta de nuevo. Vidas: ${corazones()}`;
 		}
 	}
 
@@ -1177,7 +1375,7 @@
 
 	function reiniciarCueva() {
 		const enemigo = dlg.enemigo;
-		vidas = 3;
+		vidas = vidasMax();
 		heroe.y = 0;
 		heroe.velY = 0;
 		heroe.atacando = false;
@@ -1310,16 +1508,21 @@
 		// Física real del salto: gravedad + colisión contra los tubos (el
 		// único "objeto sólido" del juego). Corre siempre, sin importar el
 		// estado, para que nunca se quede flotando a medio salto.
+		moverPlataformas();
+		// Parado en una plataforma móvil: te lleva con ella (en x y en y)
+		if (heroe.sobre && heroe.velY === 0) {
+			heroe.x += heroe.sobre.dx;
+			heroe.y = heroe.sobre.alto;
+		}
 		const alturaAntes = heroe.y;
 		heroe.velY -= GRAVEDAD * dt;
 		heroe.y += heroe.velY * dt;
-		const alturaSolida = alturaSolidaEn(heroe.x);
-		// Una superficie sólida (tubo u obstáculo) solo te sostiene arriba si ya
-		// venías cayendo desde encima (saltando). Si vas caminando por el piso
-		// normal, no te empuja hacia arriba solo por acercarte — el suelo real
-		// (0) sigue mandando, y el choque lateral (frenarEnObstaculos) evita que
-		// te metas dentro del obstáculo.
-		const suelo = alturaAntes >= alturaSolida ? alturaSolida : 0;
+		// Una superficie (tubo, obstáculo o andamio) solo te sostiene si ya
+		// venías desde encima (saltando o caminando sobre ella). Si vas por
+		// debajo, no te empuja hacia arriba — el choque lateral
+		// (frenarEnObstaculos) evita meterse dentro de los obstáculos, y los
+		// andamios se atraviesan desde abajo.
+		const suelo = sueloBajo(heroe.x, alturaAntes);
 		if (hayHuecoEn(heroe.x) && heroe.y <= suelo) {
 			// No hay piso: si no lo saltaste, sigues cayendo hasta perder.
 			if (estado === "cueva" && heroe.y < -70) perderPorHueco();
@@ -1327,6 +1530,10 @@
 			heroe.y = suelo;
 			heroe.velY = 0;
 		}
+		heroe.sobre =
+			heroe.velY === 0 && heroe.y > 0 && !dentroCueva && !vistaUrbana
+				? PLATAFORMAS.find((pl) => pl.eje && pl.alto === heroe.y && Math.abs(heroe.x - pl.x) < pl.medioAncho) || null
+				: null;
 
 		// Animaciones de pelea: puñetazo del héroe, y de cada enemigo (lanzar
 		// golpe si respondiste mal, o caer si respondiste bien).
@@ -1353,7 +1560,7 @@
 		// Agacharse: mostrar la pose de cuclillas mientras se mantiene la flecha
 		// abajo, parado en el piso. (En transición la maneja entrarPorTubo.)
 		if (estado === "jugando" || estado === "cueva" || estado === "urbano") {
-			heroe.agachado = entrada.abajo && heroe.y === 0;
+			heroe.agachado = entrada.abajo && heroeEnSuelo();
 		}
 
 		if (estado === "transicion") {
@@ -1381,13 +1588,19 @@
 			if (heroe.moviendo) {
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
-				heroe.x = clamp(heroe.x + dir * velocidad * dt, 40, limite);
+				const viejoX = heroe.x;
+				heroe.x = frenarEnObstaculos(viejoX, clamp(viejoX + dir * velocidad * dt, 40, limite), dir, heroe.y);
 				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
 				actualizarHud();
 			}
 
+			if (!cruzoPlanos && heroe.x >= FIN_PLANOS) {
+				cruzoPlanos = true;
+				destello = 1;
+			}
+
 			// Los NPCs saludan solos la primera vez que te acercas
-			const nuevo = npcs.find((n) => !n.hablado && Math.abs(n.x - heroe.x) < CFG.distanciaParaHablar);
+			const nuevo = npcs.find((n) => !n.hablado && alAlcance(n, CFG.distanciaParaHablar));
 			if (nuevo) abrirDialogo(nuevo);
 			else if (guardian && heroe.x >= limite) abrirPregunta(guardian);
 			// Cruzar el tubo de entrada ahora requiere agacharse (agacharAccion)
@@ -1650,113 +1863,812 @@
 		dibujarPistaTubo(sx, puedeUsarTuboSalida());
 	}
 
-	function dibujarMontanas(t) {
-		ctx.fillStyle = color("montanaLejana", t);
-		ctx.beginPath();
-		ctx.moveTo(0, SUELO);
-		for (let sx = 0; sx <= W + 10; sx += 10) {
-			const x = sx + camara * 0.2;
-			const h = (110 + 55 * Math.sin(x * 0.0023) + 35 * Math.sin(x * 0.0061 + 1.3) + 15 * Math.sin(x * 0.017)) * S;
-			ctx.lineTo(sx, SUELO - h * 0.8);
+	// ---------- Dibujo: zona industrial ----------
+	// Color de un edificio en un punto del camino: gris al inicio, su color
+	// propio (vivo) al acercarse a Celaque.
+	const GRIS_INDUSTRIA = "#6b6e73";
+	const pintar = (vivo, t, alfa) => mezclar(GRIS_INDUSTRIA, vivo, t, alfa);
+
+	// Bocanadas de humo saliendo de una chimenea: espeso y oscuro al inicio
+	// (smog), blanco y ligero cuando el mundo ya tiene color.
+	function dibujarHumo(x, y, s, t, semilla) {
+		for (let k = 0; k < 4; k++) {
+			const f = modulo(tiempo * 0.22 + k / 4 + semilla, 1);
+			ctx.fillStyle = color("humo", t, 0.6 * (1 - f) * (1 - 0.45 * t));
+			circulo(x + f * 34 * s + Math.sin(f * 6 + semilla * 10) * 4 * s, y - f * 80 * s, (6 + f * 18) * s);
 		}
-		ctx.lineTo(W, SUELO);
-		ctx.closePath();
-		ctx.fill();
 	}
 
-	function dibujarColinas(t) {
-		ctx.fillStyle = color("colinas", t);
-		ctx.beginPath();
-		ctx.moveTo(0, SUELO + 2);
-		for (let sx = 0; sx <= W + 10; sx += 10) {
-			const x = sx + camara * 0.45;
-			const h = (50 + 25 * Math.sin(x * 0.004) + 15 * Math.sin(x * 0.009 + 2)) * S;
-			ctx.lineTo(sx, SUELO - h);
-		}
-		ctx.lineTo(W, SUELO + 2);
-		ctx.closePath();
-		ctx.fill();
-	}
-
-	function dibujarArbol(sx, base, tam, p) {
-		const t = tono(p);
-		const s = S * tam;
-		const follaje = suave(0.1, 0.5, p); // al inicio los árboles están secos
-		const alto = 120 * s;
-
-		ctx.strokeStyle = color("tronco", t);
-		ctx.lineCap = "round";
-		ctx.lineWidth = 12 * s;
-		linea(sx, base, sx, base - alto);
-		ctx.lineWidth = 5 * s;
-		linea(sx, base - alto * 0.65, sx - 30 * s, base - alto * 0.95);
-		linea(sx, base - alto * 0.75, sx + 28 * s, base - alto * 1.05);
-		linea(sx, base - alto * 0.9, sx + 6 * s, base - alto * 1.2);
-
-		if (follaje <= 0) return;
-		const r = 48 * s * follaje;
-		ctx.fillStyle = color("hojas", t);
-		ctx.beginPath();
-		ctx.arc(sx, base - alto - 10 * s, r, 0, Math.PI * 2);
-		ctx.moveTo(sx - 32 * s + r * 0.8, base - alto + 12 * s);
-		ctx.arc(sx - 32 * s, base - alto + 12 * s, r * 0.8, 0, Math.PI * 2);
-		ctx.moveTo(sx + 34 * s + r * 0.8, base - alto + 8 * s);
-		ctx.arc(sx + 34 * s, base - alto + 8 * s, r * 0.8, 0, Math.PI * 2);
-		ctx.fill();
-
-		ctx.fillStyle = color("hojasLuz", t, 0.85);
-		circulo(sx - 12 * s, base - alto - 26 * s, r * 0.42);
-
-		// Frutos y flores en los árboles cerca de Celaque
-		if (p > 0.72) {
-			const cantidad = Math.floor(suave(0.72, 0.95, p) * 6);
-			ctx.fillStyle = sx % 2 > 1 ? "#ff5d73" : "#ffd23f";
-			for (let i = 0; i < cantidad; i++) {
-				const ang = i * 2.1 + tam * 5;
-				circulo(sx + Math.cos(ang) * r * 0.9, base - alto + Math.sin(ang) * r * 0.6, 4 * s);
+	// Siluetas de fábricas lejanas con chimeneas humeando (parallax lento).
+	// Alturas pseudo-azar pero estables por índice, como dibujarSkylineLejano.
+	function dibujarIndustriaLejana(t) {
+		const baseY = SUELO + 2 * S;
+		const paso = 120 * S;
+		const par = camara * 0.3;
+		const off = modulo(par, paso);
+		let i = Math.floor(par / paso) - 1;
+		for (let sx = -off - paso; sx < W + paso; sx += paso, i++) {
+			const semilla = Math.sin(i * 12.9898) * 43758.5453;
+			const frac = semilla - Math.floor(semilla);
+			const frac2 = modulo(frac * 7.31, 1);
+			const alto = (110 + frac * 170) * S;
+			const ancho = (90 + frac2 * 60) * S;
+			const vivo = COLORES_INDUSTRIA[modulo(i, COLORES_INDUSTRIA.length)];
+			// Más desaturado que el primer plano: queda lejos, entre la bruma
+			ctx.fillStyle = mezclar("#7d8187", vivo, t * 0.45);
+			ctx.fillRect(sx - ancho / 2, baseY - alto, ancho, alto);
+			if (frac2 > 0.45) {
+				// Chimenea con humo
+				const cx = sx - ancho * 0.25;
+				const arriba = baseY - alto - 70 * S * frac2;
+				ctx.fillRect(cx - 7 * S, arriba, 14 * S, alto);
+				dibujarHumo(cx, arriba, S * 0.8, t, frac);
+			} else {
+				// Techo de dientes de sierra
+				ctx.beginPath();
+				for (let k = 0; k < 3; k++) {
+					const x0 = sx - ancho / 2 + (k * ancho) / 3;
+					ctx.moveTo(x0, baseY - alto);
+					ctx.lineTo(x0 + ancho / 3, baseY - alto - 22 * S);
+					ctx.lineTo(x0 + ancho / 3, baseY - alto);
+				}
+				ctx.fill();
 			}
 		}
 	}
 
-	function dibujarArbolesLejanos() {
-		ctx.save();
-		ctx.globalAlpha = 0.55;
-		for (const a of arbolesLejanos) {
-			const sx = a.x - camara * 0.7;
-			if (sx < -80 || sx > W + 80) continue;
-			dibujarArbol(sx, SUELO + 2 * S, a.tam, (a.x / 0.7) / LARGO);
+	// Bruma de ciudad sobre el horizonte: separa los planos (lejano / medio /
+	// cercano) y se va despejando a medida que el mundo toma color.
+	function dibujarBruma(t, fuerza) {
+		const g = ctx.createLinearGradient(0, SUELO - 380 * S, 0, SUELO);
+		g.addColorStop(0, color("cieloAbajo", t, 0));
+		g.addColorStop(1, color("cieloAbajo", t, fuerza * (1 - 0.4 * t)));
+		ctx.fillStyle = g;
+		ctx.fillRect(0, SUELO - 380 * S, W, 380 * S + 2);
+	}
+
+	function dibujarFabrica(e, sx, base, s, t) {
+		const w = (300 + 80 * e.v) * s;
+		const h = (240 + 100 * e.v) * s;
+		const L = sx - w / 2;
+		const techo = base - h * 0.66;
+
+		// Chimeneas de ladrillo (detrás del cuerpo), con franjas blancas
+		const n = e.v > 0.45 ? 2 : 1;
+		for (let i = 0; i < n; i++) {
+			const cx = L + w * (0.14 + 0.2 * i);
+			const cw = 20 * s;
+			const arriba = base - h - i * 30 * s;
+			ctx.fillStyle = pintar("#d64545", t);
+			ctx.fillRect(cx - cw / 2, arriba, cw, base - arriba);
+			ctx.fillStyle = mezclar("#85888d", "#ffffff", t);
+			ctx.fillRect(cx - cw / 2, arriba + 10 * s, cw, 7 * s);
+			ctx.fillRect(cx - cw / 2, arriba + 26 * s, cw, 7 * s);
+			ctx.fillStyle = "rgba(0,0,0,0.3)";
+			ctx.fillRect(cx - cw / 2 - 2 * s, arriba - 4 * s, cw + 4 * s, 5 * s);
+			dibujarHumo(cx, arriba - 4 * s, s, t, e.v + i * 0.37);
 		}
+
+		// Techo de dientes de sierra con ventanales
+		const dientes = 4;
+		const dw = w / dientes;
+		const dh = 38 * s;
+		for (let k = 0; k < dientes; k++) {
+			const x0 = L + k * dw;
+			ctx.fillStyle = pintar(e.acento, t);
+			ctx.beginPath();
+			ctx.moveTo(x0, techo);
+			ctx.lineTo(x0 + dw, techo - dh);
+			ctx.lineTo(x0 + dw, techo);
+			ctx.closePath();
+			ctx.fill();
+			ctx.fillStyle = color("vidrio", t);
+			ctx.fillRect(x0 + dw - 9 * s, techo - dh + 8 * s, 7 * s, dh - 8 * s);
+		}
+
+		// Cuerpo
+		ctx.fillStyle = pintar(e.color, t);
+		ctx.fillRect(L, techo, w, base - techo);
+		ctx.fillStyle = pintar(e.acento, t);
+		ctx.fillRect(L, techo, w, 9 * s);
+
+		// Fila de ventanas
+		ctx.fillStyle = color("ventana", t);
+		const cols = Math.max(3, Math.floor(w / (36 * s)));
+		for (let c = 0; c < cols; c++) {
+			const vx = L + (c + 0.5) * (w / cols);
+			ctx.fillRect(vx - 10 * s, techo + 24 * s, 20 * s, 24 * s);
+		}
+
+		// Portón de carga con láminas
+		const pw = w * 0.24;
+		const px = L + w * 0.6;
+		const ph = h * 0.34;
+		ctx.fillStyle = "rgba(0,0,0,0.3)";
+		ctx.fillRect(px, base - ph, pw, ph);
+		ctx.fillStyle = mezclar("#5d6066", "#e9ecef", t);
+		ctx.fillRect(px + 4 * s, base - ph + 4 * s, pw - 8 * s, ph - 4 * s);
+		ctx.fillStyle = "rgba(0,0,0,0.18)";
+		for (let y = base - ph + 10 * s; y < base; y += 8 * s) ctx.fillRect(px + 4 * s, y, pw - 8 * s, 1.5 * s);
+
+		// Sombra lateral para dar volumen
+		ctx.fillStyle = "rgba(0,0,0,0.13)";
+		ctx.fillRect(L + w * 0.92, techo, w * 0.08, base - techo);
+	}
+
+	function dibujarBodega(e, sx, base, s, t) {
+		const w = (260 + 60 * e.v) * s;
+		const h = (190 + 60 * e.v) * s;
+		const L = sx - w / 2;
+		const arriba = base - h;
+
+		// Techo a dos aguas
+		ctx.fillStyle = pintar(e.acento, t);
+		ctx.beginPath();
+		ctx.moveTo(L - 10 * s, arriba + 26 * s);
+		ctx.lineTo(sx, arriba - 22 * s);
+		ctx.lineTo(L + w + 10 * s, arriba + 26 * s);
+		ctx.closePath();
+		ctx.fill();
+
+		// Cuerpo con láminas verticales
+		ctx.fillStyle = pintar(e.color, t);
+		ctx.fillRect(L, arriba + 22 * s, w, h - 22 * s);
+		ctx.fillStyle = "rgba(0,0,0,0.07)";
+		for (let x = L + 6 * s; x < L + w; x += 14 * s) ctx.fillRect(x, arriba + 22 * s, 4 * s, h - 22 * s);
+
+		// Letrero
+		const lw = w * 0.42;
+		rectRedondo(sx - lw / 2, arriba + 34 * s, lw, 30 * s, 5 * s);
+		ctx.fillStyle = mezclar("#585b60", "#ffffff", t);
+		ctx.fill();
+		ctx.fillStyle = pintar(e.acento, t);
+		ctx.fillRect(sx - lw / 2 + 12 * s, arriba + 44 * s, lw * 0.45, 4 * s);
+		ctx.fillRect(sx - lw / 2 + 12 * s, arriba + 52 * s, lw * 0.7, 4 * s);
+
+		// Portones enrollables
+		const n = e.v > 0.5 ? 3 : 2;
+		const pw = w * 0.2;
+		const ph = h * 0.45;
+		for (let i = 0; i < n; i++) {
+			const px = L + ((i + 1) * w) / (n + 1) - pw / 2;
+			ctx.fillStyle = mezclar("#55585d", "#eef1f4", t);
+			ctx.fillRect(px, base - ph, pw, ph);
+			ctx.fillStyle = "rgba(0,0,0,0.16)";
+			for (let y = base - ph + 6 * s; y < base; y += 7 * s) ctx.fillRect(px, y, pw, 2 * s);
+			// Franja de seguridad amarilla arriba del portón
+			ctx.fillStyle = color("bordillo", t);
+			ctx.fillRect(px - 3 * s, base - ph - 7 * s, pw + 6 * s, 5 * s);
+		}
+	}
+
+	function dibujarTanques(e, sx, base, s, t) {
+		const tw = 66 * s;
+		const sep = 12 * s;
+		const n = 3;
+		const L = sx - (n * tw + (n - 1) * sep) / 2;
+		const hMax = (240 + 90 * e.v) * s;
+
+		// Tubería que conecta los tanques
+		ctx.fillStyle = mezclar("#5a5d62", "#9aa3ad", t);
+		ctx.fillRect(L, base - 46 * s, n * tw + (n - 1) * sep, 9 * s);
+
+		for (let i = 0; i < n; i++) {
+			const x = L + i * (tw + sep);
+			const alto = hMax * (i === 1 ? 1 : 0.78 + 0.1 * i);
+			const vivo = i === 1 ? e.acento : e.color;
+			ctx.fillStyle = pintar(vivo, t);
+			ctx.fillRect(x, base - alto, tw, alto);
+			ctx.beginPath();
+			ctx.ellipse(x + tw / 2, base - alto, tw / 2, 9 * s, 0, 0, Math.PI * 2);
+			ctx.fill();
+			// Volumen cilíndrico
+			const g = ctx.createLinearGradient(x, 0, x + tw, 0);
+			g.addColorStop(0, "rgba(255,255,255,0.22)");
+			g.addColorStop(0.45, "rgba(255,255,255,0)");
+			g.addColorStop(1, "rgba(0,0,0,0.25)");
+			ctx.fillStyle = g;
+			ctx.fillRect(x, base - alto, tw, alto);
+			ctx.fillStyle = "rgba(255,255,255,0.25)";
+			ctx.beginPath();
+			ctx.ellipse(x + tw / 2, base - alto, tw / 2, 9 * s, 0, 0, Math.PI * 2);
+			ctx.fill();
+			// Anillos
+			ctx.fillStyle = "rgba(0,0,0,0.15)";
+			for (let y = base - alto + 34 * s; y < base - 20 * s; y += 46 * s) ctx.fillRect(x, y, tw, 4 * s);
+			// Escalera
+			ctx.strokeStyle = "rgba(0,0,0,0.35)";
+			ctx.lineWidth = 1.5 * s;
+			ctx.beginPath();
+			ctx.moveTo(x + tw - 10 * s, base);
+			ctx.lineTo(x + tw - 10 * s, base - alto);
+			ctx.moveTo(x + tw - 4 * s, base);
+			ctx.lineTo(x + tw - 4 * s, base - alto);
+			for (let y = base - 6 * s; y > base - alto; y -= 7 * s) {
+				ctx.moveTo(x + tw - 10 * s, y);
+				ctx.lineTo(x + tw - 4 * s, y);
+			}
+			ctx.stroke();
+		}
+	}
+
+	function dibujarTorre(e, sx, base, s, t) {
+		const w = (150 + 40 * e.v) * s;
+		const h = (420 + 110 * e.v) * s;
+		const L = sx - w / 2;
+		const arriba = base - h;
+
+		// Antena con luz roja que parpadea (solo cuando ya hay color)
+		ctx.strokeStyle = "#4f535a";
+		ctx.lineWidth = 3 * s;
+		linea(sx + w * 0.2, arriba, sx + w * 0.2, arriba - 50 * s);
+		if (t > 0.3 && Math.sin(tiempo * 4) > 0) {
+			ctx.fillStyle = "#ff3b3b";
+			circulo(sx + w * 0.2, arriba - 52 * s, 4 * s);
+		}
+
+		ctx.fillStyle = pintar(e.color, t);
+		ctx.fillRect(L, arriba, w, h);
+		ctx.fillStyle = pintar(e.acento, t);
+		ctx.fillRect(L - 4 * s, arriba, w + 8 * s, 12 * s);
+		// Franja vertical de acento
+		ctx.fillRect(sx - w * 0.06, arriba + 12 * s, w * 0.12, h - 12 * s);
+
+		// Ventanales de vidrio (dos columnas a cada lado de la franja)
+		ctx.fillStyle = color("vidrio", t);
+		const anchoV = (w * 0.82) / 4;
+		for (let y = arriba + 26 * s; y < base - 44 * s; y += 28 * s) {
+			for (let c = 0; c < 4; c++) {
+				const vx = L + w * 0.03 + c * anchoV + (c >= 2 ? w * 0.12 : 0);
+				ctx.fillRect(vx + 3 * s, y, anchoV - 6 * s, 16 * s);
+			}
+		}
+		// Entrada
+		ctx.fillStyle = "rgba(0,0,0,0.3)";
+		ctx.fillRect(sx - 22 * s, base - 34 * s, 44 * s, 34 * s);
+		ctx.fillStyle = "rgba(0,0,0,0.12)";
+		ctx.fillRect(L + w * 0.9, arriba, w * 0.1, h);
+	}
+
+	// Grúa torre de construcción, siempre amarilla, con una viga colgando
+	function dibujarGrua(e, sx, base, s, t) {
+		const h = (460 + 80 * e.v) * s;
+		const mx = sx - 50 * s;
+		const mw = 22 * s;
+		const arriba = base - h;
+
+		ctx.strokeStyle = pintar("#ffc300", t);
+		ctx.lineCap = "butt";
+		// Mástil de celosía
+		ctx.lineWidth = 3.5 * s;
+		linea(mx - mw / 2, base, mx - mw / 2, arriba);
+		linea(mx + mw / 2, base, mx + mw / 2, arriba);
+		ctx.lineWidth = 2 * s;
+		ctx.beginPath();
+		for (let y = base; y > arriba + mw; y -= mw) {
+			ctx.moveTo(mx - mw / 2, y);
+			ctx.lineTo(mx + mw / 2, y - mw);
+			ctx.moveTo(mx - mw / 2, y - mw);
+			ctx.lineTo(mx + mw / 2, y - mw);
+		}
+		ctx.stroke();
+
+		// Pluma (brazo largo) y contrapluma
+		const izq = mx - 90 * s;
+		const der = mx + 230 * s;
+		const alto = 16 * s;
+		ctx.lineWidth = 3 * s;
+		linea(izq, arriba, der, arriba);
+		linea(izq, arriba + alto, der, arriba + alto);
+		ctx.lineWidth = 1.8 * s;
+		ctx.beginPath();
+		for (let x = izq; x < der; x += alto) {
+			ctx.moveTo(x, arriba + alto);
+			ctx.lineTo(x + alto, arriba);
+		}
+		ctx.stroke();
+		// Punta y tirantes
+		ctx.lineWidth = 2 * s;
+		linea(mx, arriba - 46 * s, izq, arriba);
+		linea(mx, arriba - 46 * s, der, arriba);
+		ctx.lineWidth = 3.5 * s;
+		linea(mx, arriba, mx, arriba - 46 * s);
+		// Contrapeso
+		ctx.fillStyle = mezclar("#55585d", "#9aa3ad", t);
+		ctx.fillRect(izq + 6 * s, arriba + alto, 46 * s, 30 * s);
+		// Cabina
+		ctx.fillStyle = pintar(e.acento, t);
+		ctx.fillRect(mx + mw / 2, arriba + alto, 24 * s, 24 * s);
+		ctx.fillStyle = color("vidrio", t);
+		ctx.fillRect(mx + mw / 2 + 12 * s, arriba + alto + 5 * s, 9 * s, 10 * s);
+
+		// Cable, gancho y viga balanceándose
+		const carro = mx + 160 * s;
+		const largo = (170 + 40 * e.v) * s;
+		const vaiven = Math.sin(tiempo * 1.2 + e.x) * 6 * s;
+		ctx.strokeStyle = "rgba(30,30,30,0.8)";
+		ctx.lineWidth = 1.5 * s;
+		linea(carro, arriba + alto, carro + vaiven, arriba + alto + largo);
+		const gy = arriba + alto + largo;
+		ctx.fillStyle = pintar(e.color, t);
+		ctx.fillRect(carro + vaiven - 50 * s, gy, 100 * s, 10 * s);
+		ctx.fillStyle = "rgba(0,0,0,0.25)";
+		ctx.fillRect(carro + vaiven - 50 * s, gy + 7 * s, 100 * s, 3 * s);
+
+		// Base de concreto
+		ctx.fillStyle = mezclar("#55585d", "#b8bec5", t);
+		ctx.fillRect(mx - 26 * s, base - 14 * s, 52 * s, 14 * s);
+		ctx.lineCap = "round";
+	}
+
+	const DIBUJO_INDUSTRIA = {
+		fabrica: dibujarFabrica,
+		bodega: dibujarBodega,
+		tanques: dibujarTanques,
+		torre: dibujarTorre,
+		grua: dibujarGrua,
+	};
+
+	function dibujarFabricasMedias() {
+		for (const e of fabricasMedias) {
+			const sx = e.x - camara * 0.65;
+			if (sx < -260 || sx > W + 260) continue;
+			DIBUJO_INDUSTRIA[e.tipo](e, sx, SUELO + 2 * S, S * 0.6, tono(e.x / 0.65 / LARGO));
+		}
+	}
+
+	function dibujarFabricas() {
+		for (const e of fabricas) {
+			const sx = e.x - camara;
+			if (sx < -340 || sx > W + 340) continue;
+			DIBUJO_INDUSTRIA[e.tipo](e, sx, SUELO + 10 * S, S, tono(e.x / LARGO));
+		}
+	}
+
+	// Conos y barriles de obra sobre la acera
+	function dibujarConos() {
+		const base = SUELO + 14 * S;
+		for (const c of conos) {
+			const sx = c.x - camara;
+			if (sx < -30 || sx > W + 30) continue;
+			const t = tono(c.x / LARGO);
+			const naranja = pintar("#ff7b1c", t);
+			const blanco = mezclar("#8a8c90", "#ffffff", t);
+			if (c.barril) {
+				rectRedondo(sx - 10 * S, base - 28 * S, 20 * S, 28 * S, 4 * S);
+				ctx.fillStyle = naranja;
+				ctx.fill();
+				ctx.fillStyle = blanco;
+				ctx.fillRect(sx - 10 * S, base - 22 * S, 20 * S, 4 * S);
+				ctx.fillRect(sx - 10 * S, base - 12 * S, 20 * S, 4 * S);
+			} else {
+				ctx.fillStyle = naranja;
+				ctx.beginPath();
+				ctx.moveTo(sx - 8 * S, base - 3 * S);
+				ctx.lineTo(sx - 2 * S, base - 26 * S);
+				ctx.lineTo(sx + 2 * S, base - 26 * S);
+				ctx.lineTo(sx + 8 * S, base - 3 * S);
+				ctx.closePath();
+				ctx.fill();
+				ctx.fillRect(sx - 11 * S, base - 4 * S, 22 * S, 4 * S);
+				ctx.fillStyle = blanco;
+				ctx.fillRect(sx - 5.5 * S, base - 15 * S, 11 * S, 4 * S);
+			}
+		}
+	}
+
+	// ---------- Zona de planos (el inicio) ----------
+	// Un espacio vacío y gris hecho de planos: cuadrícula, bocetos punteados de
+	// edificios que todavía no existen y hojas flotando. Termina en una puerta
+	// de luz con un foco encendido (FIN_PLANOS): el punto donde nacen las
+	// ideas. Al cruzarla hay un destello y se entra al mundo con luz.
+	// Bocetos y hojas repartidos por toda la zona, sin azar (siempre igual)
+	const TIPOS_BOCETO = ["edificio", "casa", "grua", "edificio", "casa"];
+	const BOCETOS = [];
+	for (let x = 170, i = 0; x < FIN_PLANOS - 250; x += 260 + ((i * 53) % 90), i++) {
+		const tipo = TIPOS_BOCETO[i % TIPOS_BOCETO.length];
+		BOCETOS.push({ x, tipo, w: tipo === "casa" ? 130 : tipo === "grua" ? 180 : 90 + ((i * 37) % 50), h: tipo === "casa" ? 110 : 230 + ((i * 71) % 130) });
+	}
+	const HOJAS_PLANOS = [];
+	for (let x = 120, i = 0; x < FIN_PLANOS - 150; x += 190 + ((i * 41) % 80), i++) {
+		HOJAS_PLANOS.push({ x, y: 0.1 + ((i * 29) % 35) / 100, giro: (((i * 17) % 7) - 3) / 10, fase: i * 1.3 });
+	}
+	// Frases que acompañan la caminata por los planos
+	const FRASES_PLANOS = [
+		{ x: 240, texto: "Todo empieza con una idea..." },
+		{ x: 1000, texto: "...las ideas toman tiempo..." },
+		{ x: 1750, texto: "...hasta que un día se encienden." },
+	];
+	const TINTA_PLANO = "rgba(170,178,188,"; // gris apagado, casi sin tinta
+
+	function dibujarCota(x1, y1, x2, y2, texto) {
+		linea(x1, y1, x2, y2);
+		ctx.font = `${12 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(texto, (x1 + x2) / 2 + (x1 === x2 ? -14 * S : 0), (y1 + y2) / 2 + (y1 === y2 ? -10 * S : 0));
+	}
+
+	function dibujarBoceto(b, sx, piso) {
+		const w = b.w * S;
+		const h = b.h * S;
+		const L = sx - w / 2;
+		if (b.tipo === "edificio") {
+			ctx.strokeRect(L, piso - h, w, h);
+			for (let y = piso - h + 18 * S; y < piso - 30 * S; y += 32 * S) {
+				for (let x = L + 12 * S; x < L + w - 20 * S; x += 28 * S) ctx.strokeRect(x, y, 14 * S, 18 * S);
+			}
+			dibujarCota(L - 18 * S, piso, L - 18 * S, piso - h, Math.round(b.h / 20) + " m");
+		} else if (b.tipo === "casa") {
+			ctx.strokeRect(L, piso - h, w, h);
+			ctx.beginPath();
+			ctx.moveTo(L - 10 * S, piso - h);
+			ctx.lineTo(sx, piso - h - 60 * S);
+			ctx.lineTo(L + w + 10 * S, piso - h);
+			ctx.stroke();
+			ctx.strokeRect(sx - 15 * S, piso - 55 * S, 30 * S, 55 * S);
+			dibujarCota(L, piso + 14 * S, L + w, piso + 14 * S, Math.round(b.w / 13) + " m");
+		} else {
+			const mx = sx - w * 0.3;
+			linea(mx - 8 * S, piso, mx - 8 * S, piso - h);
+			linea(mx + 8 * S, piso, mx + 8 * S, piso - h);
+			linea(mx - 50 * S, piso - h, mx + w * 0.8, piso - h);
+			linea(mx, piso - h - 40 * S, mx + w * 0.8, piso - h);
+			linea(mx + w * 0.6, piso - h, mx + w * 0.6, piso - h + 120 * S);
+		}
+	}
+
+	function dibujarZonaPlanos() {
+		const gx = FIN_PLANOS - camara; // la puerta de luz, en pantalla
+		if (gx < 0) return;
+		const ancho = Math.min(W, gx);
+		const piso = SUELO + 40 * S;
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(0, 0, ancho, H);
+		ctx.clip();
+
+		const g = ctx.createLinearGradient(0, 0, 0, H);
+		g.addColorStop(0, "#1e2023");
+		g.addColorStop(0.7, "#2f3236");
+		g.addColorStop(1, "#26282b");
+		ctx.fillStyle = g;
+		ctx.fillRect(0, 0, ancho, H);
+
+		// Cuadrícula de plano (fina y gruesa)
+		ctx.lineWidth = 1;
+		for (const [paso, alfa] of [[40 * S, 0.04], [200 * S, 0.09]]) {
+			ctx.strokeStyle = TINTA_PLANO + alfa + ")";
+			ctx.beginPath();
+			for (let x = -modulo(camara, paso); x < ancho; x += paso) {
+				ctx.moveTo(x, 0);
+				ctx.lineTo(x, piso);
+			}
+			for (let y = piso; y > 0; y -= paso) {
+				ctx.moveTo(0, y);
+				ctx.lineTo(ancho, y);
+			}
+			ctx.stroke();
+		}
+
+		// Piso: una hoja de plano en perspectiva
+		ctx.fillStyle = "#35383c";
+		ctx.fillRect(0, piso, ancho, H - piso);
+		ctx.strokeStyle = TINTA_PLANO + "0.1)";
+		ctx.beginPath();
+		const paso = 60 * S;
+		for (let x = -modulo(camara, paso) - W; x < W * 2; x += paso) {
+			ctx.moveTo(x, piso);
+			ctx.lineTo(x + (x - W / 2) * 0.9, H);
+		}
+		ctx.stroke();
+		ctx.strokeStyle = TINTA_PLANO + "0.4)";
+		ctx.lineWidth = 2 * S;
+		linea(0, piso, ancho, piso);
+
+		// Bocetos punteados de lo que todavía no existe
+		ctx.strokeStyle = TINTA_PLANO + "0.28)";
+		ctx.fillStyle = TINTA_PLANO + "0.4)";
+		ctx.lineWidth = 1.5 * S;
+		ctx.setLineDash([8 * S, 6 * S]);
+		for (const b of BOCETOS) {
+			const sx = b.x - camara;
+			if (sx < -300 || sx > ancho + 300) continue;
+			dibujarBoceto(b, sx, piso);
+		}
+		ctx.setLineDash([]);
+
+		// Hojas de planos flotando
+		for (const hj of HOJAS_PLANOS) {
+			const sx = hj.x - camara * 0.8;
+			const sy = hj.y * SUELO + Math.sin(tiempo * 0.8 + hj.fase) * 10 * S;
+			ctx.save();
+			ctx.translate(sx, sy);
+			ctx.rotate(hj.giro + Math.sin(tiempo * 0.5 + hj.fase) * 0.06);
+			ctx.fillStyle = "rgba(120,124,130,0.22)";
+			ctx.fillRect(-28 * S, -20 * S, 56 * S, 40 * S);
+			ctx.strokeStyle = TINTA_PLANO + "0.45)";
+			ctx.lineWidth = 1;
+			ctx.strokeRect(-28 * S, -20 * S, 56 * S, 40 * S);
+			ctx.strokeRect(-20 * S, -12 * S, 22 * S, 16 * S);
+			linea(6 * S, -10 * S, 22 * S, -10 * S);
+			linea(6 * S, -3 * S, 18 * S, -3 * S);
+			linea(-20 * S, 10 * S, 20 * S, 10 * S);
+			ctx.restore();
+		}
+
+		ctx.font = `italic ${22 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.fillStyle = TINTA_PLANO + "0.5)";
+		for (const f of FRASES_PLANOS) ctx.fillText(f.texto, f.x - camara, SUELO - 260 * S);
+
+		// Viñeta: los bordes se cierran en penumbra
+		const vin = ctx.createRadialGradient(W / 2, SUELO * 0.7, SUELO * 0.4, W / 2, SUELO * 0.7, W * 0.8);
+		vin.addColorStop(0, "rgba(0,0,0,0)");
+		vin.addColorStop(1, "rgba(0,0,0,0.45)");
+		ctx.fillStyle = vin;
+		ctx.fillRect(0, 0, ancho, H);
 		ctx.restore();
 	}
 
-	function dibujarArboles() {
-		for (const a of arboles) {
-			const sx = a.x - camara;
-			if (sx < -120 || sx > W + 120) continue;
-			dibujarArbol(sx, SUELO + 10 * S, a.tam, a.x / LARGO);
+	// La puerta de luz con el foco encendido. Se dibuja DESPUÉS de la neblina
+	// para que brille de verdad sobre lo gris.
+	function dibujarPuertaIdea() {
+		const gx = FIN_PLANOS - camara;
+		if (gx < -500 || gx > W + 500) return;
+		const piso = SUELO + 40 * S;
+		const alto = 210 * S;
+		const ancho = 74 * S;
+		const pulso = 0.85 + Math.sin(tiempo * 2.2) * 0.15;
+
+		// Resplandor general (más fuerte hacia el lado con luz)
+		const halo = ctx.createRadialGradient(gx, piso - alto * 0.55, 10 * S, gx, piso - alto * 0.55, 520 * S);
+		halo.addColorStop(0, `rgba(255,244,200,${0.6 * pulso})`);
+		halo.addColorStop(1, "rgba(255,244,200,0)");
+		ctx.fillStyle = halo;
+		ctx.fillRect(gx - 520 * S, piso - alto * 0.55 - 520 * S, 1040 * S, 1040 * S);
+
+		// Rayos que se cuelan hacia lo gris
+		ctx.fillStyle = `rgba(255,240,195,${0.1 * pulso})`;
+		for (const [a, b] of [[0.05, 0.35], [0.45, 0.75], [0.8, 1]]) {
+			ctx.beginPath();
+			ctx.moveTo(gx - ancho / 2, piso - alto * (1 - a * 0.9));
+			ctx.lineTo(gx - ancho / 2, piso - alto * (1 - b * 0.9));
+			ctx.lineTo(gx - 600 * S, piso + (b - 0.5) * 300 * S);
+			ctx.lineTo(gx - 600 * S, piso + (a - 0.5) * 300 * S);
+			ctx.fill();
 		}
+
+		// Marco y vano de luz
+		const luz = ctx.createLinearGradient(gx - ancho / 2, 0, gx + ancho / 2, 0);
+		luz.addColorStop(0, "#fff6d2");
+		luz.addColorStop(0.5, "#ffffff");
+		luz.addColorStop(1, "#ffefb0");
+		ctx.fillStyle = luz;
+		ctx.fillRect(gx - ancho / 2, piso - alto, ancho, alto);
+		ctx.strokeStyle = TINTA_PLANO + "0.8)";
+		ctx.lineWidth = 4 * S;
+		ctx.strokeRect(gx - ancho / 2 - 3 * S, piso - alto - 3 * S, ancho + 6 * S, alto + 3 * S);
+
+		// Foco (la idea) encima de la puerta
+		const fy = piso - alto - 70 * S;
+		const brillo = ctx.createRadialGradient(gx, fy, 4 * S, gx, fy, 90 * S);
+		brillo.addColorStop(0, `rgba(255,236,150,${0.9 * pulso})`);
+		brillo.addColorStop(1, "rgba(255,236,150,0)");
+		ctx.fillStyle = brillo;
+		circulo(gx, fy, 90 * S);
+		ctx.strokeStyle = `rgba(255,230,140,${0.8 * pulso})`;
+		ctx.lineWidth = 3 * S;
+		for (let i = 0; i < 8; i++) {
+			const ang = (i / 8) * Math.PI * 2 + tiempo * 0.3;
+			linea(gx + Math.cos(ang) * 36 * S, fy + Math.sin(ang) * 36 * S, gx + Math.cos(ang) * 50 * S, fy + Math.sin(ang) * 50 * S);
+		}
+		ctx.fillStyle = "#fff6c8";
+		circulo(gx, fy, 24 * S);
+		ctx.fillRect(gx - 11 * S, fy + 14 * S, 22 * S, 12 * S);
+		ctx.fillStyle = "#9aa3ad";
+		ctx.fillRect(gx - 10 * S, fy + 26 * S, 20 * S, 12 * S);
+		ctx.strokeStyle = "rgba(90,90,90,0.6)";
+		ctx.lineWidth = 1.5 * S;
+		linea(gx - 10 * S, fy + 31 * S, gx + 10 * S, fy + 31 * S);
+		ctx.strokeStyle = "#f2a516";
+		ctx.lineWidth = 2 * S;
+		ctx.beginPath();
+		ctx.moveTo(gx - 7 * S, fy + 14 * S);
+		ctx.lineTo(gx - 4 * S, fy - 2 * S);
+		ctx.lineTo(gx, fy + 4 * S);
+		ctx.lineTo(gx + 4 * S, fy - 2 * S);
+		ctx.lineTo(gx + 7 * S, fy + 14 * S);
+		ctx.stroke();
+		ctx.strokeStyle = CONTORNO_FOCO;
+		ctx.lineWidth = 2 * S;
+		ctx.beginPath();
+		ctx.arc(gx, fy, 24 * S, Math.PI * 0.75, Math.PI * 2.25);
+		ctx.stroke();
+	}
+	const CONTORNO_FOCO = "rgba(120,110,80,0.6)";
+
+	// ---------- Avisos flotantes (subir de nivel) ----------
+	function dibujarAvisos(dt) {
+		for (const a of avisos) a.t += dt;
+		avisos = avisos.filter((a) => a.t < 2.4);
+		for (const a of avisos) {
+			const x = heroe.x - camara;
+			const y = SUELO + 38 * S - heroe.y * S - 150 * S - a.t * 35 * S;
+			const alfa = Math.min(1, 2.4 - a.t);
+			const zoom = 1 + Math.max(0, 0.3 - a.t) * 1.5;
+			ctx.save();
+			ctx.globalAlpha = alfa;
+			ctx.translate(x, y);
+			ctx.scale(zoom, zoom);
+			ctx.font = `bold ${24 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.lineWidth = 5 * S;
+			ctx.strokeStyle = "rgba(60,40,10,0.85)";
+			ctx.strokeText(a.texto, 0, 0);
+			ctx.fillStyle = "#ffd23f";
+			ctx.fillText(a.texto, 0, 0);
+			ctx.restore();
+		}
+	}
+
+	// Andamios de obra: tablón de metal con franja de seguridad, patas y
+	// crucetas hasta el piso. Gris al inicio, colores al acercarse a Celaque.
+	function dibujarAndamios() {
+		const piso = SUELO + 30 * S;
+		for (const pl of PLATAFORMAS) {
+			const sx = pl.x - camara;
+			const w = pl.medioAncho;
+			if (sx + w < -20 || sx - w > W + 20) continue;
+			const t = tono(pl.x / LARGO);
+			const top = SUELO + 38 * S - pl.alto * S;
+			const metal = pintar(pl.principal ? "#2f80ed" : pl.eje ? "#ffc300" : "#ff9f1c", t);
+
+			// Patas y crucetas (las plataformas móviles no tienen: van en
+			// rieles o colgadas de una grúa)
+			if (pl.eje) dibujarGuiaMovil(pl, sx, top, piso, t);
+			ctx.strokeStyle = mezclar("#55585d", "#8a96a3", t);
+			ctx.lineWidth = 4 * S;
+			ctx.lineCap = "butt";
+			const patas = pl.eje ? [] : pl.principal ? [-w + 8 * S, 0, w - 8 * S] : [-w + 8 * S, w - 8 * S];
+			for (const dx of patas) linea(sx + dx, top, sx + dx, piso);
+			ctx.lineWidth = 2 * S;
+			ctx.beginPath();
+			for (let i = 0; i < patas.length - 1; i++) {
+				const a = sx + patas[i];
+				const b = sx + patas[i + 1];
+				for (let y = top + 12 * S; y < piso - 10 * S; y += 60 * S) {
+					const y2 = Math.min(piso, y + 50 * S);
+					ctx.moveTo(a, y);
+					ctx.lineTo(b, y2);
+					ctx.moveTo(b, y);
+					ctx.lineTo(a, y2);
+				}
+			}
+			ctx.stroke();
+			ctx.lineCap = "round";
+			// Base de las patas
+			ctx.fillStyle = "rgba(0,0,0,0.35)";
+			for (const dx of patas) ctx.fillRect(sx + dx - 6 * S, piso - 3 * S, 12 * S, 4 * S);
+
+			// Tablón con franja amarilla/negra
+			ctx.fillStyle = metal;
+			ctx.fillRect(sx - w, top, w * 2, 12 * S);
+			ctx.fillStyle = "rgba(255,255,255,0.25)";
+			ctx.fillRect(sx - w, top, w * 2, 3 * S);
+			ctx.fillStyle = "rgba(20,20,20,0.6)";
+			ctx.fillRect(sx - w, top + 12 * S, w * 2, 5 * S);
+			ctx.fillStyle = color("bordillo", t);
+			for (let x = sx - w; x < sx + w - 6 * S; x += 16 * S) ctx.fillRect(x, top + 12 * S, 8 * S, 5 * S);
+		}
+	}
+
+	// Elevador: dos rieles del piso hasta lo más alto que llega.
+	// Viga móvil en x: cuelga de cables, como si la llevara una grúa.
+	function dibujarGuiaMovil(pl, sx, top, piso, t) {
+		const w = pl.medioAncho;
+		if (pl.eje === "y") {
+			const arriba = SUELO + 38 * S - (pl.alto0 + pl.amp) * S - 24 * S;
+			ctx.strokeStyle = mezclar("#55585d", "#8a96a3", t);
+			ctx.lineWidth = 4 * S;
+			linea(sx - w - 4 * S, piso, sx - w - 4 * S, arriba);
+			linea(sx + w + 4 * S, piso, sx + w + 4 * S, arriba);
+			ctx.lineWidth = 6 * S;
+			linea(sx - w - 10 * S, arriba, sx + w + 10 * S, arriba);
+			// Cable del elevador
+			ctx.strokeStyle = "rgba(30,30,30,0.7)";
+			ctx.lineWidth = 1.5 * S;
+			linea(sx, arriba, sx, top);
+		} else {
+			const nudo = top - 50 * S;
+			ctx.strokeStyle = "rgba(30,30,30,0.75)";
+			ctx.lineWidth = 1.5 * S;
+			linea(sx - w * 0.7, top, sx, nudo);
+			linea(sx + w * 0.7, top, sx, nudo);
+			linea(sx, nudo, sx, 0);
+			ctx.strokeStyle = "#7d858e";
+			ctx.lineWidth = 3 * S;
+			ctx.beginPath();
+			ctx.arc(sx, nudo + 6 * S, 6 * S, -Math.PI * 0.5, Math.PI * 0.8);
+			ctx.stroke();
+		}
+	}
+
+	// Barrera de concreto tipo "New Jersey" con franjas de seguridad
+	function dibujarBarrera(sx, baseY, topY, w, t) {
+		ctx.fillStyle = mezclar("#6e7176", "#d7d9dc", t);
+		ctx.beginPath();
+		ctx.moveTo(sx - w, baseY);
+		ctx.lineTo(sx - w * 0.82, baseY - (baseY - topY) * 0.3);
+		ctx.lineTo(sx - w * 0.45, topY);
+		ctx.lineTo(sx + w * 0.45, topY);
+		ctx.lineTo(sx + w * 0.82, baseY - (baseY - topY) * 0.3);
+		ctx.lineTo(sx + w, baseY);
+		ctx.closePath();
+		ctx.fill();
+		ctx.fillStyle = "rgba(0,0,0,0.15)";
+		ctx.fillRect(sx + w * 0.2, topY, w * 0.25, baseY - topY);
+		// Franjas diagonales rojas/blancas (se pintan al recuperar el color)
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(sx - w * 0.6, topY + (baseY - topY) * 0.2, w * 1.2, (baseY - topY) * 0.32);
+		ctx.clip();
+		ctx.fillStyle = pintar("#e63946", t);
+		for (let x = sx - w * 1.2; x < sx + w; x += 14 * S) {
+			ctx.beginPath();
+			ctx.moveTo(x, topY + (baseY - topY) * 0.52);
+			ctx.lineTo(x + 7 * S, topY + (baseY - topY) * 0.52);
+			ctx.lineTo(x + 7 * S + (baseY - topY) * 0.32, topY + (baseY - topY) * 0.2);
+			ctx.lineTo(x + (baseY - topY) * 0.32, topY + (baseY - topY) * 0.2);
+			ctx.fill();
+		}
+		ctx.restore();
 	}
 
 	function dibujarSuelo() {
 		const t0 = tono(camara / LARGO);
 		const t1 = tono((camara + W) / LARGO);
+		const degradado = (clave) => {
+			const g = ctx.createLinearGradient(0, 0, W, 0);
+			g.addColorStop(0, color(clave, t0));
+			g.addColorStop(1, color(clave, t1));
+			return g;
+		};
 
-		const tierra = ctx.createLinearGradient(0, 0, W, 0);
-		tierra.addColorStop(0, color("tierra", t0));
-		tierra.addColorStop(1, color("tierra", t1));
-		ctx.fillStyle = tierra;
+		// Asfalto
+		ctx.fillStyle = degradado("asfalto");
 		ctx.fillRect(0, SUELO, W, H - SUELO);
 
-		const pasto = ctx.createLinearGradient(0, 0, W, 0);
-		pasto.addColorStop(0, color("pasto", t0));
-		pasto.addColorStop(1, color("pasto", t1));
-		ctx.fillStyle = pasto;
+		// Acera de concreto con juntas
+		ctx.fillStyle = degradado("acera");
 		ctx.fillRect(0, SUELO - 2 * S, W, 18 * S);
-		ctx.fillRect(0, SUELO + 62 * S, W, H - SUELO);
+		ctx.fillStyle = "rgba(255,255,255,0.14)";
+		ctx.fillRect(0, SUELO - 2 * S, W, 4 * S);
+		ctx.fillStyle = "rgba(0,0,0,0.14)";
+		const pasoJunta = 64 * S;
+		for (let sx = -modulo(camara, pasoJunta); sx < W; sx += pasoJunta) ctx.fillRect(sx, SUELO - 2 * S, 2 * S, 16 * S);
+
+		// Bordillo pintado de seguridad (amarillo / negro)
+		ctx.fillStyle = "rgba(25,25,25,0.55)";
+		ctx.fillRect(0, SUELO + 14 * S, W, 6 * S);
+		ctx.fillStyle = degradado("bordillo");
+		const pasoFranja = 26 * S;
+		for (let sx = -modulo(camara, pasoFranja); sx < W; sx += pasoFranja) ctx.fillRect(sx, SUELO + 14 * S, 13 * S, 6 * S);
 
 		// Sendero por donde camina el protagonista
-		ctx.fillStyle = "rgba(255,255,255,0.1)";
+		ctx.fillStyle = "rgba(255,255,255,0.08)";
 		ctx.fillRect(0, SUELO + 24 * S, W, 20 * S);
+
+		// Línea discontinua de la calle
+		ctx.fillStyle = degradado("marca");
+		const pasoLinea = 80 * S;
+		for (let sx = -modulo(camara, pasoLinea); sx < W; sx += pasoLinea) ctx.fillRect(sx, SUELO + 52 * S, 40 * S, 4 * S);
+
+		// Franja de pasto al frente (el verde vuelve poco a poco)
+		ctx.fillStyle = degradado("pasto");
+		ctx.fillRect(0, SUELO + 62 * S, W, H - SUELO);
 	}
 
 	// ---------- Dibujo: la Cueva (versión simple, foco en la lógica) ----------
@@ -1935,9 +2847,9 @@
 	// Obstáculos sólidos de la Cueva (rocas y cajas). Se apoyan en la línea de
 	// pies del héroe (SUELO + 38*S = heroe.y 0) y suben `alto*S`, así la cara
 	// superior coincide exacto con donde quedan los pies al pararse encima.
-	function dibujarObstaculosCueva() {
+	function dibujarObstaculos(lista) {
 		const baseY = SUELO + 38 * S;
-		for (const o of OBSTACULOS_CUEVA) {
+		for (const o of lista) {
 			const sx = o.x - camara;
 			const w = o.medioAncho * S;
 			if (sx + w < -20 || sx - w > W + 20) continue;
@@ -1950,6 +2862,7 @@
 			ctx.fill();
 
 			if (o.tipo === "roca") dibujarRoca(sx, baseY, topY, w);
+			else if (o.tipo === "barrera") dibujarBarrera(sx, baseY, topY, w, tono(o.x / LARGO));
 			else dibujarCaja(sx, baseY, topY, w);
 		}
 	}
@@ -2193,7 +3106,7 @@
 			const frac = semilla - Math.floor(semilla);
 			const alto = (130 + frac * 190) * S;
 			const ancho = (52 + ((i * 37) % 34)) * S;
-			ctx.fillStyle = `rgba(155,166,178,${0.28 + frac * 0.14})`;
+			ctx.fillStyle = `hsla(${(i * 47) % 360},60%,72%,${0.4 + frac * 0.2})`;
 			ctx.fillRect(sx - ancho / 2, baseY - alto, ancho, alto);
 			// unas ventanitas apenas visibles
 			ctx.fillStyle = "rgba(255,255,255,0.12)";
@@ -2272,8 +3185,13 @@
 
 			ctx.fillStyle = e.color;
 			ctx.fillRect(sx - anchoPx / 2, baseY - altoPx, anchoPx, altoPx);
+			// Cornisa y sombra lateral para dar volumen
+			ctx.fillStyle = "rgba(0,0,0,0.18)";
+			ctx.fillRect(sx - anchoPx / 2 - 4 * S, baseY - altoPx, anchoPx + 8 * S, 10 * S);
+			ctx.fillStyle = "rgba(0,0,0,0.1)";
+			ctx.fillRect(sx + anchoPx * 0.38, baseY - altoPx + 10 * S, anchoPx * 0.12, altoPx - 10 * S);
 
-			ctx.fillStyle = "rgba(255,255,255,0.55)";
+			ctx.fillStyle = "rgba(225,245,255,0.75)";
 			const filas = Math.max(2, Math.floor(altoPx / (16 * S)));
 			const columnas = Math.max(2, Math.floor(anchoPx / (14 * S)));
 			for (let f = 0; f < filas; f++) {
@@ -2384,6 +3302,7 @@
 			if (m.delante !== delante) continue;
 			// No dibujar pasto/flores encima del tubo de entrada (en LARGO).
 			if (Math.abs(m.x - LARGO) < 55) continue;
+			if (m.x < FIN_PLANOS + 20) continue; // la zona de planos está vacía
 			const sx = m.x - camara;
 			if (sx < -20 || sx > W + 20) continue;
 			const p = m.x / LARGO;
@@ -2585,6 +3504,230 @@
 		ctx.restore();
 	}
 
+	// NPC obrero / ingeniero con el mismo estilo que las fotos del héroe:
+	// proporciones realistas en vista 3/4, contorno oscuro, casco, camiseta de
+	// manga corta, chaleco reflectivo, cinturón con bolsas, pantalón de
+	// trabajo y botas. Coordenadas en "u" (pie = 0, hacia arriba negativo);
+	// mide lo mismo que el héroe (~100 u con el casco).
+	const CONTORNO = "#1f1a17";
+	function figura(u, puntos, relleno) {
+		ctx.beginPath();
+		ctx.moveTo(puntos[0] * u, puntos[1] * u);
+		for (let i = 2; i < puntos.length; i += 2) ctx.lineTo(puntos[i] * u, puntos[i + 1] * u);
+		ctx.closePath();
+		ctx.fillStyle = relleno;
+		ctx.fill();
+		ctx.stroke();
+	}
+
+	// NPC con la foto del héroe ya teñida (ver fotoNpc). Misma escala, sombra
+	// y vaivén que dibujarHeroeSprite, para que se vean del mismo mundo.
+	function dibujarNpcFoto(x, pie, n, dir) {
+		const f = fotoNpc(n);
+		if (!f) return false;
+		const s = S * 1.15 * (n.apariencia.escala || 1);
+		const rebote = Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
+		const k = (100 * s) / ((f.meta.abajo - f.meta.arriba) * f.lienzo.height);
+		const dw = f.lienzo.width * k;
+		const dh = f.lienzo.height * k;
+		ctx.save();
+		ctx.translate(x, pie);
+		ctx.fillStyle = "rgba(40,40,40,0.18)";
+		ctx.beginPath();
+		ctx.ellipse(0, 0, 14 * s, 4 * s, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.translate(0, -rebote);
+		ctx.scale(dir, 1);
+		ctx.drawImage(f.lienzo, -f.meta.anclaX * dw, -f.meta.abajo * dh, dw, dh);
+		ctx.restore();
+		return true;
+	}
+
+	function dibujarObrero(x, pie, o) {
+		const u = S * 1.15;
+		// Respiración sutil (fase de MUNDO, para que no tiemble con la cámara)
+		const respira = Math.sin(tiempo * 2 + x + camara) * 0.5;
+		const sombra = "rgba(0,0,0,0.16)";
+
+		ctx.save();
+		ctx.translate(x, pie);
+		ctx.fillStyle = "rgba(40,40,40,0.2)";
+		ctx.beginPath();
+		ctx.ellipse(0, 0, 18 * u, 4 * u, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.scale(o.dir, 1);
+		ctx.lineJoin = "round";
+		ctx.lineCap = "round";
+		ctx.strokeStyle = CONTORNO;
+		ctx.lineWidth = 1.3 * u;
+		// El cuerpo va más angosto que el dibujo base (como la silueta
+		// delgada del héroe); la cabeza se dibuja después sin angostar.
+		ctx.save();
+		ctx.scale(0.84, 1);
+
+		// Piernas (la de atrás con sombra) y bolsillo cargo
+		figura(u, [-10, -47, -1, -47, -6, -9, -15, -9], o.pantalon);
+		ctx.fillStyle = sombra;
+		ctx.beginPath();
+		ctx.moveTo(-10 * u, -47 * u);
+		ctx.lineTo(-6 * u, -47 * u);
+		ctx.lineTo(-11 * u, -9 * u);
+		ctx.lineTo(-15 * u, -9 * u);
+		ctx.fill();
+		figura(u, [0, -47, 10, -47, 14, -9, 5, -9], o.pantalon);
+		figura(u, [8, -34, 12, -34, 12.8, -25, 8.8, -25], o.pantalon);
+
+		// Botas con suela negra y cordones
+		figura(u, [-16, -11, -6, -11, -5, -5, -2, -3, -2, 0, -17, 0], o.botas);
+		figura(u, [4, -11, 14, -11, 15, -6, 19.5, -4, 19.5, 0, 4, 0], o.botas);
+		ctx.fillStyle = "#1c1c1c";
+		ctx.fillRect(-17 * u, -2 * u, 15 * u, 2 * u);
+		ctx.fillRect(4 * u, -2 * u, 15.5 * u, 2 * u);
+		ctx.strokeStyle = "rgba(255,240,210,0.7)";
+		ctx.lineWidth = 0.8 * u;
+		for (let k = 0; k < 3; k++) linea((7 + k * 2) * u, (-9 + k * 1.5) * u, (10 + k * 2) * u, (-9 + k * 1.5) * u);
+		ctx.strokeStyle = CONTORNO;
+		ctx.lineWidth = 1.3 * u;
+
+		// Del cinturón para arriba "respira"
+		ctx.translate(0, respira * u);
+
+		// Martillo colgando del cinturón (como el del héroe)
+		if (o.herramienta === "martillo") {
+			figura(u, [-14.5, -47, -12.5, -47, -13, -33, -15, -33], "#f2b81c");
+			figura(u, [-15, -40, -13, -40, -13, -33, -15, -33], "#2a2a2a");
+			figura(u, [-19, -50, -9, -50, -9, -47, -19, -47], "#a3abb4");
+		}
+
+		// Brazo de atrás + mano
+		figura(u, [-15, -66, -11, -65, -13, -50, -17.5, -50.5], o.piel);
+		ctx.fillStyle = o.piel;
+		circulo(-15.5 * u, -48 * u, 3 * u);
+		ctx.stroke();
+
+		// Camiseta y mangas cortas
+		figura(u, [-14, -72, 14, -72, 12, -49, -12, -49], o.ropa);
+		figura(u, [-14, -72, -9, -72, -10.5, -63, -17, -64.5], o.ropa);
+		figura(u, [9, -72, 14, -72, 17, -64.5, 10.5, -63], o.ropa);
+
+		// Chaleco reflectivo (abierto al centro) con dos franjas
+		figura(u, [-13, -72, -4, -73, -1, -58, -1, -49.5, -12, -49.5], o.chaleco);
+		figura(u, [4, -73, 13, -72, 12, -49.5, 1, -49.5, 1, -58], o.chaleco);
+		ctx.fillStyle = "#d6dce1";
+		ctx.fillRect(-12.7 * u, -61 * u, 11.2 * u, 2.6 * u);
+		ctx.fillRect(1.5 * u, -61 * u, 11.2 * u, 2.6 * u);
+		ctx.fillRect(-12.3 * u, -55 * u, 10.8 * u, 2.6 * u);
+		ctx.fillRect(1.5 * u, -55 * u, 10.6 * u, 2.6 * u);
+		ctx.fillStyle = sombra;
+		ctx.fillRect(-12.7 * u, -72 * u, 3 * u, 22 * u);
+
+		// Cinturón con hebilla y bolsas de herramientas
+		figura(u, [-12.5, -50.5, 12.5, -50.5, 12.5, -46.5, -12.5, -46.5], "#6b4424");
+		ctx.strokeStyle = "#b9c0c7";
+		ctx.lineWidth = 1 * u;
+		ctx.strokeRect(1.5 * u, -50 * u, 4 * u, 3 * u);
+		ctx.strokeStyle = CONTORNO;
+		ctx.lineWidth = 1.3 * u;
+		figura(u, [7.5, -48, 13.5, -48, 13, -39, 8, -39], "#8a5a2b");
+		figura(u, [-12.5, -48, -7.5, -48, -8, -41, -12, -41], "#8a5a2b");
+
+		// Planos enrollados bajo el brazo (antes del brazo de adelante)
+		if (o.herramienta === "plano") {
+			figura(u, [2, -62, 21, -57, 20, -53, 1, -58], "#2f6fd6");
+			ctx.fillStyle = "#dbe8ff";
+			ctx.beginPath();
+			ctx.ellipse(20.5 * u, -55 * u, 1.3 * u, 2 * u, 0.25, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+		// Brazo de adelante + mano
+		figura(u, [10.5, -65, 15.5, -66, 18.5, -50.5, 14, -50], o.piel);
+		ctx.fillStyle = o.piel;
+		circulo(16.5 * u, -47.8 * u, 3.1 * u);
+		ctx.stroke();
+
+		if (o.herramienta === "portapapeles") {
+			figura(u, [14, -57, 23, -56, 22, -43, 13, -44], "#a0703c");
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(15 * u, -54.5 * u, 6 * u, 9 * u);
+			ctx.fillStyle = "#9aa3ad";
+			ctx.fillRect(16 * u, -57.5 * u, 4.5 * u, 2.5 * u);
+		} else if (o.herramienta === "llave") {
+			figura(u, [16, -46, 18, -46, 19.5, -36, 17.5, -36], "#a3abb4");
+			ctx.strokeStyle = "#a3abb4";
+			ctx.lineWidth = 2 * u;
+			ctx.beginPath();
+			ctx.arc(18.6 * u, -34 * u, 2.4 * u, -0.6, Math.PI + 0.6, true);
+			ctx.stroke();
+			ctx.strokeStyle = CONTORNO;
+			ctx.lineWidth = 1.3 * u;
+		}
+
+		ctx.restore();
+		ctx.translate(0, respira * u);
+
+		// Cuello y cabeza
+		figura(u, [-2, -76, 3, -76, 3, -71, -2, -71], o.piel);
+		ctx.fillStyle = o.piel;
+		ctx.beginPath();
+		ctx.ellipse(1 * u, -83.5 * u, 8.2 * u, 9 * u, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.ellipse(-4.6 * u, -83 * u, 1.9 * u, 2.7 * u, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+
+		// Pelo: mechones bajo el casco y cola de caballo (si lleva pelo largo)
+		if (o.peloLargo) figura(u, [-5, -86, -10, -84, -12, -70, -8, -69, -5, -78], o.pelo);
+		figura(u, [-7.5, -89, 7, -90, 8.5, -87, 5, -88.5, 1, -87, -2, -88, -5, -84, -6.5, -79, -8.5, -82], o.pelo);
+
+		// Cara (mirando hacia adelante en 3/4)
+		ctx.strokeStyle = o.pelo;
+		ctx.lineWidth = 1.2 * u;
+		linea(2 * u, -87.2 * u, 4.8 * u, -87.7 * u);
+		linea(6.4 * u, -87.7 * u, 8.4 * u, -87 * u);
+		ctx.fillStyle = CONTORNO;
+		ctx.beginPath();
+		ctx.ellipse(3.6 * u, -84.6 * u, 1.1 * u, 1.5 * u, 0, 0, Math.PI * 2);
+		ctx.ellipse(7.4 * u, -84.6 * u, 0.95 * u, 1.4 * u, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = "#ffffff";
+		circulo(3.9 * u, -85.2 * u, 0.4 * u);
+		circulo(7.7 * u, -85.2 * u, 0.35 * u);
+		ctx.strokeStyle = "rgba(60,30,20,0.75)";
+		ctx.lineWidth = 0.9 * u;
+		linea(8.8 * u, -83.6 * u, 9.3 * u, -81.6 * u);
+		ctx.beginPath();
+		ctx.arc(5.2 * u, -80.6 * u, 2.2 * u, 0.3, Math.PI - 0.7);
+		ctx.stroke();
+		ctx.strokeStyle = CONTORNO;
+		ctx.lineWidth = 1.3 * u;
+
+		// Casco: cúpula, ala (más larga al frente), cresta y brillo
+		ctx.fillStyle = o.casco;
+		ctx.beginPath();
+		ctx.ellipse(1 * u, -89 * u, 10 * u, 9 * u, 0, Math.PI, 0);
+		ctx.closePath();
+		ctx.fill();
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.ellipse(3.5 * u, -89 * u, 12.5 * u, 2.3 * u, -0.05, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.stroke();
+		ctx.strokeStyle = "rgba(0,0,0,0.25)";
+		ctx.lineWidth = 2 * u;
+		ctx.beginPath();
+		ctx.ellipse(1 * u, -89 * u, 4.5 * u, 8.5 * u, 0, Math.PI * 1.1, Math.PI * 1.9);
+		ctx.stroke();
+		ctx.fillStyle = "rgba(255,255,255,0.45)";
+		ctx.beginPath();
+		ctx.ellipse(5 * u, -95 * u, 2.2 * u, 1.3 * u, -0.3, 0, Math.PI * 2);
+		ctx.fill();
+
+		ctx.restore();
+	}
+
 	function dibujarGlobo(x, y, texto, fondo) {
 		ctx.font = `bold ${14 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
 		const ancho = ctx.measureText(texto).width + 18 * S;
@@ -2604,26 +3747,36 @@
 	}
 
 	function dibujarNpcs() {
-		const pie = SUELO + 36 * S;
 		for (const n of npcs) {
+			const pie = SUELO + 36 * S - (n.alto || 0) * S;
 			const sx = n.x - camara;
 			if (sx < -60 || sx > W + 60) continue;
 			const a = n.apariencia;
-			dibujarPersona(sx, pie, {
+			const o = {
 				piel: a.piel,
 				ropa: a.ropa,
 				pantalon: a.pantalon,
 				pelo: a.pelo,
 				sombrero: a.sombrero,
+				peloLargo: a.peloLargo,
+				casco: a.casco,
+				chaleco: a.chaleco,
+				botas: a.botas || "#6b4424",
+				herramienta: a.herramienta,
 				dir: heroe.x >= n.x ? 1 : -1,
 				fase: 0,
 				moviendo: false,
-			});
+			};
+			// Con casco + chaleco usa la foto del héroe teñida con sus colores
+			// (o, mientras carga, el obrero dibujado); si no, el muñequito simple.
+			if (a.casco && a.chaleco) {
+				if (!dibujarNpcFoto(sx, pie, n, o.dir)) dibujarObrero(sx, pie, o);
+			} else dibujarPersona(sx, pie, o);
 
-			const arriba = pie - 110 * S + Math.sin(tiempo * 3 + n.x) * 3 * S;
+			const arriba = pie - 125 * S + Math.sin(tiempo * 3 + n.x) * 3 * S;
 			if (!n.hablado) {
 				dibujarGlobo(sx, arriba, "!", "#ffe066");
-			} else if (estado === "jugando" && Math.abs(n.x - heroe.x) < CFG.distanciaParaHablar * 1.3) {
+			} else if (estado === "jugando" && alAlcance(n, CFG.distanciaParaHablar * 1.3)) {
 				dibujarGlobo(sx, arriba, esTactil ? "Hablar" : "E · Hablar", "#fffbea");
 			}
 		}
@@ -2832,9 +3985,10 @@
 			dibujarCielo(t);
 			dibujarNubes(t);
 			dibujarCelaque(t);
-			dibujarMontanas(t);
-			dibujarColinas(t);
-			dibujarArbolesLejanos();
+			dibujarIndustriaLejana(t);
+			dibujarBruma(t, 0.55);
+			dibujarFabricasMedias();
+			dibujarBruma(t, 0.3);
 		}
 
 		if (modo === "cueva") dibujarSueloCueva();
@@ -2843,13 +3997,17 @@
 
 		if (modo === "afuera") {
 			dibujarTuboEntrada(); // se pinta sobre el sendero, no antes
+			dibujarFabricas();
+			dibujarConos();
 			dibujarMatas(false);
-			dibujarArboles();
+			dibujarAndamios();
+			dibujarObstaculos(OBSTACULOS_AFUERA);
+			dibujarZonaPlanos(); // tapa todo lo que hay antes de la puerta de luz
 		} else if (modo === "cueva") {
 			dibujarEstalagmitas(); // picos de roca detrás de todo
 			dibujarCristales(); // gemas que brillan sobre el camino
 			dibujarHuecos();
-			dibujarObstaculosCueva(); // rocas y cajas sólidas (se saltan/recorren)
+			dibujarObstaculos(OBSTACULOS_CUEVA); // rocas y cajas sólidas (se saltan/recorren)
 			dibujarTuboSalida();
 		} else if (modo === "urbano") {
 			dibujarEdificiosSimples(); // relleno gris detrás
@@ -2860,17 +4018,25 @@
 		dibujarNpcs();
 		if (modo !== "urbano") dibujarEnemigos(); // el Guardián vive afuera, antes de LARGO
 		dibujarHeroe(t);
+		dibujarAvisos(dt);
 
 		if (modo === "afuera") {
 			dibujarMatas(true);
 			dibujarMariposas();
-			dibujarLluvia(dt, t);
+			if (heroe.x > FIN_PLANOS) dibujarLluvia(dt, t);
 
-			// Neblina gris al inicio y luz cálida al final
-			ctx.fillStyle = `rgba(125,129,135,${0.35 * (1 - t)})`;
+			// Smog gris al inicio y luz cálida al final
+			ctx.fillStyle = `rgba(118,122,128,${0.42 * (1 - t)})`;
 			ctx.fillRect(0, 0, W, H);
 			ctx.fillStyle = `rgba(255,250,215,${0.08 * t})`;
 			ctx.fillRect(0, 0, W, H);
+
+			dibujarPuertaIdea();
+			if (destello > 0) {
+				ctx.fillStyle = `rgba(255,252,235,${0.85 * destello})`;
+				ctx.fillRect(0, 0, W, H);
+				destello = Math.max(0, destello - dt * 0.9);
+			}
 		} else if (modo === "cueva") {
 			dibujarPolvoCueva(dt); // esporas flotando por delante
 			// Viñeta oscura: la cueva se cierra en los bordes de la pantalla

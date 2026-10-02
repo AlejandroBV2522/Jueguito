@@ -1,8 +1,9 @@
 # Camino a Celaque
 
 Juego de navegador: el protagonista camina desde un mundo gris y lluvioso hasta
-**Celaque**, conociendo personas (NPC) en el camino. A medida que avanza, el
-paisaje se vuelve verde, luminoso y lleno de flores.
+**Celaque**, cruzando una zona industrial y conociendo a ingenieros y
+constructores (NPC) en el camino. Al inicio todo es gris (smog y lluvia); a
+medida que avanza, las fábricas, bodegas y grúas recuperan sus colores.
 
 Todo el código es propio: no usa librerías, fuentes ni enlaces de terceros.
 Casi todo se dibuja con `<canvas>`; la llegada a Celaque (al salir de la
@@ -36,10 +37,16 @@ ocupado, usa otro número, por ejemplo 5501.)
 | Elegir personaje (inicio) | ← → o clic en la tarjeta | Tocar la tarjeta |
 | Caminar                 | ← → o A / D (o la rueda del mouse) | Botones ◀ ▶ |
 | Correr                  | Mantener Q mientras caminas | Mantener "Correr" |
+| Saltar                  | ↑ o W                     | Botón "Saltar"     |
 | Hablar / avanzar diálogo | E, Enter o Espacio        | Botón "Hablar" o tocar la caja |
 
-Los NPC te hablan solos la primera vez que te acercas. Después puedes volver a
-hablarles con E.
+Es un plataformero: cada NPC espera arriba de un andamio y hay que subir
+saltando por los escalones para hablarle (desde el piso no te escucha).
+Los escalones se atraviesan saltando desde abajo. En la calle hay barreras
+de concreto que hay que saltar.
+
+Los NPC te hablan solos la primera vez que llegas a su andamio. Después
+puedes volver a hablarles con E.
 
 ## Personalizar
 
@@ -51,7 +58,8 @@ Todo lo editable está en **`config.js`**:
 - `largoDelCamino`: distancia hasta Celaque.
 - `textos`: títulos y mensajes de las pantallas.
 - `NPCS`: la lista de personajes. Cada uno tiene `nombre`, `posicion`
-  (0 = inicio, 1 = Celaque), `apariencia` (colores) y `dialogo` (lista de
+  (0 = inicio, 1 = Celaque), `apariencia` (colores, casco, chaleco y
+  herramienta) y `dialogo` (lista de
   frases). Para agregar un NPC nuevo, copia un bloque `{ ... }` y cambia los
   datos. No hay límite de NPCs.
 
@@ -61,5 +69,7 @@ Todo lo editable está en **`config.js`**:
 - `style.css`: estilos de la interfaz.
 - `config.js`: configuración, textos y NPCs.
 - `main.js`: lógica y dibujo del juego.
+- `assets/personaje/mascaras/`: zonas (casco, chaleco, pantalón, pelo) de
+  las fotos del protagonista, para teñir a cada NPC con sus colores.
 - `assets/edificios/`: imágenes PNG que se ven al salir de la Cueva, junto
   al letrero de llegada a Celaque.
