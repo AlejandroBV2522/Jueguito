@@ -507,10 +507,21 @@
 		SPRITES_JEFE[clave].cargando = cargarImagen(RUTA_ENEMIGOS + SPRITES_JEFE[clave].archivo);
 	}
 
-	// Qué foto usar según el nombre del enemigo (los que no aparecen acá
-	// -como el Guardián de la Entrada- se dibujan con el personaje vectorial
-	// de siempre).
+	// El Guardián de la Entrada: centinela de piedra tallada con ojos de
+	// cristal, parado sobre un pedestal con runas (quieto) y lanzando un
+	// puñetazo en estocada (golpe, sin pedestal -pose dinámica de combate-).
+	const SPRITES_CENTINELA = {
+		quieto: { archivo: "Centinela.png", anclaX: 0.3483, arriba: 0.0456, abajo: 0.9701, mirarIzquierda: true },
+		golpe: { archivo: "CentinelaGolpe.png", anclaX: 0.502, arriba: 0.0534, abajo: 0.9635, escalaExtra: 0.92 },
+	};
+	for (const clave in SPRITES_CENTINELA) {
+		SPRITES_CENTINELA[clave].cargando = cargarImagen(RUTA_ENEMIGOS + SPRITES_CENTINELA[clave].archivo);
+	}
+
+	// Qué foto usar según el nombre del enemigo (los que no aparecen acá se
+	// dibujan con el personaje vectorial de siempre).
 	const SPRITES_POR_ENEMIGO = {
+		"Guardián de la Entrada": SPRITES_CENTINELA,
 		"Murciélago de la Cueva": SPRITES_MURCIELAGO,
 		"Guerrero Esqueleto": SPRITES_ESQUELETO,
 		"Golem de Piedra": SPRITES_GOLEM,
@@ -532,28 +543,27 @@
 	const SPRITES_HEROE_CHICO = {
 		quieto: { archivo: "PersonajeHDePie.png", anclaX: 0.4585, arriba: 0.0163, abajo: 0.9831 },
 		caminando: { archivo: "PersonajeHCaminando.png", anclaX: 0.4576, arriba: 0.0365, abajo: 0.9674 },
-		caminando2: { archivo: "PersonajeHCaminando2.png", anclaX: 0.4679, arriba: 0.1185, abajo: 0.8919 },
+		caminando2: { archivo: "PersonajeHCaminando2.png", anclaX: 0.4679, arriba: 0.1185, abajo: 0.8919, escalaExtra: 1.25 },
 		saltando: { archivo: "PersonajeHSalta.png", anclaX: 0.5139, arriba: 0.0215, abajo: 0.875 },
 		golpe: { archivo: "PersonajeHGolpe.png", anclaX: 0.4845, arriba: 0.042, abajo: 0.9665 },
 		agachado: { archivo: "PersonajeHAgachado.png", anclaX: 0.4878, arriba: 0.0977, abajo: 0.9212 },
+		golpeado: { archivo: "PersonajeHGolpeado.png", anclaX: 0.457, arriba: 0.0345, abajo: 0.9811 },
 	};
 	for (const clave in SPRITES_HEROE_CHICO) {
 		SPRITES_HEROE_CHICO[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICO[clave].archivo);
 	}
 
-	// La Chica: ya tiene de pie/caminando/saltando propias. Golpe y agachado
-	// siguen sin foto propia -se reusa "quieto" con los mismos trucos del
-	// dibujo vectorial: se agranda un poco al atacar y se achica verticalmente
-	// al agacharse (ver sinFotoPropia en dibujarHeroeSprite)-, hasta que se
-	// agreguen esas 2 fotos igual que con el Chico.
+	// La Chica: ya tiene las 6 poses con foto propia, igual que el Chico.
 	const SPRITES_HEROE_CHICA = {
 		quieto: { archivo: "PersonajeMDePie.png", anclaX: 0.4737, arriba: 0.0254, abajo: 0.9772 },
 		caminando: { archivo: "PersonajeMCaminando.png", anclaX: 0.47, arriba: 0.0293, abajo: 0.974 },
+		caminando2: { archivo: "PersonajeMCaminando2.png", anclaX: 0.4825, arriba: 0.0267, abajo: 0.9857 },
 		saltando: { archivo: "PersonajeMSalta.png", anclaX: 0.4892, arriba: 0.0153, abajo: 0.9825 },
+		golpe: { archivo: "PersonajeMGolpe.png", anclaX: 0.4685, arriba: 0.0697, abajo: 0.9759 },
+		agachado: { archivo: "PersonajeMAgachado.png", anclaX: 0.4706, arriba: 0.0278, abajo: 0.9737 },
+		golpeado: { archivo: "PersonajeMGolpeado.png", anclaX: 0.4731, arriba: 0.0482, abajo: 0.9785 },
 	};
-	SPRITES_HEROE_CHICA.golpe = SPRITES_HEROE_CHICA.quieto;
-	SPRITES_HEROE_CHICA.agachado = SPRITES_HEROE_CHICA.quieto;
-	for (const clave of ["quieto", "caminando", "saltando"]) {
+	for (const clave in SPRITES_HEROE_CHICA) {
 		SPRITES_HEROE_CHICA[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICA[clave].archivo);
 	}
 
@@ -689,6 +699,8 @@
 		agachado: false,
 		atacando: false,
 		atacandoT: 0,
+		golpeado: false,
+		golpeadoT: 0,
 	};
 	const CLAVES_PERSONAJE = Object.keys(CFG.personajes);
 	let personaje = CLAVES_PERSONAJE[0];
@@ -1123,6 +1135,8 @@
 		} else {
 			enemigo.atacando = true;
 			enemigo.atacandoT = 0;
+			heroe.golpeado = true;
+			heroe.golpeadoT = 0;
 			vidas--;
 			if (vidas <= 0) setTimeout(perderCueva, 350);
 			else ui.pista.textContent = `Incorrecto, intenta de nuevo. Vidas: ${"♥".repeat(vidas)}${"♡".repeat(3 - vidas)}`;
@@ -1337,6 +1351,13 @@
 				heroe.atacandoT = 0;
 			}
 		}
+		if (heroe.golpeado) {
+			heroe.golpeadoT += dt;
+			if (heroe.golpeadoT >= 0.5) {
+				heroe.golpeado = false;
+				heroe.golpeadoT = 0;
+			}
+		}
 		for (const en of enemigos) {
 			if (en.atacando) {
 				en.atacandoT += dt;
@@ -1369,6 +1390,7 @@
 		if (estado === "jugando") {
 			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
 			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
+			if (heroe.agachado) dir = 0; // agachado: no avanza hasta soltar abajo
 
 			heroe.moviendo = dir !== 0;
 			heroe.corriendo = heroe.moviendo && entrada.correr;
@@ -1396,6 +1418,7 @@
 		if (estado === "cueva") {
 			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
 			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
+			if (heroe.agachado) dir = 0; // agachado: no avanza hasta soltar abajo
 			heroe.moviendo = dir !== 0;
 			heroe.corriendo = heroe.moviendo && entrada.correr;
 
@@ -1419,6 +1442,7 @@
 		if (estado === "urbano") {
 			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
 			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
+			if (heroe.agachado) dir = 0; // agachado: no avanza hasta soltar abajo
 			heroe.moviendo = dir !== 0;
 			heroe.corriendo = heroe.moviendo && entrada.correr;
 
@@ -2300,6 +2324,9 @@
 		// la misma foto.
 		const sinPoseDeGolpe = sprites.golpe === sprites.quieto;
 		const embestida = o.atacando && sinPoseDeGolpe ? 1.18 : 1;
+		// Ajuste fino por foto puntual (ej. que el golpe se vea un poco más
+		// chico que parado), aparte del tamaño base del enemigo.
+		const escalaExtra = meta.escalaExtra ?? 1;
 
 		const s = S * 1.15 * (o.escala || 1);
 		// El vaivén de reposo NO debe escalar con "escala": es una animación de
@@ -2314,7 +2341,7 @@
 		const rebote = o.moviendo
 			? Math.abs(Math.cos(o.fase)) * 2 * sVaiven
 			: Math.sin(tiempo * 2 + x + camara) * 0.8 * sVaiven;
-		const altoDeseado = 100 * s * embestida;
+		const altoDeseado = 100 * s * embestida * escalaExtra;
 
 		ctx.save();
 		ctx.translate(x, pie);
@@ -2335,8 +2362,18 @@
 
 		const w = el.naturalWidth || el.width;
 		const h = el.naturalHeight || el.height;
-		const altoContenido = (meta.abajo - meta.arriba) * h;
-		const k = altoDeseado / altoContenido;
+		// La escala SIEMPRE sale de la foto "quieto" (no de la pose actual):
+		// si cada pose normalizara su propio alto de contenido, una pose con
+		// bbox más bajo/más alto (ej. una estocada agachada) se vería de
+		// tamaño distinto a quieto aunque el cuerpo mida lo mismo -mismo bug
+		// que se corrigió para el héroe en dibujarHeroeSprite-.
+		const metaQuieto = sprites.quieto;
+		const elQuieto = metaQuieto.cargando.elemento;
+		const refMeta = elQuieto ? metaQuieto : meta;
+		const refEl = elQuieto || el;
+		const hRef = refEl.naturalHeight || refEl.height;
+		const altoContenidoRef = (refMeta.abajo - refMeta.arriba) * hRef;
+		const k = altoDeseado / altoContenidoRef;
 		const dw = w * k;
 		const dh = h * k;
 		const anclaY = meta.anclaY ?? meta.abajo;
@@ -2639,7 +2676,9 @@
 		// pasos -Math.cos(o.fase)-, así las piernas ciclan de verdad en vez de
 		// quedar fijas con una sola foto.
 		const hayZancada2 = sprites.caminando2 && sprites.caminando2 !== sprites.caminando;
-		const pose = o.agachado
+		const pose = o.golpeado && sprites.golpeado
+			? "golpeado"
+			: o.agachado
 			? "agachado"
 			: o.atacando
 			? "golpe"
@@ -2665,10 +2704,12 @@
 		// quedar más bajo por su propio alto de contenido, se reduce un poco
 		// más para que se vea claramente más chico/compacto, no solo bajito.
 		const factorAgachado = pose === "agachado" && !sinFotoPropia ? 0.78 : 1;
-		// caminando2 vino dibujada más chica dentro de su propio cuadro (más
-		// alejada de cámara que las demás fotos), así que con la MISMA escala
-		// de referencia (quieto) se ve más chica. Se compensa agrandándola.
-		const factorCaminando2 = pose === "caminando2" ? 1.25 : 1;
+		// Algunas fotos puntuales vienen dibujadas más chicas/grandes dentro de
+		// su propio cuadro que las demás del mismo personaje (zoom distinto de
+		// cámara al generarlas), así que con la MISMA escala de referencia
+		// (quieto) se ven de tamaño distinto. Se corrige por foto, no por pose
+		// -ej. el "caminando2" del Chico lo necesita, pero no todos lo tienen-.
+		const factorEscalaPropio = meta.escalaExtra ?? 1;
 
 		const s = S * 1.15;
 		// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
@@ -2677,7 +2718,7 @@
 		const rebote = o.moviendo
 			? Math.abs(Math.cos(o.fase)) * 2 * s
 			: Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
-		const altoDeseado = 100 * s * embestida * factorAgachado * factorCaminando2;
+		const altoDeseado = 100 * s * embestida * factorAgachado * factorEscalaPropio;
 
 		ctx.save();
 		ctx.translate(x, pie);
@@ -2724,6 +2765,7 @@
 			...aparienciaHeroe(personaje, t, heroe),
 			agachado: heroe.agachado,
 			atacando: heroe.atacando,
+			golpeado: heroe.golpeado,
 		};
 		const x = heroe.x - camara;
 		const pie = SUELO + 38 * S - heroe.y * S;

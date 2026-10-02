@@ -135,7 +135,8 @@ window.PREGUNTAS_CUEVA = [
   {
     nombre: "Guardián de la Entrada",
     posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
-    escala: 1, // tamaño base: el primer reto, ni el más débil ni el más grande
+    escala: 1.4, // centinela de piedra: grande e imponente, el primer reto
+    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
     // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
     apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
     pregunta: "¿Cuál es la misión de Celaque?",
