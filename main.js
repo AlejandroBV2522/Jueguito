@@ -703,6 +703,10 @@
 		golpe: { archivo: "PersonajeHGolpe.png", anclaX: 0.4845, arriba: 0.042, abajo: 0.9665 },
 		agachado: { archivo: "PersonajeHAgachado.png", anclaX: 0.4878, arriba: 0.0977, abajo: 0.9212 },
 		golpeado: { archivo: "PersonajeHGolpeado.png", anclaX: 0.457, arriba: 0.0345, abajo: 0.9811 },
+		// Correr (Q): se alternan estas 2, que vienen de la misma hoja (mismo
+		// tamaño y estilo). escalaExtra las iguala al tamaño de las demás.
+		corre: { archivo: "PersonajeHCorre.png", anclaX: 0.5466, arriba: 0.0235, abajo: 0.9765, escalaExtra: 2.889 },
+		correPaso: { archivo: "PersonajeHCorrePaso.png", anclaX: 0.4656, arriba: 0.0231, abajo: 0.9769, escalaExtra: 2.889 },
 	};
 	for (const clave in SPRITES_HEROE_CHICO) {
 		SPRITES_HEROE_CHICO[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICO[clave].archivo);
@@ -717,6 +721,8 @@
 		golpe: { archivo: "PersonajeMGolpe.png", anclaX: 0.4685, arriba: 0.0697, abajo: 0.9759 },
 		agachado: { archivo: "PersonajeMAgachado.png", anclaX: 0.4706, arriba: 0.0278, abajo: 0.9737 },
 		golpeado: { archivo: "PersonajeMGolpeado.png", anclaX: 0.4731, arriba: 0.0482, abajo: 0.9785 },
+		corre: { archivo: "PersonajeMCorre.png", anclaX: 0.5351, arriba: 0.0232, abajo: 0.9768, escalaExtra: 2.937 },
+		correPaso: { archivo: "PersonajeMCorrePaso.png", anclaX: 0.5092, arriba: 0.0232, abajo: 0.9768, escalaExtra: 2.937 },
 	};
 	for (const clave in SPRITES_HEROE_CHICA) {
 		SPRITES_HEROE_CHICA[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICA[clave].archivo);
@@ -4965,11 +4971,15 @@
 		// cos = 1 pie apoyado (zancada abierta), cos = -1 pierna de paso.
 		// Cerca del cambio (|cos| < ANCHO_FUNDIDO) las 2 fotos se funden, así
 		// no hay un corte seco entre zancadas.
-		const hayZancada2 = sprites.caminando2 && sprites.caminando2 !== sprites.caminando;
+		// Corriendo (Q) se alternan las fotos de correr (corre / correPaso);
+		// caminando, las piernas por código (ver pintarRig), o si no hay, las
+		// fotos de zancada (caminando / caminando2).
 		const recibeGolpe = o.golpeado && sprites.golpeado;
 		const enMarcha = o.moviendo && !recibeGolpe && !o.agachado && !o.atacando && heroeEnSuelo();
-		// Piernas por código (ver pintarRig): parte de la foto "quieto"
-		const conRig = enMarcha && rigListo(sprites.rig);
+		const fotosCorrer = enMarcha && o.corriendo && sprites.corre && sprites.correPaso && sprites.corre.cargando.elemento && sprites.correPaso.cargando.elemento;
+		const [zancada1, zancada2] = fotosCorrer ? ["corre", "correPaso"] : ["caminando", "caminando2"];
+		const hayZancada2 = sprites[zancada2] && sprites[zancada2] !== sprites[zancada1];
+		const conRig = enMarcha && !fotosCorrer && rigListo(sprites.rig);
 		const ciclo = Math.cos(o.fase);
 		const ANCHO_FUNDIDO = 0.35;
 		const peso2 = enMarcha && hayZancada2 && !conRig ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
@@ -4983,13 +4993,13 @@
 			? "saltando"
 			: o.moviendo && !conRig
 			? peso2 >= 1
-				? "caminando2"
-				: "caminando"
+				? zancada2
+				: zancada1
 			: "quieto";
 		const meta = sprites[pose];
 		const el = meta.cargando.elemento;
 		if (!el) return false;
-		const el2 = peso2 > 0 && peso2 < 1 && sprites.caminando2.cargando.elemento;
+		const el2 = peso2 > 0 && peso2 < 1 && sprites[zancada2].cargando.elemento;
 
 		// Si el personaje todavía no tiene foto propia para esta pose (p.ej.
 		// la Chica, que por ahora solo tiene "de pie"), se reusa la de
@@ -5081,7 +5091,7 @@
 			// hasta la mitad y la que entra se pinta encima; pasada la mitad,
 			// la que entra ya está opaca y la de abajo se desvanece.
 			pintar(el, meta, 1, Math.min(1, 2 * (1 - peso2)));
-			pintar(el2, sprites.caminando2, (sprites.caminando2.escalaExtra ?? 1) / factorEscalaPropio, Math.min(1, 2 * peso2));
+			pintar(el2, sprites[zancada2], (sprites[zancada2].escalaExtra ?? 1) / factorEscalaPropio, Math.min(1, 2 * peso2));
 		} else {
 			pintar(el, meta, 1, 1);
 		}
