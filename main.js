@@ -839,6 +839,7 @@
 		x: INICIO_X,
 		dir: 1,
 		fase: 0,
+		marcha: 0, // 0 quieto, ~0.45 caminando, 1 corriendo (suavizado, ver actualizar)
 		moviendo: false,
 		corriendo: false,
 		y: 0, // altura sobre el suelo (0 = piso), física real de salto
@@ -847,6 +848,7 @@
 		atacando: false,
 		atacandoT: 0,
 	};
+	const polvoPasos = []; // nubecitas al correr (ver actualizar/dibujarPolvoPasos)
 	const CLAVES_PERSONAJE = Object.keys(CFG.personajes);
 	let personaje = CLAVES_PERSONAJE[0];
 	let camara = 0;
@@ -1590,7 +1592,7 @@
 				heroe.dir = dir;
 				const viejoX = heroe.x;
 				heroe.x = frenarEnObstaculos(viejoX, clamp(viejoX + dir * velocidad * dt, 40, limite), dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 				actualizarHud();
 			}
 
@@ -1621,7 +1623,7 @@
 				const viejoX = heroe.x;
 				const tentativo = clamp(viejoX + dir * velocidad * dt, LARGO, limite);
 				heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 			}
 
 			if (bloqueante && heroe.x >= limite) abrirPregunta(bloqueante);
@@ -1639,11 +1641,41 @@
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
 				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO_TOTAL, LARGO_META);
-				heroe.fase += dt * (heroe.corriendo ? 15 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 			}
 
 			if (heroe.x >= LARGO_META) ganar();
 		}
+
+		// Postura de marcha suavizada: arrancar, frenar o pasar de caminar a
+		// correr inclina y acelera el rebote poco a poco, en vez de saltar de
+		// golpe entre poses (ver dibujarHeroeSprite).
+		const objetivoMarcha = heroe.moviendo ? (heroe.corriendo ? 1 : 0.45) : 0;
+		heroe.marcha += (objetivoMarcha - heroe.marcha) * Math.min(1, dt * 8);
+
+		// Polvo al pisar corriendo: una nubecita cada vez que el pie toca el
+		// suelo (cada vuelta completa de la fase = una zancada).
+		const zancada = Math.floor(heroe.fase / (Math.PI * 2));
+		if (heroe.corriendo && heroeEnSuelo() && zancada !== heroe.ultimaZancada) {
+			for (let i = 0; i < 3; i++) {
+				polvoPasos.push({
+					x: heroe.x - heroe.dir * (6 + Math.random() * 8),
+					y: heroe.y,
+					vx: -heroe.dir * (10 + Math.random() * 25),
+					vy: 8 + Math.random() * 14,
+					r: 3 + Math.random() * 3,
+					vida: 0,
+					dura: 0.35 + Math.random() * 0.2,
+				});
+			}
+		}
+		heroe.ultimaZancada = zancada;
+		for (const p of polvoPasos) {
+			p.vida += dt;
+			p.x += p.vx * dt;
+			p.y += p.vy * dt;
+		}
+		while (polvoPasos.length && polvoPasos[0].vida >= polvoPasos[0].dura) polvoPasos.shift();
 
 		if (estado === "dialogo") {
 			const linea = lineaActual();
@@ -3788,10 +3820,15 @@
 	// enemigos con dibujarEnemigoSprite).
 	function dibujarHeroeSprite(x, pie, o, sprites, t) {
 		// Caminando/corriendo: si hay 2da zancada (caminando2, distinta de la
-		// primera), se alterna con la misma fase que ya marca el rebote de
-		// pasos -Math.cos(o.fase)-, así las piernas ciclan de verdad en vez de
-		// quedar fijas con una sola foto.
+		// primera), se alterna con la fase de pasos -Math.cos(o.fase)-:
+		// cos = 1 pie apoyado (zancada abierta), cos = -1 pierna de paso.
+		// Cerca del cambio (|cos| < ANCHO_FUNDIDO) las 2 fotos se funden, así
+		// no hay un corte seco entre zancadas.
 		const hayZancada2 = sprites.caminando2 && sprites.caminando2 !== sprites.caminando;
+		const enMarcha = o.moviendo && !o.agachado && !o.atacando && heroeEnSuelo();
+		const ciclo = Math.cos(o.fase);
+		const ANCHO_FUNDIDO = 0.35;
+		const peso2 = enMarcha && hayZancada2 ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
 		const pose = o.agachado
 			? "agachado"
 			: o.atacando
@@ -3799,13 +3836,14 @@
 			: !heroeEnSuelo()
 			? "saltando"
 			: o.moviendo
-			? hayZancada2 && Math.cos(o.fase) < 0
+			? peso2 >= 1
 				? "caminando2"
 				: "caminando"
 			: "quieto";
 		const meta = sprites[pose];
 		const el = meta.cargando.elemento;
 		if (!el) return false;
+		const el2 = peso2 > 0 && peso2 < 1 && sprites.caminando2.cargando.elemento;
 
 		// Si el personaje todavía no tiene foto propia para esta pose (p.ej.
 		// la Chica, que por ahora solo tiene "de pie"), se reusa la de
@@ -3821,25 +3859,41 @@
 		// caminando2 vino dibujada más chica dentro de su propio cuadro (más
 		// alejada de cámara que las demás fotos), así que con la MISMA escala
 		// de referencia (quieto) se ve más chica. Se compensa agrandándola.
-		const factorCaminando2 = pose === "caminando2" ? 1.25 : 1;
+		const FACTOR_CAMINANDO2 = 1.25;
+		const factorCaminando2 = pose === "caminando2" ? FACTOR_CAMINANDO2 : 1;
 
 		const s = S * 1.15;
+		// Marcha (0 quieto .. 1 corriendo, ya suavizada): cuánto se inclina,
+		// rebota y se estira el cuerpo. Con 2 zancadas, el cuerpo sube en la
+		// pierna de paso (cos = -1) y baja al apoyar (cos = 1): un rebote por
+		// zancada. La Chica (1 sola foto) mantiene el golpeteo de 2 por ciclo.
+		const marcha = enMarcha ? Math.max(o.marcha, 0.3) : 0;
+		const subida = hayZancada2 ? (1 - ciclo) / 2 : Math.abs(Math.sin(o.fase));
 		// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
 		// tiemble con la cámara al moverse — ver nota en dibujarEnemigoSprite).
-		// Caminando, el mismo rebote marca el golpeteo de los pasos.
-		const rebote = o.moviendo
-			? Math.abs(Math.cos(o.fase)) * 2 * s
+		const rebote = enMarcha
+			? subida * (1.5 + 4.5 * marcha) * s
+			: o.moviendo
+			? 0
 			: Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
+		// Squash & stretch: aplasta un poco al apoyar, estira en el aire.
+		const estiro = enMarcha ? (subida - 0.5) * 0.06 * marcha : 0;
+		// Se inclina hacia adelante al correr, con un cabeceo leve por paso.
+		const inclinacion = enMarcha ? 0.13 * marcha + Math.sin(o.fase) * 0.025 * marcha : 0;
 		const altoDeseado = 100 * s * embestida * factorAgachado * factorCaminando2;
 
 		ctx.save();
 		ctx.translate(x, pie);
+		// La sombra se achica cuando el cuerpo sube.
+		const sombra = 1 - (rebote / (8 * s)) * 0.25;
 		ctx.fillStyle = "rgba(40,40,40,0.18)";
 		ctx.beginPath();
-		ctx.ellipse(0, 0, 14 * s, 4 * s, 0, 0, Math.PI * 2);
+		ctx.ellipse(0, 0, 14 * s * sombra, 4 * s * sombra, 0, 0, Math.PI * 2);
 		ctx.fill();
 		ctx.translate(0, -rebote);
 		ctx.scale(o.dir, 1);
+		ctx.rotate(inclinacion);
+		ctx.scale(1 - estiro * 0.6, 1 + estiro);
 		if (pose === "agachado" && sinFotoPropia) ctx.scale(1, 0.55);
 
 		// Gris al inicio del camino, colores vivos al llegar a Celaque — mismo
@@ -3862,14 +3916,36 @@
 		const altoContenidoRef = (refMeta.abajo - refMeta.arriba) * hRef;
 		const k = altoDeseado / altoContenidoRef;
 
-		const w = el.naturalWidth || el.width;
-		const h = el.naturalHeight || el.height;
-		const dw = w * k;
-		const dh = h * k;
-		ctx.drawImage(el, -meta.anclaX * dw, -meta.abajo * dh, dw, dh);
+		const pintar = (img, m, factor, alfa) => {
+			const dw = (img.naturalWidth || img.width) * k * factor;
+			const dh = (img.naturalHeight || img.height) * k * factor;
+			ctx.globalAlpha = alfa;
+			ctx.drawImage(img, -m.anclaX * dw, -m.abajo * dh, dw, dh);
+		};
+		if (el2) {
+			// Fundido cruzado sin "agujeros": la foto que sale queda opaca
+			// hasta la mitad y la que entra se pinta encima; pasada la mitad,
+			// la que entra ya está opaca y la de abajo se desvanece.
+			pintar(el, meta, 1, Math.min(1, 2 * (1 - peso2)));
+			pintar(el2, sprites.caminando2, FACTOR_CAMINANDO2, Math.min(1, 2 * peso2));
+		} else {
+			pintar(el, meta, 1, 1);
+		}
 
 		ctx.restore();
 		return true;
+	}
+
+	function dibujarPolvoPasos() {
+		for (const p of polvoPasos) {
+			const avance = p.vida / p.dura;
+			const sx = p.x - camara;
+			const sy = SUELO + 38 * S - p.y * S;
+			ctx.fillStyle = `rgba(150,135,110,${(0.35 * (1 - avance)).toFixed(3)})`;
+			ctx.beginPath();
+			ctx.arc(sx, sy - 2 * S, p.r * S * (0.6 + avance), 0, Math.PI * 2);
+			ctx.fill();
+		}
 	}
 
 	function dibujarHeroe(t) {
@@ -3881,6 +3957,7 @@
 		const x = heroe.x - camara;
 		const pie = SUELO + 38 * S - heroe.y * S;
 		const sprites = SPRITES_POR_PERSONAJE[personaje];
+		dibujarPolvoPasos();
 		const yaDibujado = sprites && dibujarHeroeSprite(x, pie, o, sprites, t);
 		if (!yaDibujado) dibujarPersona(x, pie, o);
 	}
@@ -3902,6 +3979,7 @@
 			fase: pose.fase,
 			moviendo: pose.moviendo,
 			corriendo: pose.corriendo,
+			marcha: pose.marcha || 0,
 		};
 	}
 
