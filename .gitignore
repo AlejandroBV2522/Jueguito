@@ -1,0 +1,3 @@
+# Agentes de Claude Code y sus planes: solo locales, no se suben
+.claude/agents/
+.claude/handoffs/

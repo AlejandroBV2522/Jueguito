@@ -16,10 +16,21 @@ window.CONFIG_JUEGO = {
 
   textos: {
     titulo: "Camino a Celaque",
-    subtitulo: "Camina, conoce a quienes encuentres y devuélvele el color al mundo.",
-    victoriaTitulo: "¡Felicidades!",
-    victoriaTexto: "Bienvenido a Celaque.",
+    subtitulo: "Camina, conoce a quienes encuentres y completa los módulos de tu capacitación.",
+    victoriaTitulo: "¿Estás listo?",
+    victoriaTexto: "¡Bienvenido a Celaque! Completaste todos los módulos de tu capacitación.",
     contadorNpcs: "Personas conocidas",
+    letreroFinal: "¿Estás listo?", // letrero al final de la calle de Celaque
+  },
+
+  /* Colores oficiales de Celaque (tomados de la presentación institucional).
+     Los de la pantalla (botones, cajas) están repetidos en style.css. */
+  colores: {
+    oscuro: "#032420",  // verde casi negro (fondos, textos fuertes)
+    verde: "#0b5c58",   // verde Celaque (logo)
+    teal: "#00767a",    // turquesa de SharePoint / sitios
+    claro: "#3fb3ad",   // turquesa claro (brillos, guías)
+    crema: "#f3efe6",   // fondo claro de cajas
   },
 
   /* Personajes que se pueden elegir al inicio. Los colores son los que
@@ -230,3 +241,198 @@ window.PREGUNTAS_CUEVA = [
     ],
   },
 ];
+
+/* ---------------------------------------------------------------------
+   Módulos de capacitación (la calle de Celaque, al salir de la Cueva)
+   ---------------------------------------------------------------------
+   Son 6 módulos. El primero (Talento) es todo lo anterior: el camino y la
+   Cueva, y ya está completo al salir de ella. Cada uno de los demás es un
+   EDIFICIO: al llegar a su puerta hay que contestar sus preguntas para
+   completarlo, subir de nivel y poder seguir por la calle. Fallar no quita
+   vidas: la opción equivocada se tacha y se vuelve a intentar.
+
+   - nombre:      nombre del módulo (se ve en el letrero del edificio).
+   - subtitulo:   texto chico debajo del nombre.
+   - color:       color del edificio y del letrero ("#RRGGBB").
+   - logo:        (opcional) ruta a un PNG/SVG con el logo del módulo, ej.
+                  "assets/logos/Proyectos.png". Se dibuja SIN deformar
+                  (respeta su proporción). Sin logo se usa la inicial.
+   - completoAlSalirDeLaCueva: solo para Talento.
+   - intro:       frases que se leen antes de las preguntas.
+   - preguntas:   { pregunta, opciones, correcta (índice desde 0),
+                    explicacion (opcional, se muestra al acertar) }.
+
+   ✏️ Las preguntas de SharePoint salen de la capacitación "Suite de
+   Microsoft". Las demás son un BORRADOR: cada departamento debe
+   reemplazarlas con su contenido real.
+   --------------------------------------------------------------------- */
+
+window.MODULOS = [
+  {
+    nombre: "Talento",
+    subtitulo: "Celaque: quiénes somos",
+    color: "#00767a",
+    completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
+    intro: [],
+    preguntas: [],
+  },
+  {
+    nombre: "Proyectos",
+    subtitulo: "Nuestro trabajo en Wrike",
+    color: "#0b5c58",
+    intro: [
+      "Bienvenido al edificio de Proyectos.",
+      "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
+    ],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área de Proyectos
+        pregunta: "¿Qué es Wrike?",
+        opciones: [
+          "Una plataforma para planear y dar seguimiento a proyectos y tareas en equipo.",
+          "Un programa para editar fotos.",
+          "Una red social personal.",
+        ],
+        correcta: 0,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "Si te asignan una tarea en Wrike, ¿qué es lo correcto?",
+        opciones: [
+          "Ignorarla hasta que alguien pregunte.",
+          "Actualizar su estado y avances para que el equipo sepa cómo va.",
+          "Borrarla si no te gusta.",
+        ],
+        correcta: 1,
+      },
+    ],
+  },
+  {
+    nombre: "Procesos",
+    subtitulo: "Cómo hacemos las cosas",
+    color: "#2f8f6f",
+    intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área de Procesos
+        pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
+        opciones: [
+          "Improvisar sin avisar a nadie.",
+          "Preguntar a tu líder o al área responsable y seguir el proceso establecido.",
+          "Saltarte los pasos que no entiendas.",
+        ],
+        correcta: 1,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "¿Dónde se guardan los documentos de cada proceso?",
+        opciones: [
+          "En la carpeta del departamento en SharePoint.",
+          "En una memoria USB personal.",
+          "En el escritorio de tu computadora.",
+        ],
+        correcta: 0,
+      },
+    ],
+  },
+  {
+    nombre: "SharePoint",
+    subtitulo: "SharePoint, Outlook y Teams",
+    color: "#00767a",
+    intro: [
+      "Bienvenido al edificio de Plataformas.",
+      "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
+    ],
+    preguntas: [
+      {
+        pregunta: "¿Qué es SharePoint?",
+        opciones: [
+          "Un juego de Microsoft.",
+          "Una plataforma de Microsoft para almacenar, organizar, compartir y acceder a información desde cualquier dispositivo.",
+          "Un antivirus.",
+        ],
+        correcta: 1,
+      },
+      {
+        pregunta: "¿Cómo se organiza la información en el SharePoint de Celaque?",
+        opciones: [
+          "Cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
+          "Todos los archivos van sueltos en una sola carpeta.",
+          "Cada persona guarda todo en su correo.",
+        ],
+        correcta: 0,
+      },
+      {
+        pregunta: "¿Para qué sirve el historial de versiones de un documento?",
+        opciones: [
+          "Para borrar el documento.",
+          "Para cambiarle el nombre.",
+          "Para rastrear cambios y recuperar versiones anteriores.",
+        ],
+        correcta: 2,
+      },
+      {
+        pregunta: "¿Qué herramienta usas para chatear y tener reuniones con otros colaboradores?",
+        opciones: ["Microsoft Teams.", "El historial de versiones.", "La papelera de reciclaje."],
+        correcta: 0,
+        explicacion: "Y en Outlook gestionas tu correo, calendario, contactos y grupos.",
+      },
+    ],
+  },
+  {
+    nombre: "Seguridad",
+    subtitulo: "Cuidamos la información",
+    color: "#1f6f8b",
+    intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área de Seguridad
+        pregunta: "Te llega un correo urgente pidiendo tu contraseña. ¿Qué haces?",
+        opciones: [
+          "La envío rápido para no tener problemas.",
+          "No la comparto y lo reporto al área de Sistemas.",
+          "Se la reenvío a un compañero.",
+        ],
+        correcta: 1,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "¿Qué debes usar para protegerte en la obra?",
+        opciones: ["Nada.", "Equipo de protección personal.", "Solo un casco de juguete."],
+        correcta: 1,
+      },
+    ],
+  },
+  {
+    nombre: "IA",
+    subtitulo: "Inteligencia artificial",
+    color: "#4b5fa8",
+    intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área responsable
+        pregunta: "¿Qué debes hacer con una respuesta generada por IA antes de usarla?",
+        opciones: [
+          "Copiarla sin leerla.",
+          "Revisarla y verificar que sea correcta.",
+          "Enviarla a todos los clientes.",
+        ],
+        correcta: 1,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "¿Se puede pegar información confidencial de la empresa en cualquier herramienta de IA?",
+        opciones: [
+          "Sí, siempre.",
+          "Solo en las herramientas aprobadas por la empresa.",
+          "Sí, si nadie se entera.",
+        ],
+        correcta: 1,
+      },
+    ],
+  },
+];
+
+/* Proyectos de Celaque que se ven como edificios de fondo en la calle
+   (solo decoración, con su nombre en el letrero). */
+window.PROYECTOS_CELAQUE = ["Zorzales", "Astria", "Céfiro"];

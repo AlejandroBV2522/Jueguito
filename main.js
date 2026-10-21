@@ -11,7 +11,13 @@
 	const INICIO_X = 80;
 	const LARGO_CUEVA = 5200; // tramo de la Cueva, después del camino (más largo = enemigos más separados)
 	const LARGO_TOTAL = LARGO + LARGO_CUEVA;
-	const LARGO_META = LARGO_TOTAL + 500; // tramo urbano: se camina un poco más hasta el letrero
+	// Calle de Celaque (al salir de la Cueva): un edificio por cada módulo de
+	// capacitación (config.js → MODULOS) y, al final, el letrero de llegada.
+	const MODULOS_DATOS = window.MODULOS || [];
+	const PRIMER_MODULO = LARGO_TOTAL + 420;
+	const ESPACIO_MODULO = 640;
+	const LARGO_META = PRIMER_MODULO + MODULOS_DATOS.length * ESPACIO_MODULO + 80;
+	const COLORES = CFG.colores || { oscuro: "#032420", verde: "#0b5c58", teal: "#00767a", claro: "#3fb3ad", crema: "#f3efe6" };
 
 	// ---------- Física del salto (real: gravedad + colisión contra los tubos) ----------
 	// Unidades de mundo (iguales a heroe.x), independientes de S — se multiplican
@@ -207,7 +213,7 @@
 		PLATAFORMAS.push({ x: n.x, x0: n.x, alto: n.alto, alto0: n.alto, medioAncho: 85, principal: true, dx: 0 });
 		escalones.forEach((e, k) => {
 			const x = n.x + lado * e.d;
-			PLATAFORMAS.push({ x, x0: x, alto: e.alto, alto0: e.alto, medioAncho: 50, eje: e.eje, amp: e.amp, vel: e.vel, fase: i * 1.7 + k, dx: 0 });
+			PLATAFORMAS.push({ x, x0: x, alto: e.alto, alto0: e.alto, medioAncho: 62, eje: e.eje, amp: e.amp, vel: e.vel, fase: i * 1.7 + k, dx: 0 });
 		});
 	});
 
@@ -216,7 +222,9 @@
 	function moverPlataformas() {
 		for (const pl of PLATAFORMAS) {
 			if (!pl.eje) continue;
-			const onda = Math.sin(tiempo * pl.vel + pl.fase) * pl.amp;
+			// 0.75: un poco más lentas que el diseño original, para que subir
+		// sea fácil también para quien no juega seguido.
+		const onda = Math.sin(tiempo * pl.vel * 0.75 + pl.fase) * pl.amp;
 			const x = pl.eje === "x" ? pl.x0 + onda : pl.x0;
 			pl.dx = x - pl.x;
 			pl.x = x;
@@ -239,6 +247,22 @@
 			cayendo: 0,
 		}))
 		.sort((a, b) => a.x - b.x);
+
+	// Módulos: cada uno es un edificio en la calle de Celaque. Su puerta
+	// queda en x; mientras no lo completes, una reja justo después de la
+	// puerta no te deja seguir (ver limiteUrbano).
+	const RUTA_LOGOS = "assets/logos/";
+	const logoCelaque = cargarImagen(RUTA_LOGOS + "celaque.svg");
+	const logoCelaqueBlanco = cargarImagen(RUTA_LOGOS + "celaque-blanco.svg");
+	const modulos = MODULOS_DATOS.map((d, i) => ({
+		...d,
+		x: PRIMER_MODULO + i * ESPACIO_MODULO,
+		completo: false,
+		preguntaActual: 0,
+		visitado: false, // ya se abrió solo una vez al llegar a la puerta
+		brillo: 0, // destello al completarlo (1 → 0)
+		logoImg: d.logo ? cargarImagen(d.logo) : null,
+	}));
 
 	// Edificios de la ciudad: se ven DESPUÉS del letrero de meta (LARGO_META),
 	// como el skyline al que llegaste. "Atlas" y "Lirios" son los 2 edificios
@@ -790,6 +814,16 @@
 		});
 	}
 
+	// Proyectos de Celaque (config.js → PROYECTOS_CELAQUE): torres de fondo
+	// repartidas entre los edificios de los módulos. Medidas fijas (sin
+	// azar()) para no correrle la secuencia a lo que se genera después.
+	const proyectos = (window.PROYECTOS_CELAQUE || []).map((nombre, k) => ({
+		nombre,
+		x: PRIMER_MODULO + (k * 2 + 0.5) * ESPACIO_MODULO,
+		alto: 380 + (k % 2) * 60,
+		ancho: 150,
+	}));
+
 	// ---------- Decoración de la Cueva ----------
 	// Todo esto vive entre LARGO (boca) y LARGO_TOTAL (salida). Se genera con
 	// el mismo azar() determinista, DESPUÉS de todo lo de afuera para no
@@ -859,6 +893,8 @@
 		atacandoT: 0,
 		golpeado: false,
 		golpeadoT: 0,
+		ultimoSuelo: -1, // último instante parado en suelo (salto "coyote", ver saltarAccion)
+		saltoPedido: -1, // salto presionado en el aire, sale al aterrizar
 	};
 	const polvoPasos = []; // nubecitas al correr (ver actualizar/dibujarPolvoPasos)
 	const CLAVES_PERSONAJE = Object.keys(CFG.personajes);
@@ -977,6 +1013,12 @@
 			e.cayendo = 0;
 			e.preguntaActual = 0;
 		});
+		modulos.forEach((m) => {
+			m.completo = false;
+			m.visitado = false;
+			m.preguntaActual = 0;
+			m.brillo = 0;
+		});
 		nivel = 0;
 		vidas = VIDAS_BASE;
 		avisos = [];
@@ -1035,7 +1077,7 @@
 		dlg.visibles = 0;
 		dlg.mostradas = -1;
 		ui.nombre.textContent = npc.nombre;
-		ui.retrato.textContent = npc.nombre.charAt(0).toUpperCase();
+		ui.retrato.textContent = (npc.inicial || npc.nombre.charAt(0)).toUpperCase();
 		ui.retrato.style.background = npc.apariencia.chaleco || npc.apariencia.ropa;
 		ui.dialogo.hidden = false;
 		ui.dialogo.classList.remove("arriba"); // el diálogo normal de NPC va abajo
@@ -1057,6 +1099,9 @@
 			reiniciarCueva();
 			return;
 		}
+		// Con una pregunta abierta, tocar la caja (fuera de las opciones) no
+		// hace nada: no hay diálogo que avanzar.
+		if (estado !== "dialogo" || !dlg.npc) return;
 		if (dlg.visibles < lineaActual().length) {
 			dlg.visibles = lineaActual().length; // completar la frase de golpe
 			return;
@@ -1081,6 +1126,13 @@
 	}
 
 	function cerrarDialogo() {
+		// La intro de un módulo sigue directo con sus preguntas
+		if (dlg.npc.modulo) {
+			const m = dlg.npc.modulo;
+			dlg.npc = null;
+			abrirPreguntaModulo(m);
+			return;
+		}
 		if (!dlg.npc.hablado) subirNivel();
 		dlg.npc.hablado = true;
 		dlg.npc = null;
@@ -1097,6 +1149,105 @@
 
 	function npcCercano() {
 		return npcs.find((n) => alAlcance(n, CFG.distanciaParaHablar * 1.3));
+	}
+
+	// ---------- Módulos de capacitación (calle de Celaque) ----------
+	const modulosCompletos = () => modulos.filter((m) => m.completo).length;
+	// El primer módulo sin completar: su reja no deja pasar de su puerta.
+	const moduloPendiente = () => modulos.find((m) => !m.completo);
+
+	function limiteUrbano() {
+		const m = moduloPendiente();
+		return m ? m.x + 30 : LARGO_META;
+	}
+
+	function moduloEnPuerta() {
+		const m = moduloPendiente();
+		return m && estado === "urbano" && Math.abs(heroe.x - m.x) < CFG.distanciaParaHablar && heroeEnSuelo() ? m : null;
+	}
+
+	function actualizarHudUrbano() {
+		const n = modulosCompletos();
+		ui.hudRelleno.style.width = ((n / Math.max(1, modulos.length)) * 100).toFixed(1) + "%";
+		ui.hudTexto.textContent = `Nivel ${nivel}  ·  Módulos completados: ${n} / ${modulos.length}`;
+	}
+
+	function abrirModulo(m) {
+		m.visitado = true;
+		m.preguntaActual = 0;
+		if (m.intro && m.intro.length) {
+			abrirDialogo({ nombre: `Módulo ${m.nombre}`, inicial: m.nombre.charAt(0), x: m.x, dialogo: m.intro, apariencia: { chaleco: m.color }, modulo: m });
+		} else {
+			abrirPreguntaModulo(m);
+		}
+	}
+
+	function abrirPreguntaModulo(m) {
+		if (!m.preguntas || !m.preguntas.length) {
+			completarModulo(m);
+			return;
+		}
+		estado = "pregunta";
+		heroe.moviendo = heroe.corriendo = false;
+		const p = m.preguntas[m.preguntaActual];
+		ui.nombre.textContent = `Módulo ${m.nombre}`;
+		ui.retrato.textContent = m.nombre.charAt(0).toUpperCase();
+		ui.retrato.style.background = m.color;
+		ui.texto.textContent = p.pregunta;
+		ui.pista.textContent = `Pregunta ${m.preguntaActual + 1} de ${m.preguntas.length}`;
+		ui.opciones.innerHTML = "";
+		ui.opciones.hidden = false;
+		p.opciones.forEach((texto, i) => {
+			const btn = document.createElement("button");
+			btn.className = "boton opcion-respuesta";
+			btn.textContent = texto;
+			btn.addEventListener("click", (e) => {
+				e.stopPropagation(); // no debe disparar el click-to-advance de #dialogo
+				responderModulo(i, m, btn);
+			});
+			ui.opciones.appendChild(btn);
+		});
+		ui.dialogo.hidden = false;
+		ui.dialogo.classList.remove("arriba");
+		document.body.classList.add("con-dialogo");
+	}
+
+	// Sin vidas ni castigo: la opción equivocada se tacha y se vuelve a
+	// intentar. Es una capacitación, no un examen.
+	function responderModulo(indice, m, btn) {
+		const p = m.preguntas[m.preguntaActual];
+		if (indice !== p.correcta) {
+			btn.classList.add("incorrecta");
+			btn.disabled = true;
+			ui.pista.textContent = "Esa no es. ¡Intenta con otra opción!";
+			heroe.golpeado = true;
+			heroe.golpeadoT = 0;
+			return;
+		}
+		btn.classList.add("correcta");
+		ui.opciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
+		ui.pista.textContent = p.explicacion ? `¡Correcto! ${p.explicacion}` : "¡Correcto!";
+		heroe.atacando = true; // el mismo gesto de "¡bien!" que al vencer a un enemigo
+		heroe.atacandoT = 0;
+		setTimeout(() => {
+			m.preguntaActual++;
+			if (m.preguntaActual < m.preguntas.length) abrirPreguntaModulo(m);
+			else completarModulo(m);
+		}, p.explicacion ? 2200 : 900);
+	}
+
+	// Completar un módulo sube de nivel, enciende el edificio y abre su reja.
+	function completarModulo(m) {
+		m.completo = true;
+		m.brillo = 1;
+		ui.opciones.hidden = true;
+		ui.opciones.innerHTML = "";
+		ui.dialogo.hidden = true;
+		document.body.classList.remove("con-dialogo");
+		estado = "urbano";
+		nivel++;
+		avisos.push({ texto: `¡Nivel ${nivel}! ${m.nombre} ✓`, t: 0 });
+		actualizarHudUrbano();
 	}
 
 	// ---------- La Cueva ----------
@@ -1248,9 +1399,19 @@
 		return (1 - meta.anclaX) * dw * factorFrente + 12 * S;
 	}
 
+	// Más fácil para quien no juega seguido: vale saltar un instante después
+	// de salir de un borde ("coyote"), y si se presiona justo antes de
+	// aterrizar, el salto sale solo al tocar el piso (ver actualizar).
 	function saltarAccion() {
-		if ((estado !== "jugando" && estado !== "cueva" && estado !== "urbano") || !heroeEnSuelo()) return;
-		heroe.velY = IMPULSO_SALTO;
+		if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano") return;
+		const recienEnSuelo = tiempo - heroe.ultimoSuelo < 0.14 && heroe.velY <= 0;
+		if (heroeEnSuelo() || recienEnSuelo) {
+			heroe.velY = IMPULSO_SALTO;
+			heroe.ultimoSuelo = -1;
+			heroe.saltoPedido = -1;
+		} else {
+			heroe.saltoPedido = tiempo;
+		}
 	}
 
 	function agacharAccion() {
@@ -1264,6 +1425,16 @@
 	function salirACiudad() {
 		estado = "urbano";
 		vistaUrbana = true;
+		// El camino + la Cueva son el módulo de Talento: ya está completo.
+		for (const m of modulos) {
+			if (m.completoAlSalirDeLaCueva && !m.completo) {
+				m.completo = true;
+				m.brillo = 1;
+				nivel++;
+				avisos.push({ texto: `¡Nivel ${nivel}! ${m.nombre} ✓`, t: 0 });
+			}
+		}
+		actualizarHudUrbano();
 	}
 
 	// Pantalla negra de 3s al cruzar un tubo (ver el bloque "transicion" en
@@ -1360,22 +1531,18 @@
 		}
 	}
 
-	// Caerte en un hueco (a diferencia de perder por preguntas) no pasa con
-	// el diálogo ya abierto, así que hay que abrirlo desde cero acá.
+	// Caerte en un hueco no castiga: vuelves justo antes del hueco (no a la
+	// entrada de la cueva) con una pista para pasarlo, así quien no juega
+	// seguido no pierde todo lo avanzado.
 	function perderPorHueco() {
-		estado = "pregunta";
-		heroe.moviendo = heroe.corriendo = false;
-		dlg.enemigo = null;
-		ui.nombre.textContent = "Cuidado";
-		ui.retrato.textContent = "!";
-		ui.retrato.style.background = "#3a3a4a";
-		ui.dialogo.hidden = false;
-		document.body.classList.add("con-dialogo");
-		ui.opciones.hidden = true;
-		ui.opciones.innerHTML = "";
-		ui.texto.textContent = "Te caíste en un hueco. Vuelves a la entrada de la cueva.";
-		ui.pista.textContent = "Reintentar ▸";
-		dlg.sistema = true; // avanzarDialogo() lo revisa primero
+		const hueco = HUECOS_CUEVA.find((h) => Math.abs(heroe.x - h.x) < ANCHO_HUECO);
+		heroe.x = (hueco ? hueco.x : heroe.x) - ANCHO_HUECO / 2 - 70;
+		heroe.y = 0;
+		heroe.velY = 0;
+		heroe.dir = 1;
+		heroe.golpeado = true;
+		heroe.golpeadoT = 0;
+		avisos.push({ texto: esTactil ? "¡Ups! Corre y salta" : "¡Ups! Corre (Q) y salta", t: 0 });
 	}
 
 	function perderCueva() {
@@ -1431,7 +1598,19 @@
 		else if (estado === "jugando") {
 			const npc = npcCercano();
 			if (npc) abrirDialogo(npc);
+		} else if (estado === "urbano") {
+			const m = moduloEnPuerta();
+			if (m) abrirModulo(m);
 		}
+	}
+
+	// La barra espaciadora salta, salvo cuando hay algo que hacer con ella
+	// (empezar, avanzar un diálogo, hablar con alguien o entrar a un edificio).
+	function hayAccion() {
+		if (estado === "inicio" || estado === "dialogo") return true;
+		if (estado === "jugando") return !!npcCercano();
+		if (estado === "urbano") return !!moduloEnPuerta();
+		return false;
 	}
 
 	// ---------- Controles ----------
@@ -1458,7 +1637,9 @@
 		} else if (TECLAS_ACCION.includes(e.key)) {
 			if (e.target.tagName === "BUTTON") return; // el botón ya maneja su clic
 			e.preventDefault();
-			if (!e.repeat) accion();
+			if (e.repeat) return;
+			if (e.key === " " && !hayAccion()) saltarAccion();
+			else accion();
 		} else if (TECLAS_SALTAR.includes(e.key)) {
 			e.preventDefault();
 			if (!e.repeat) saltarAccion();
@@ -1545,6 +1726,11 @@
 		} else if (heroe.y <= suelo) {
 			heroe.y = suelo;
 			heroe.velY = 0;
+		}
+		if (heroeEnSuelo()) {
+			heroe.ultimoSuelo = tiempo;
+			// Salto presionado justo antes de aterrizar: sale ahora
+			if (tiempo - heroe.saltoPedido < 0.15) saltarAccion();
 		}
 		heroe.sobre =
 			heroe.velY === 0 && heroe.y > 0 && !dentroCueva && !vistaUrbana
@@ -1664,12 +1850,17 @@
 			if (heroe.moviendo) {
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
-				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO_TOTAL, LARGO_META);
+				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO_TOTAL, limiteUrbano());
 				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 			}
 
-			if (heroe.x >= LARGO_META) ganar();
+			// La primera vez que llegas a la puerta de un módulo se abre solo
+			// (después, con E / Espacio / "Hablar" frente a la puerta).
+			const pendiente = moduloPendiente();
+			if (pendiente && !pendiente.visitado && heroe.x >= pendiente.x - 20 && heroeEnSuelo()) abrirModulo(pendiente);
+			else if (heroe.x >= LARGO_META) ganar();
 		}
+		for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);
 
 		// Postura de marcha suavizada: arrancar, frenar o pasar de caminar a
 		// correr inclina y acelera el rebote poco a poco, en vez de saltar de
@@ -3260,6 +3451,314 @@
 		}
 	}
 
+	// Dibuja una imagen (logo) centrada en (cx, cy) dentro de una caja de
+	// maxAncho x maxAlto SIN deformarla: se escala por el lado que más limita.
+	function dibujarImagenContenida(img, cx, cy, maxAncho, maxAlto) {
+		const w = img.naturalWidth || img.width;
+		const h = img.naturalHeight || img.height;
+		if (!w || !h) return;
+		const k = Math.min(maxAncho / w, maxAlto / h);
+		ctx.drawImage(img, cx - (w * k) / 2, cy - (h * k) / 2, w * k, h * k);
+	}
+
+	const FUENTE = `"Trebuchet MS", "Segoe UI", sans-serif`;
+
+	// Torres de los proyectos de Celaque, de fondo, con su nombre arriba.
+	function dibujarProyectos() {
+		const baseY = SUELO + 10 * S;
+		for (const p of proyectos) {
+			const sx = p.x - camara;
+			const ancho = p.ancho * S;
+			const alto = p.alto * S;
+			if (sx + ancho < -80 || sx - ancho > W + 80) continue;
+			const izq = sx - ancho / 2;
+			const arriba = baseY - alto;
+
+			// Vidrio: degradado de turquesa a verde Celaque, con pisos y parteluces
+			const vidrio = ctx.createLinearGradient(izq, arriba, izq + ancho, baseY);
+			vidrio.addColorStop(0, mezclar(COLORES.claro, "#ffffff", 0.35));
+			vidrio.addColorStop(1, COLORES.verde);
+			ctx.fillStyle = vidrio;
+			ctx.fillRect(izq, arriba, ancho, alto);
+			ctx.strokeStyle = "rgba(255,255,255,0.28)";
+			ctx.lineWidth = 1.5 * S;
+			ctx.beginPath();
+			for (let y = arriba + 22 * S; y < baseY; y += 22 * S) linea(izq, y, izq + ancho, y);
+			for (let x = izq + ancho / 5; x < izq + ancho - 1; x += ancho / 5) linea(x, arriba, x, baseY);
+			ctx.stroke();
+			ctx.fillStyle = "rgba(255,255,255,0.16)"; // reflejo diagonal
+			ctx.beginPath();
+			ctx.moveTo(izq, arriba + alto * 0.25);
+			ctx.lineTo(izq + ancho * 0.45, arriba);
+			ctx.lineTo(izq + ancho * 0.7, arriba);
+			ctx.lineTo(izq, arriba + alto * 0.55);
+			ctx.fill();
+			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillRect(izq - 5 * S, arriba - 10 * S, ancho + 10 * S, 12 * S);
+
+			// Letrero con el nombre del proyecto
+			ctx.font = `bold ${17 * S}px ${FUENTE}`;
+			const anchoLetrero = ctx.measureText(p.nombre).width + 30 * S;
+			rectRedondo(sx - anchoLetrero / 2, arriba - 46 * S, anchoLetrero, 32 * S, 8 * S);
+			ctx.fillStyle = COLORES.oscuro;
+			ctx.fill();
+			ctx.fillStyle = COLORES.crema;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(p.nombre, sx, arriba - 30 * S);
+		}
+	}
+
+	// Letrero de cada módulo (encima del edificio): logo + nombre + subtítulo.
+	// El logo (si el módulo trae uno en config.js) se dibuja sin deformar.
+	function dibujarLetreroModulo(m, sx, abajo, encendido) {
+		ctx.font = `bold ${20 * S}px ${FUENTE}`;
+		const anchoNombre = ctx.measureText(m.nombre).width;
+		ctx.font = `${12 * S}px ${FUENTE}`;
+		const anchoSub = ctx.measureText(m.subtitulo || "").width;
+		const logo = 44 * S;
+		const ancho = Math.max(anchoNombre, anchoSub) + logo + 44 * S;
+		const alto = 62 * S;
+		const x0 = sx - ancho / 2;
+		const y0 = abajo - alto;
+
+		ctx.save();
+		if (encendido) {
+			ctx.shadowColor = conAlfa(COLORES.claro, 0.9);
+			ctx.shadowBlur = 18 * S;
+		}
+		rectRedondo(x0, y0, ancho, alto, 12 * S);
+		ctx.fillStyle = encendido ? COLORES.crema : "#c9cfce";
+		ctx.fill();
+		ctx.restore();
+		rectRedondo(x0, y0, ancho, alto, 12 * S);
+		ctx.lineWidth = 3 * S;
+		ctx.strokeStyle = m.color;
+		ctx.stroke();
+
+		const lx = x0 + 16 * S + logo / 2;
+		const ly = y0 + alto / 2;
+		const img = m.logoImg && m.logoImg.elemento;
+		if (img) {
+			dibujarImagenContenida(img, lx, ly, logo, logo);
+		} else {
+			ctx.fillStyle = m.color;
+			circulo(lx, ly, logo / 2);
+			ctx.fillStyle = "#fff";
+			ctx.font = `bold ${22 * S}px ${FUENTE}`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(m.nombre.charAt(0).toUpperCase(), lx, ly + 1 * S);
+		}
+
+		ctx.textAlign = "left";
+		ctx.textBaseline = "middle";
+		ctx.fillStyle = COLORES.oscuro;
+		ctx.font = `bold ${20 * S}px ${FUENTE}`;
+		ctx.fillText(m.nombre, x0 + 28 * S + logo, y0 + alto * 0.38);
+		ctx.fillStyle = COLORES.teal;
+		ctx.font = `${12 * S}px ${FUENTE}`;
+		ctx.fillText(m.subtitulo || "", x0 + 28 * S + logo, y0 + alto * 0.72);
+
+		// Sello de completado
+		if (m.completo) {
+			const cx = x0 + ancho - 4 * S;
+			const cy = y0 + 4 * S;
+			ctx.fillStyle = "#2f9e5f";
+			circulo(cx, cy, 13 * S);
+			ctx.strokeStyle = "#fff";
+			ctx.lineWidth = 3 * S;
+			ctx.beginPath();
+			ctx.moveTo(cx - 6 * S, cy);
+			ctx.lineTo(cx - 1.5 * S, cy + 5 * S);
+			ctx.lineTo(cx + 6.5 * S, cy - 5 * S);
+			ctx.stroke();
+		}
+	}
+
+	// Un edificio por módulo. Apagado (gris, ventanas oscuras) hasta que lo
+	// completas; entonces se enciende con el color del módulo. La puerta del
+	// próximo módulo pendiente brilla para que se vea a dónde ir.
+	function dibujarModulos() {
+		const baseY = SUELO + 10 * S;
+		const pendiente = moduloPendiente();
+		modulos.forEach((m, i) => {
+			const sx = m.x - camara;
+			const ancho = 250 * S;
+			const alto = (260 + (i % 2) * 50) * S;
+			if (sx + ancho < -120 || sx - ancho > W + 120) return;
+			const izq = sx - ancho / 2;
+			const arriba = baseY - alto;
+			const encendido = m.completo;
+			const pulso = 0.5 + 0.5 * Math.sin(tiempo * 4);
+
+			if (m === pendiente) {
+				const halo = ctx.createRadialGradient(sx, baseY - 50 * S, 10 * S, sx, baseY - 50 * S, 190 * S);
+				halo.addColorStop(0, conAlfa(COLORES.claro, 0.35 + 0.25 * pulso));
+				halo.addColorStop(1, conAlfa(COLORES.claro, 0));
+				ctx.fillStyle = halo;
+				ctx.fillRect(sx - 200 * S, baseY - 250 * S, 400 * S, 300 * S);
+			}
+
+			ctx.fillStyle = encendido ? m.color : mezclar("#7d8384", m.color, 0.3);
+			ctx.fillRect(izq, arriba, ancho, alto);
+			ctx.fillStyle = "rgba(0,0,0,0.16)";
+			ctx.fillRect(izq + ancho * 0.84, arriba, ancho * 0.16, alto);
+			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillRect(izq - 7 * S, arriba - 9 * S, ancho + 14 * S, 13 * S);
+
+			// Ventanas: encendidas (cálidas) o apagadas
+			const filas = Math.floor((alto - 120 * S) / (36 * S));
+			for (let f = 0; f < filas; f++) {
+				for (let c = 0; c < 4; c++) {
+					const vx = izq + 22 * S + c * 52 * S;
+					const vy = arriba + 24 * S + f * 36 * S;
+					ctx.fillStyle = encendido
+						? (f + c + i) % 5 === 0
+							? "rgba(255,255,255,0.85)"
+							: "rgba(255,232,160,0.95)"
+						: "rgba(25,40,42,0.55)";
+					ctx.fillRect(vx, vy, 32 * S, 22 * S);
+				}
+			}
+
+			// Puerta (de vidrio, con marco oscuro). La del módulo pendiente late.
+			const anchoP = 66 * S;
+			const altoP = 84 * S;
+			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillRect(sx - anchoP / 2 - 5 * S, baseY - altoP - 5 * S, anchoP + 10 * S, altoP + 5 * S);
+			ctx.save();
+			if (m === pendiente) {
+				ctx.shadowColor = COLORES.claro;
+				ctx.shadowBlur = (16 + 14 * pulso) * S;
+			}
+			ctx.fillStyle = encendido ? "#fff1c1" : m === pendiente ? mezclar(COLORES.claro, "#ffffff", 0.35 + 0.4 * pulso) : "#2b3a3c";
+			ctx.fillRect(sx - anchoP / 2, baseY - altoP, anchoP, altoP);
+			ctx.restore();
+			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillRect(sx - 1.5 * S, baseY - altoP, 3 * S, altoP);
+
+			dibujarLetreroModulo(m, sx, arriba - 16 * S, encendido);
+
+			// "Módulo 3 de 6" sobre la puerta
+			ctx.font = `bold ${12 * S}px ${FUENTE}`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillStyle = encendido ? "#fff" : "#dfe5e4";
+			ctx.fillText(`Módulo ${i + 1} de ${modulos.length}`, sx, baseY - altoP - 18 * S);
+			if (m === pendiente && m.visitado && estado === "urbano" && Math.abs(heroe.x - m.x) < CFG.distanciaParaHablar * 1.3) {
+				dibujarGlobo(sx, baseY - altoP - 36 * S, esTactil ? "Toca Hablar para entrar" : "E · Entrar", "#c9f7f1");
+			}
+
+			if (m.brillo > 0) {
+				const destelloM = ctx.createRadialGradient(sx, arriba + alto / 2, 10 * S, sx, arriba + alto / 2, 300 * S);
+				destelloM.addColorStop(0, `rgba(255,255,235,${0.75 * m.brillo})`);
+				destelloM.addColorStop(1, "rgba(255,255,235,0)");
+				ctx.fillStyle = destelloM;
+				ctx.fillRect(sx - 300 * S, arriba - 120 * S, 600 * S, alto + 240 * S);
+			}
+		});
+	}
+
+	// Reja con candado justo después de cada módulo sin completar: no se
+	// pasa hasta contestar sus preguntas (ver limiteUrbano).
+	function dibujarRejas() {
+		for (const m of modulos) {
+			if (m.completo) continue;
+			const sx = m.x + 60 - camara;
+			if (sx < -60 || sx > W + 60) continue;
+			const piso = SUELO + 40 * S;
+			const alto = 74 * S;
+			const ancho = 34 * S;
+			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillRect(sx - ancho / 2 - 4 * S, piso - alto - 6 * S, 7 * S, alto + 6 * S);
+			ctx.fillRect(sx + ancho / 2 - 3 * S, piso - alto - 6 * S, 7 * S, alto + 6 * S);
+			ctx.fillRect(sx - ancho / 2, piso - alto, ancho, 5 * S);
+			ctx.fillRect(sx - ancho / 2, piso - alto * 0.45, ancho, 4 * S);
+			ctx.strokeStyle = COLORES.oscuro;
+			ctx.lineWidth = 3 * S;
+			ctx.beginPath();
+			for (let k = 1; k < 4; k++) {
+				const bx = sx - ancho / 2 + (ancho * k) / 4;
+				linea(bx, piso, bx, piso - alto);
+			}
+			ctx.stroke();
+			// Candado
+			const cy = piso - alto * 0.62;
+			ctx.strokeStyle = "#e8b931";
+			ctx.lineWidth = 3 * S;
+			ctx.beginPath();
+			ctx.arc(sx, cy - 6 * S, 6 * S, Math.PI, 0);
+			ctx.stroke();
+			ctx.fillStyle = "#ffcf3f";
+			rectRedondo(sx - 9 * S, cy - 6 * S, 18 * S, 15 * S, 3 * S);
+			ctx.fill();
+		}
+	}
+
+	// ---------- Guías de dirección ----------
+	// Hacia dónde ir ahora: el próximo NPC por conocer (adelante), el
+	// Guardián/tubo de la cueva, el próximo enemigo, la puerta del próximo
+	// módulo o el letrero final.
+	function objetivoActual() {
+		if (estado === "jugando") {
+			const npc = npcs.find((n) => !n.hablado && n.x > heroe.x - 400);
+			return npc ? npc.x : LARGO;
+		}
+		if (estado === "cueva") {
+			const en = enemigos.find((e) => !e.derrotado && e.x > LARGO);
+			return en ? en.x : LARGO_TOTAL;
+		}
+		if (estado === "urbano") {
+			const m = moduloPendiente();
+			return m ? m.x : LARGO_META;
+		}
+		return null;
+	}
+
+	// Columna de luz sobre el objetivo + flechas luminosas a los pies del
+	// héroe apuntando hacia él (se apagan al llegar).
+	function dibujarGuias() {
+		const objetivo = objetivoActual();
+		if (objetivo === null) return;
+
+		const fx = objetivo - camara;
+		if (fx > -80 && fx < W + 80) {
+			const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
+			const luz = ctx.createLinearGradient(0, SUELO + 40 * S, 0, SUELO - 320 * S);
+			luz.addColorStop(0, conAlfa(COLORES.claro, 0.45 + 0.2 * pulso));
+			luz.addColorStop(1, conAlfa(COLORES.claro, 0));
+			ctx.fillStyle = luz;
+			ctx.fillRect(fx - 34 * S, SUELO - 320 * S, 68 * S, 360 * S);
+		}
+
+		const dist = objetivo - heroe.x;
+		if (Math.abs(dist) < 100) return;
+		const dir = Math.sign(dist);
+		const alfa = clamp((Math.abs(dist) - 100) / 160, 0, 1);
+		const pie = SUELO + 38 * S - heroe.y * S;
+		const y = pie - 16 * S;
+		const x0 = heroe.x - camara + dir * 40 * S;
+		ctx.save();
+		ctx.lineCap = "round";
+		ctx.lineJoin = "round";
+		ctx.shadowColor = COLORES.claro;
+		ctx.shadowBlur = 16 * S;
+		for (let k = 0; k < 3; k++) {
+			// Una ola de luz recorre las 3 flechas hacia el objetivo
+			const a = alfa * (0.35 + 0.65 * Math.max(0, Math.sin(tiempo * 6 - k * 1.1)));
+			const cx = x0 + dir * k * 17 * S;
+			ctx.strokeStyle = `rgba(220,255,250,${a.toFixed(3)})`;
+			ctx.lineWidth = 5 * S;
+			ctx.beginPath();
+			ctx.moveTo(cx - dir * 6 * S, y - 9 * S);
+			ctx.lineTo(cx + dir * 5 * S, y);
+			ctx.lineTo(cx - dir * 6 * S, y + 9 * S);
+			ctx.stroke();
+		}
+		ctx.restore();
+	}
+
 	// Dibuja un enemigo con foto (sprite) en vez de vector, con la misma
 	// sombra/rebote/flip/caída que dibujarPersona, para que se sienta
 	// parte del mismo mundo. Si la foto todavía no cargó, devuelve false y
@@ -3406,38 +3905,51 @@
 		if (sx < -300 || sx > W + 300) return;
 		const pie = SUELO + 22 * S;
 
-		const brillo = ctx.createRadialGradient(sx, pie - 80 * S, 10, sx, pie - 80 * S, 200 * S);
-		brillo.addColorStop(0, "rgba(255,255,210,0.55)");
-		brillo.addColorStop(1, "rgba(255,255,210,0)");
+		const brillo = ctx.createRadialGradient(sx, pie - 80 * S, 10, sx, pie - 80 * S, 220 * S);
+		brillo.addColorStop(0, conAlfa(COLORES.claro, 0.55));
+		brillo.addColorStop(1, conAlfa(COLORES.claro, 0));
 		ctx.fillStyle = brillo;
-		ctx.fillRect(sx - 200 * S, pie - 280 * S, 400 * S, 400 * S);
+		ctx.fillRect(sx - 220 * S, pie - 300 * S, 440 * S, 420 * S);
 
-		ctx.font = `bold ${26 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
-		const anchoTablero = Math.max(160 * S, ctx.measureText(CFG.nombreMeta).width + 44 * S);
+		const texto = CFG.textos.letreroFinal || CFG.nombreMeta;
+		ctx.font = `bold ${26 * S}px ${FUENTE}`;
+		const anchoTablero = Math.max(190 * S, ctx.measureText(texto).width + 50 * S);
 
-		ctx.fillStyle = "#6b4424";
+		ctx.fillStyle = COLORES.oscuro;
 		ctx.fillRect(sx - anchoTablero * 0.35, pie - 115 * S, 10 * S, 115 * S);
 		ctx.fillRect(sx + anchoTablero * 0.35 - 10 * S, pie - 115 * S, 10 * S, 115 * S);
 
-		rectRedondo(sx - anchoTablero / 2, pie - 155 * S, anchoTablero, 52 * S, 8 * S);
-		ctx.fillStyle = "#b07a42";
+		ctx.save();
+		ctx.shadowColor = COLORES.claro;
+		ctx.shadowBlur = 22 * S;
+		rectRedondo(sx - anchoTablero / 2, pie - 160 * S, anchoTablero, 56 * S, 12 * S);
+		ctx.fillStyle = COLORES.crema;
 		ctx.fill();
-		ctx.lineWidth = 3 * S;
-		ctx.strokeStyle = "#6b4424";
+		ctx.restore();
+		ctx.lineWidth = 4 * S;
+		ctx.strokeStyle = COLORES.teal;
 		ctx.stroke();
 
-		ctx.fillStyle = "#fff8e1";
+		ctx.fillStyle = COLORES.oscuro;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillText(CFG.nombreMeta, sx, pie - 128 * S);
+		ctx.fillText(texto, sx, pie - 131 * S);
+
+		// Logo de Celaque arriba del letrero (sin deformar)
+		const logo = logoCelaque.elemento;
+		if (logo) {
+			ctx.fillStyle = COLORES.crema;
+			circulo(sx, pie - 205 * S, 40 * S);
+			dibujarImagenContenida(logo, sx, pie - 205 * S, 66 * S, 66 * S);
+		}
 
 		// Bandera ondeando
 		const mastil = sx + anchoTablero / 2 + 30 * S;
-		ctx.strokeStyle = "#5a3a1f";
+		ctx.strokeStyle = COLORES.oscuro;
 		ctx.lineWidth = 4 * S;
 		linea(mastil, pie, mastil, pie - 190 * S);
 		const ola = Math.sin(tiempo * 4) * 6 * S;
-		ctx.fillStyle = "#2fbf5a";
+		ctx.fillStyle = COLORES.teal;
 		ctx.beginPath();
 		ctx.moveTo(mastil, pie - 188 * S);
 		ctx.quadraticCurveTo(mastil + 30 * S, pie - 188 * S + ola, mastil + 60 * S, pie - 175 * S);
@@ -3797,13 +4309,23 @@
 		ctx.restore();
 	}
 
+	// Globito de pista ("!", "E · Hablar", "↑ · Saltar"...). Más grande y con
+	// un halo de luz que late, para que se vea desde lejos.
 	function dibujarGlobo(x, y, texto, fondo) {
-		ctx.font = `bold ${14 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
-		const ancho = ctx.measureText(texto).width + 18 * S;
-		const alto = 24 * S;
-		rectRedondo(x - ancho / 2, y - alto, ancho, alto, 10 * S);
+		ctx.font = `bold ${16 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+		const ancho = ctx.measureText(texto).width + 22 * S;
+		const alto = 28 * S;
+		ctx.save();
+		ctx.shadowColor = fondo;
+		ctx.shadowBlur = (14 + 8 * Math.sin(tiempo * 4)) * S;
+		rectRedondo(x - ancho / 2, y - alto, ancho, alto, 11 * S);
 		ctx.fillStyle = fondo;
 		ctx.fill();
+		ctx.restore();
+		ctx.lineWidth = 2 * S;
+		ctx.strokeStyle = "rgba(255,255,255,0.9)";
+		ctx.stroke();
+		ctx.fillStyle = fondo;
 		ctx.beginPath();
 		ctx.moveTo(x - 5 * S, y);
 		ctx.lineTo(x + 5 * S, y);
@@ -4131,9 +4653,13 @@
 			dibujarTuboSalida();
 		} else if (modo === "urbano") {
 			dibujarEdificiosSimples(); // relleno gris detrás
+			dibujarProyectos(); // Zorzales, Astria, Céfiro
 			dibujarEdificiosSalida(); // Atlas al frente
+			dibujarModulos(); // un edificio por módulo de capacitación
+			dibujarRejas();
 		}
 
+		dibujarGuias(); // la columna de luz queda detrás del letrero final
 		if (modo === "urbano") dibujarMeta(); // el letrero solo se ve ya afuera
 		dibujarNpcs();
 		if (modo !== "urbano") dibujarEnemigos(); // el Guardián vive afuera, antes de LARGO
