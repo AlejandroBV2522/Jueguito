@@ -252,8 +252,15 @@
 	// queda en x; mientras no lo completes, una reja justo después de la
 	// puerta no te deja seguir (ver limiteUrbano).
 	const RUTA_LOGOS = "assets/logos/";
-	const logoCelaque = cargarImagen(RUTA_LOGOS + "celaque.svg");
-	const logoCelaqueBlanco = cargarImagen(RUTA_LOGOS + "celaque-blanco.svg");
+	// "Céfiro" → "cefiro": nombre de archivo sin tildes, espacios ni mayúsculas
+	function nombreArchivo(texto) {
+		return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+	}
+
+	// Logos oficiales (los pone el equipo en assets/logos/; ver README). Si
+	// todavía no están, en su lugar se dibuja un recuadro que dice "LOGO".
+	const logoCelaque = cargarImagen(RUTA_LOGOS + "celaque.png");
+	const logoCelaqueBlanco = cargarImagen(RUTA_LOGOS + "celaque-blanco.png");
 	// Interior de cada módulo: una oficina propia en una franja del mundo
 	// aparte (muy lejos de la calle, para que no se mezclen), recorrida de
 	// izquierda a derecha: entrada → compañero → muebles → computadora.
@@ -285,7 +292,8 @@
 			visitado: false, // ya se entró solo una vez al llegar a la puerta
 			terminalVisitada: false,
 			brillo: 0, // destello al completarlo (1 → 0)
-			logoImg: d.logo ? cargarImagen(d.logo) : null,
+			// Sin "logo" en config.js se busca assets/logos/modulo-<nombre>.png
+			logoImg: cargarImagen(d.logo || RUTA_LOGOS + "modulo-" + nombreArchivo(d.nombre) + ".png"),
 			oficina: {
 				x0,
 				terminalX: x0 + LARGO_OFICINA,
@@ -721,6 +729,100 @@
 		chica: SPRITES_HEROE_CHICA,
 	};
 
+	// ---------- Piernas animadas por código ----------
+	// tools/partes_personaje.py corta la foto "de pie" en torso + muslo y
+	// pantorrilla de cada pierna (assets/personaje/partes/, con sus puntos de
+	// giro en partes.js). Al caminar y correr se giran desde la cadera y la
+	// rodilla: un ciclo continuo con el MISMO dibujo que el personaje quieto.
+	// config.js → animacionPiernas: "fotos" vuelve a alternar las 2 fotos de
+	// zancada (caminando / caminando2).
+	for (const [clave, datos] of Object.entries(window.PARTES_PERSONAJE || {})) {
+		const piezas = {};
+		for (const [nombre, p] of Object.entries(datos.piezas)) {
+			piezas[nombre] = { ...p, cargando: cargarImagen(RUTA_PERSONAJE + "partes/" + p.archivo) };
+		}
+		if (SPRITES_POR_PERSONAJE[clave]) SPRITES_POR_PERSONAJE[clave].rig = { ...datos, piezas };
+	}
+	const rigListo = (rig) => rig && CFG.animacionPiernas !== "fotos" && Object.values(rig.piezas).every((p) => p.cargando.elemento);
+
+	// Ángulos de las piernas para la fase de pasos (una vuelta = un paso con
+	// cada pierna). marcha: ~0.45 caminando → 1 corriendo (más zancada y más
+	// rodilla). "caida": cuánto bajar el cuerpo (px de la foto) para que el
+	// pie más bajo quede apoyado en el piso, así el rebote sale solo.
+	function posturaPiernas(rig, fase, marcha) {
+		const r = clamp((marcha - 0.45) / 0.55, 0, 1);
+		const ampMuslo = lerp(0.3, 0.55, r);
+		const ampRodilla = lerp(0.55, 1.25, r);
+		const flexBase = lerp(0.05, 0.22, r);
+		const postura = { caida: Infinity };
+		for (const [lado, desfase] of [["A", 0], ["B", Math.PI]]) {
+			const f = fase + desfase;
+			const muslo = -ampMuslo * Math.sin(f); // negativo = hacia adelante
+			// La rodilla se dobla mientras la pierna pasa hacia adelante
+			const rodilla = flexBase + ampRodilla * Math.pow(Math.max(0, Math.cos(f - 0.5)), 1.5);
+			postura[lado] = { muslo, rodilla };
+			const p = rig.piernas[lado];
+			const dx1 = p.rodilla[0] - p.cadera[0];
+			const dy1 = p.rodilla[1] - p.cadera[1];
+			const dy2 = rig.pie - p.rodilla[1];
+			const pieY = p.cadera[1] + dx1 * Math.sin(muslo) + dy1 * Math.cos(muslo) + dy2 * Math.cos(muslo + rodilla);
+			postura.caida = Math.min(postura.caida, rig.pie - pieY);
+			// Cada brazo va al revés que la pierna de su lado. Al correr, más
+			// balanceo y el codo doblado (como corredor), más aún al ir adelante.
+			const hombro = lerp(0.3, 0.75, r) * Math.sin(f);
+			const codo = -(lerp(0.12, 1.35, r) + lerp(0.25, 0.35, r) * Math.max(0, -Math.sin(f)));
+			postura["brazo" + lado] = { hombro, codo };
+		}
+		return postura;
+	}
+
+	// Pinta el torso y las 4 piezas de las piernas con la misma escala y
+	// ancla que la foto "quieto" (meta), girando cada pieza en su articulación.
+	function pintarRig(rig, meta, k, postura) {
+		const ox = -meta.anclaX * rig.ancho * k;
+		const oy = -meta.abajo * rig.alto * k;
+		const pieza = (nombre) => {
+			const p = rig.piezas[nombre];
+			const img = p.cargando.elemento;
+			ctx.drawImage(img, ox + p.x * k, oy + p.y * k, img.naturalWidth * k, img.naturalHeight * k);
+		};
+		const girar = (punto, angulo) => {
+			const px = ox + punto[0] * k;
+			const py = oy + punto[1] * k;
+			ctx.translate(px, py);
+			ctx.rotate(angulo);
+			ctx.translate(-px, -py);
+		};
+		ctx.translate(0, postura.caida * k);
+		// B (la pierna de atrás en la foto) primero, luego A, y el torso encima
+		for (const lado of ["B", "A"]) {
+			const pierna = rig.piernas[lado];
+			ctx.save();
+			girar(pierna.cadera, postura[lado].muslo);
+			ctx.save();
+			girar(pierna.rodilla, postura[lado].rodilla);
+			pieza("pantorrilla" + lado);
+			ctx.restore();
+			pieza("muslo" + lado);
+			ctx.restore();
+		}
+		// Brazos (si la foto los tiene separados): el de atrás (B) detrás del
+		// torso y el de adelante (A) encima
+		const brazo = (lado) => {
+			const b = rig.brazos && rig.brazos[lado];
+			if (!b) return;
+			ctx.save();
+			girar(b.hombro, postura["brazo" + lado].hombro);
+			pieza("brazo" + lado);
+			girar(b.codo, postura["brazo" + lado].codo);
+			pieza("antebrazo" + lado);
+			ctx.restore();
+		};
+		brazo("B");
+		pieza("torso");
+		brazo("A");
+	}
+
 	// ---------- NPCs con la misma ilustración del héroe ----------
 	// Cada NPC usa la foto "de pie" del Chico o la Chica, recoloreando casco,
 	// chaleco, pantalón y pelo con sus propios colores. Las máscaras de cada
@@ -870,6 +972,7 @@
 	// azar()) para no correrle la secuencia a lo que se genera después.
 	const proyectos = (window.PROYECTOS_CELAQUE || []).map((nombre, k) => ({
 		nombre,
+		logoImg: cargarImagen(RUTA_LOGOS + "proyecto-" + nombreArchivo(nombre) + ".png"),
 		x: PRIMER_MODULO + (k * 2 + 0.5) * ESPACIO_MODULO,
 		alto: 380 + (k % 2) * 60,
 		ancho: 150,
@@ -978,6 +1081,19 @@
 		terminalPista: $("terminal-pista"),
 		terminalSalir: $("terminal-salir"),
 	};
+
+	// Logos en la pantalla (inicio, victoria, computadora): el oficial si ya
+	// está en assets/logos/, o el recuadro "LOGO" mientras tanto.
+	document.querySelectorAll(".espacio-logo[data-logo]").forEach((caja) => {
+		const img = new Image();
+		img.alt = caja.getAttribute("aria-label") || "";
+		img.onload = () => {
+			caja.textContent = "";
+			caja.classList.add("con-logo");
+			caja.appendChild(img);
+		};
+		img.src = caja.dataset.logo;
+	});
 
 	$("titulo").textContent = CFG.textos.titulo;
 	$("subtitulo").textContent = CFG.textos.subtitulo;
@@ -1943,7 +2059,7 @@
 				heroe.dir = dir;
 				const viejoX = heroe.x;
 				heroe.x = frenarEnObstaculos(viejoX, clamp(viejoX + dir * velocidad * dt, 40, limite), dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 				actualizarHud();
 			}
 
@@ -1975,7 +2091,7 @@
 				const viejoX = heroe.x;
 				const tentativo = clamp(viejoX + dir * velocidad * dt, LARGO, limite);
 				heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 			}
 
 			if (bloqueante && heroe.x >= limite) abrirPregunta(bloqueante);
@@ -1994,7 +2110,7 @@
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
 				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO_TOTAL, limiteUrbano());
-				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 			}
 
 			// La primera vez que llegas a la puerta de un módulo entras solo
@@ -2017,7 +2133,7 @@
 				const viejoX = heroe.x;
 				const tentativo = clamp(viejoX + dir * velocidad * dt, of.x0 + 40, of.terminalX - 50);
 				heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 				actualizarHudOficina();
 			}
 			// El compañero te habla solo la primera vez; la computadora se
@@ -3634,6 +3750,29 @@
 
 	const FUENTE = `"Trebuchet MS", "Segoe UI", sans-serif`;
 
+	// Dibuja el logo (si su archivo ya está) o, mientras tanto, un recuadro
+	// punteado que dice "LOGO" del mismo tamaño, para ver dónde va a quedar.
+	function dibujarLogoOEspacio(carga, cx, cy, ancho, alto, claro) {
+		const img = carga && carga.elemento;
+		if (img) {
+			dibujarImagenContenida(img, cx, cy, ancho, alto);
+			return;
+		}
+		ctx.save();
+		const color = claro ? "rgba(255,255,255,0.85)" : conAlfa(COLORES.verde, 0.75);
+		ctx.setLineDash([5 * S, 4 * S]);
+		ctx.lineWidth = 2 * S;
+		ctx.strokeStyle = color;
+		rectRedondo(cx - ancho / 2, cy - alto / 2, ancho, alto, 8 * S);
+		ctx.stroke();
+		ctx.fillStyle = color;
+		ctx.font = `bold ${Math.max(8, Math.min(alto * 0.34, ancho * 0.24))}px ${FUENTE}`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText("LOGO", cx, cy + 1 * S);
+		ctx.restore();
+	}
+
 	// Torres de los proyectos de Celaque, de fondo, con su nombre arriba.
 	function dibujarProyectos() {
 		const baseY = SUELO + 10 * S;
@@ -3667,7 +3806,11 @@
 			ctx.fillStyle = COLORES.oscuro;
 			ctx.fillRect(izq - 5 * S, arriba - 10 * S, ancho + 10 * S, 12 * S);
 
-			// Letrero con el nombre del proyecto
+			// Logo del proyecto en la fachada, y letrero con su nombre arriba
+			ctx.fillStyle = "rgba(243,239,230,0.92)";
+			rectRedondo(sx - 52 * S, arriba + 28 * S, 104 * S, 66 * S, 10 * S);
+			ctx.fill();
+			dibujarLogoOEspacio(p.logoImg, sx, arriba + 61 * S, 92 * S, 54 * S, false);
 			ctx.font = `bold ${17 * S}px ${FUENTE}`;
 			const anchoLetrero = ctx.measureText(p.nombre).width + 30 * S;
 			rectRedondo(sx - anchoLetrero / 2, arriba - 46 * S, anchoLetrero, 32 * S, 8 * S);
@@ -3709,18 +3852,7 @@
 
 		const lx = x0 + 16 * S + logo / 2;
 		const ly = y0 + alto / 2;
-		const img = m.logoImg && m.logoImg.elemento;
-		if (img) {
-			dibujarImagenContenida(img, lx, ly, logo, logo);
-		} else {
-			ctx.fillStyle = m.color;
-			circulo(lx, ly, logo / 2);
-			ctx.fillStyle = "#fff";
-			ctx.font = `bold ${22 * S}px ${FUENTE}`;
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(m.nombre.charAt(0).toUpperCase(), lx, ly + 1 * S);
-		}
+		dibujarLogoOEspacio(m.logoImg, lx, ly, logo, logo, false);
 
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
@@ -3928,8 +4060,7 @@
 			const sx = x - camara;
 			if (sx < -200 || sx > W + 200) continue;
 			const cy = 150 * S;
-			const logo = logoCelaque.elemento;
-			if (logo) dibujarImagenContenida(logo, sx, cy, 80 * S, 80 * S);
+			dibujarLogoOEspacio(logoCelaque, sx, cy, 120 * S, 80 * S, false);
 			ctx.fillStyle = COLORES.verde;
 			ctx.font = `bold ${22 * S}px ${FUENTE}`;
 			ctx.textAlign = "center";
@@ -4124,8 +4255,7 @@
 		pantalla.addColorStop(1, COLORES.oscuro);
 		ctx.fillStyle = pantalla;
 		ctx.fillRect(sx - mw / 2, my, mw, mh);
-		const logo = logoCelaqueBlanco.elemento;
-		if (logo) dibujarImagenContenida(logo, sx, my + mh * 0.4, 46 * S, 46 * S);
+		dibujarLogoOEspacio(logoCelaqueBlanco, sx, my + mh * 0.4, 76 * S, 44 * S, true);
 		ctx.fillStyle = "#fff";
 		ctx.font = `bold ${11 * S}px ${FUENTE}`;
 		ctx.textAlign = "center";
@@ -4390,12 +4520,10 @@
 		ctx.fillText(texto, sx, pie - 131 * S);
 
 		// Logo de Celaque arriba del letrero (sin deformar)
-		const logo = logoCelaque.elemento;
-		if (logo) {
-			ctx.fillStyle = COLORES.crema;
-			circulo(sx, pie - 205 * S, 40 * S);
-			dibujarImagenContenida(logo, sx, pie - 205 * S, 66 * S, 66 * S);
-		}
+		ctx.fillStyle = COLORES.crema;
+		rectRedondo(sx - 58 * S, pie - 242 * S, 116 * S, 74 * S, 12 * S);
+		ctx.fill();
+		dibujarLogoOEspacio(logoCelaque, sx, pie - 205 * S, 100 * S, 60 * S, false);
 
 		// Bandera ondeando
 		const mastil = sx + anchoTablero / 2 + 30 * S;
@@ -4840,9 +4968,11 @@
 		const hayZancada2 = sprites.caminando2 && sprites.caminando2 !== sprites.caminando;
 		const recibeGolpe = o.golpeado && sprites.golpeado;
 		const enMarcha = o.moviendo && !recibeGolpe && !o.agachado && !o.atacando && heroeEnSuelo();
+		// Piernas por código (ver pintarRig): parte de la foto "quieto"
+		const conRig = enMarcha && rigListo(sprites.rig);
 		const ciclo = Math.cos(o.fase);
 		const ANCHO_FUNDIDO = 0.35;
-		const peso2 = enMarcha && hayZancada2 ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
+		const peso2 = enMarcha && hayZancada2 && !conRig ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
 		const pose = recibeGolpe
 			? "golpeado"
 			: o.agachado
@@ -4851,7 +4981,7 @@
 			? "golpe"
 			: !heroeEnSuelo()
 			? "saltando"
-			: o.moviendo
+			: o.moviendo && !conRig
 			? peso2 >= 1
 				? "caminando2"
 				: "caminando"
@@ -4888,13 +5018,18 @@
 		const subida = hayZancada2 ? (1 - ciclo) / 2 : Math.abs(Math.sin(o.fase));
 		// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
 		// tiemble con la cámara al moverse — ver nota en dibujarEnemigoSprite).
-		const rebote = enMarcha
+		// Con las piernas por código, el rebote sale solo de apoyar el pie más
+		// bajo (postura.caida), así que no se suma otro.
+		const rebote = conRig
+			? 0
+			: enMarcha
 			? subida * (1.5 + 4.5 * marcha) * s
 			: o.moviendo
 			? 0
 			: Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
-		// Squash & stretch: aplasta un poco al apoyar, estira en el aire.
-		const estiro = enMarcha ? (subida - 0.5) * 0.06 * marcha : 0;
+		// Squash & stretch: aplasta un poco al apoyar, estira en el aire (no
+		// con las piernas por código: deformaría las piezas).
+		const estiro = enMarcha && !conRig ? (subida - 0.5) * 0.06 * marcha : 0;
 		// Se inclina hacia adelante al correr, con un cabeceo leve por paso.
 		const inclinacion = enMarcha ? 0.13 * marcha + Math.sin(o.fase) * 0.025 * marcha : 0;
 		const altoDeseado = 100 * s * embestida * factorAgachado * factorEscalaPropio;
@@ -4939,7 +5074,9 @@
 			ctx.globalAlpha = alfa;
 			ctx.drawImage(img, -m.anclaX * dw, -m.abajo * dh, dw, dh);
 		};
-		if (el2) {
+		if (conRig) {
+			pintarRig(sprites.rig, meta, k, posturaPiernas(sprites.rig, o.fase, marcha));
+		} else if (el2) {
 			// Fundido cruzado sin "agujeros": la foto que sale queda opaca
 			// hasta la mitad y la que entra se pinta encima; pasada la mitad,
 			// la que entra ya está opaca y la de abajo se desvanece.

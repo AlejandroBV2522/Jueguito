@@ -9,6 +9,7 @@
     <title>Camino a Celaque</title>
     <link rel="stylesheet" href="style.css">
     <script defer src="config.js"></script>
+    <script defer src="assets/personaje/partes/partes.js"></script>
     <script defer src="main.js"></script>
 </head>
 <body>
@@ -36,7 +37,7 @@
         <div class="monitor">
             <div class="pantalla-pc">
                 <div class="barra-pc">
-                    <img src="assets/logos/celaque-blanco.svg" alt="">
+                    <div class="espacio-logo logo-pc" data-logo="assets/logos/celaque-blanco.png" role="img" aria-label="Celaque">LOGO</div>
                     <span id="terminal-titulo"></span>
                     <span id="terminal-progreso"></span>
                 </div>
@@ -53,7 +54,7 @@
 
     <!-- Pantalla de inicio -->
     <div id="pantalla-inicio" class="pantalla">
-        <img class="logo-celaque" src="assets/logos/celaque-blanco.svg" alt="Celaque">
+        <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-blanco.png" role="img" aria-label="Celaque">LOGO</div>
         <h1 id="titulo"></h1>
         <p id="subtitulo"></p>
         <div id="selector" role="radiogroup" aria-label="Elige tu personaje">
@@ -72,7 +73,7 @@
 
     <!-- Pantalla de victoria -->
     <div id="pantalla-victoria" class="pantalla" hidden>
-        <img class="logo-celaque" src="assets/logos/celaque-blanco.svg" alt="Celaque">
+        <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-blanco.png" role="img" aria-label="Celaque">LOGO</div>
         <h1 id="victoria-titulo"></h1>
         <p id="victoria-texto"></p>
         <div class="botones">

@@ -1,3 +1,6 @@
 # Agentes de Claude Code y sus planes: solo locales, no se suben
 .claude/agents/
 .claude/handoffs/
+
+# Imagen de control de tools/partes_personaje.py --revisar
+assets/personaje/partes/_control.png
