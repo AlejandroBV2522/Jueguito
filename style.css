@@ -390,6 +390,145 @@ kbd {
 	cursor: default;
 }
 
+/* ---------- Terminal Celaque (computadora de la oficina) ---------- */
+#terminal {
+	position: fixed;
+	inset: 0;
+	z-index: 18;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(3, 36, 32, 0.55);
+	animation: aparecer 0.3s ease-out;
+}
+
+.monitor {
+	width: min(760px, 100%);
+	padding: 14px;
+	border-radius: 22px;
+	background: #1c2526;
+	box-shadow: 0 0 0 3px #2e3a3c, 0 0 60px rgba(63, 179, 173, 0.55), 0 24px 50px rgba(0, 0, 0, 0.5);
+}
+
+.pie-monitor {
+	width: 120px;
+	height: 26px;
+	background: linear-gradient(#2e3a3c, #1c2526);
+	clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%);
+}
+
+.pantalla-pc {
+	overflow: hidden;
+	border-radius: 10px;
+	background: linear-gradient(170deg, var(--celaque-teal), var(--celaque-oscuro));
+	color: #fff;
+}
+
+.barra-pc {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 16px;
+	background: rgba(3, 36, 32, 0.75);
+	font-weight: bold;
+}
+
+.barra-pc img {
+	width: 28px;
+	height: 28px;
+}
+
+#terminal-progreso {
+	margin-left: auto;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--celaque-claro);
+	color: var(--celaque-oscuro);
+	font-size: 0.85rem;
+}
+
+.cuerpo-pc {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 20px 22px 22px;
+}
+
+#terminal-pregunta {
+	margin: 0;
+	font-size: clamp(1.15rem, 2.6vw, 1.45rem);
+	font-weight: bold;
+	line-height: 1.35;
+}
+
+#terminal-opciones {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.opcion-pc {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-height: 56px;
+	padding: 10px 16px;
+	border: 2px solid rgba(255, 255, 255, 0.45);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font: inherit;
+	font-size: 1.05rem;
+	text-align: left;
+	cursor: pointer;
+	transition: transform 0.1s, background 0.1s, border-color 0.1s;
+}
+
+.opcion-pc:hover:not(:disabled),
+.opcion-pc:focus-visible {
+	transform: translateX(4px);
+	border-color: var(--celaque-claro);
+	background: rgba(63, 179, 173, 0.35);
+	outline: none;
+}
+
+.num-pc {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: #fff;
+	color: var(--celaque-oscuro);
+	font-weight: bold;
+}
+
+.opcion-pc.correcta {
+	border-color: #7fe0a6;
+	background: rgba(47, 158, 95, 0.75);
+}
+
+.opcion-pc.incorrecta {
+	opacity: 0.45;
+	text-decoration: line-through;
+	cursor: default;
+}
+
+#terminal-pista {
+	margin: 0;
+	min-height: 1.4em;
+	color: #c9f7f1;
+	font-weight: bold;
+}
+
+#terminal-salir {
+	align-self: center;
+}
+
 /* ---------- Controles táctiles ---------- */
 #controles-tactiles {
 	position: fixed;

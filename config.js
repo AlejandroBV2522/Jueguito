@@ -8,11 +8,12 @@
 
 window.CONFIG_JUEGO = {
   velocidadPersonaje: 120,   // píxeles por segundo (súbelo o bájalo a gusto)
-  velocidadCorriendo: 240,   // velocidad mientras se mantiene presionada la Q
+  velocidadCorriendo: 320,   // velocidad mientras se mantiene presionada la Q
   largoDelCamino: 7000,      // distancia total desde el inicio hasta Celaque
   nombreMeta: "CELAQUE",     // texto del letrero de llegada
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
+  preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
 
   textos: {
     titulo: "Camino a Celaque",
@@ -247,9 +248,13 @@ window.PREGUNTAS_CUEVA = [
    ---------------------------------------------------------------------
    Son 6 módulos. El primero (Talento) es todo lo anterior: el camino y la
    Cueva, y ya está completo al salir de ella. Cada uno de los demás es un
-   EDIFICIO: al llegar a su puerta hay que contestar sus preguntas para
-   completarlo, subir de nivel y poder seguir por la calle. Fallar no quita
-   vidas: la opción equivocada se tacha y se vuelve a intentar.
+   EDIFICIO: al llegar a su puerta se entra a su OFICINA. Adentro te recibe
+   un compañero (dice la "intro"), hay muebles que saltar, y al fondo una
+   computadora (Terminal Celaque) donde se contestan las preguntas. Al
+   terminar vuelves a la calle con el módulo completo, subes de nivel y se
+   abre la reja para seguir. Fallar no quita vidas: la opción equivocada se
+   tacha y se vuelve a intentar. La computadora hace solo las primeras
+   "preguntasPorModulo" (arriba, en CONFIG_JUEGO) de cada módulo.
 
    - nombre:      nombre del módulo (se ve en el letrero del edificio).
    - subtitulo:   texto chico debajo del nombre.
@@ -258,7 +263,9 @@ window.PREGUNTAS_CUEVA = [
                   "assets/logos/Proyectos.png". Se dibuja SIN deformar
                   (respeta su proporción). Sin logo se usa la inicial.
    - completoAlSalirDeLaCueva: solo para Talento.
-   - intro:       frases que se leen antes de las preguntas.
+   - intro:       lo que dice el compañero que te recibe en la oficina.
+   - companero:   (opcional) { nombre: "Ana", cuerpo: "chica" } para el
+                  compañero de la oficina. Sin esto: "Equipo de <módulo>".
    - preguntas:   { pregunta, opciones, correcta (índice desde 0),
                     explicacion (opcional, se muestra al acertar) }.
 

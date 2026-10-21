@@ -47,7 +47,7 @@
 
 	// ---------- Huecos en la Cueva (hay que saltarlos, si no te caes) ----------
 	// Con IMPULSO_SALTO/GRAVEDAD de arriba, un salto completo dura ~0.6s: a
-	// velocidadCorriendo (240 px/s) cubre ~145px, caminando (120 px/s) solo
+	// velocidadCorriendo (320 px/s) cubre ~195px, caminando (120 px/s) solo
 	// ~73px. ANCHO_HUECO=90 exige correr para pasarlo cómodo (caminando se
 	// queda corto y cae).
 	const ANCHO_HUECO = 70;
@@ -254,15 +254,66 @@
 	const RUTA_LOGOS = "assets/logos/";
 	const logoCelaque = cargarImagen(RUTA_LOGOS + "celaque.svg");
 	const logoCelaqueBlanco = cargarImagen(RUTA_LOGOS + "celaque-blanco.svg");
-	const modulos = MODULOS_DATOS.map((d, i) => ({
-		...d,
-		x: PRIMER_MODULO + i * ESPACIO_MODULO,
-		completo: false,
-		preguntaActual: 0,
-		visitado: false, // ya se abrió solo una vez al llegar a la puerta
-		brillo: 0, // destello al completarlo (1 → 0)
-		logoImg: d.logo ? cargarImagen(d.logo) : null,
-	}));
+	// Interior de cada módulo: una oficina propia en una franja del mundo
+	// aparte (muy lejos de la calle, para que no se mezclen), recorrida de
+	// izquierda a derecha: entrada → compañero → muebles → computadora.
+	const OFICINA_BASE = LARGO_META + 4000;
+	const SEPARACION_OFICINAS = 4000;
+	const LARGO_OFICINA = 2000;
+	// Muebles = obstáculos sólidos (como las rocas de la cueva): se saltan o
+	// se camina por encima. Todos de 80 o menos de alto, así un salto normal
+	// caminando alcanza para subirse (ver nota de OBSTACULOS_CUEVA).
+	const MUEBLES = {
+		escritorio: { medioAncho: 58, alto: 64 },
+		silla: { medioAncho: 20, alto: 40 },
+		archivero: { medioAncho: 28, alto: 78 },
+		cajas: { medioAncho: 32, alto: 54 },
+		impresora: { medioAncho: 30, alto: 60 },
+		planta: { medioAncho: 18, alto: 50 },
+		dispensador: { medioAncho: 18, alto: 74 },
+	};
+	const ORDEN_MUEBLES = ["planta", "escritorio", "silla", "archivero", "cajas", "escritorio", "impresora", "dispensador"];
+	// Distancias desde la entrada; el compañero espera en 760 (entre muebles)
+	const POSICIONES_MUEBLES = [340, 520, 1000, 1180, 1360, 1540, 1720];
+	const modulos = MODULOS_DATOS.map((d, i) => {
+		const x0 = OFICINA_BASE + i * SEPARACION_OFICINAS;
+		return {
+			...d,
+			x: PRIMER_MODULO + i * ESPACIO_MODULO,
+			completo: false,
+			preguntaActual: 0,
+			visitado: false, // ya se entró solo una vez al llegar a la puerta
+			terminalVisitada: false,
+			brillo: 0, // destello al completarlo (1 → 0)
+			logoImg: d.logo ? cargarImagen(d.logo) : null,
+			oficina: {
+				x0,
+				terminalX: x0 + LARGO_OFICINA,
+				obstaculos: POSICIONES_MUEBLES.map((dist, k) => {
+					const tipo = ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
+					return { x: x0 + dist, tipo, ...MUEBLES[tipo] };
+				}),
+				// Compañero que recibe al jugador: dice la intro del módulo
+				companero: {
+					nombre: (d.companero && d.companero.nombre) || `Equipo de ${d.nombre}`,
+					x: x0 + 760,
+					alto: 0,
+					enOficina: true,
+					hablado: false,
+					dialogo: d.intro && d.intro.length ? d.intro : [`Bienvenido al módulo ${d.nombre}.`],
+					apariencia: {
+						cuerpo: (d.companero && d.companero.cuerpo) || (i % 2 ? "chica" : "chico"),
+						casco: "#ffffff",
+						chaleco: d.color || "#00767a",
+						pelo: i % 2 ? "#3b2414" : "#1f1a17",
+						pantalon: "#2d3a4a",
+					},
+				},
+			},
+		};
+	});
+	// Oficina en la que está el héroe (null = afuera)
+	let oficinaActual = null;
 
 	// Edificios de la ciudad: se ven DESPUÉS del letrero de meta (LARGO_META),
 	// como el skyline al que llegaste. "Atlas" y "Lirios" son los 2 edificios
@@ -919,6 +970,13 @@
 		inicio: $("pantalla-inicio"),
 		victoria: $("pantalla-victoria"),
 		tactiles: $("controles-tactiles"),
+		terminal: $("terminal"),
+		terminalTitulo: $("terminal-titulo"),
+		terminalProgreso: $("terminal-progreso"),
+		terminalPregunta: $("terminal-pregunta"),
+		terminalOpciones: $("terminal-opciones"),
+		terminalPista: $("terminal-pista"),
+		terminalSalir: $("terminal-salir"),
 	};
 
 	$("titulo").textContent = CFG.textos.titulo;
@@ -1034,6 +1092,12 @@
 		heroe.atacando = false;
 		heroe.atacandoT = 0;
 		petalos = [];
+		oficinaActual = null;
+		ui.terminal.hidden = true;
+		modulos.forEach((m) => {
+			m.terminalVisitada = false;
+			m.oficina.companero.hablado = false;
+		});
 		ui.victoria.hidden = true;
 	}
 
@@ -1126,20 +1190,19 @@
 	}
 
 	function cerrarDialogo() {
-		// La intro de un módulo sigue directo con sus preguntas
-		if (dlg.npc.modulo) {
-			const m = dlg.npc.modulo;
-			dlg.npc = null;
-			abrirPreguntaModulo(m);
-			return;
-		}
-		if (!dlg.npc.hablado) subirNivel();
+		// Los compañeros de oficina no suben de nivel: eso lo da el módulo
+		if (!dlg.npc.hablado && !dlg.npc.enOficina) subirNivel();
 		dlg.npc.hablado = true;
 		dlg.npc = null;
 		ui.dialogo.hidden = true;
 		document.body.classList.remove("con-dialogo");
-		estado = "jugando";
-		actualizarHud();
+		if (oficinaActual) {
+			estado = "oficina";
+			actualizarHudOficina();
+		} else {
+			estado = "jugando";
+			actualizarHud();
+		}
 	}
 
 	// Para hablar hay que estar cerca Y parado en el mismo andamio que el NPC
@@ -1172,82 +1235,145 @@
 		ui.hudTexto.textContent = `Nivel ${nivel}  ·  Módulos completados: ${n} / ${modulos.length}`;
 	}
 
-	function abrirModulo(m) {
+	// ---------- Oficina (interior de cada módulo) ----------
+	// Al cruzar la puerta de un módulo se entra a su oficina: un compañero
+	// te recibe (la intro del módulo) y al fondo hay una computadora con la
+	// Terminal Celaque, donde se contestan las preguntas. Al terminar vuelves
+	// a la calle con el módulo completo.
+	function entrarOficina(m) {
 		m.visitado = true;
-		m.preguntaActual = 0;
-		if (m.intro && m.intro.length) {
-			abrirDialogo({ nombre: `Módulo ${m.nombre}`, inicial: m.nombre.charAt(0), x: m.x, dialogo: m.intro, apariencia: { chaleco: m.color }, modulo: m });
-		} else {
-			abrirPreguntaModulo(m);
-		}
+		heroe.moviendo = heroe.corriendo = false;
+		estado = "transicion";
+		transicion = {
+			t: 0,
+			dur: 0.9,
+			luego: () => {
+				oficinaActual = m;
+				heroe.x = m.oficina.x0 + 110;
+				heroe.y = 0;
+				heroe.velY = 0;
+				heroe.dir = 1;
+				camara = Math.max(0, heroe.x - W * 0.35);
+				estado = "oficina";
+				actualizarHudOficina();
+			},
+		};
 	}
 
-	function abrirPreguntaModulo(m) {
-		if (!m.preguntas || !m.preguntas.length) {
-			completarModulo(m);
-			return;
-		}
-		estado = "pregunta";
+	function salirDeOficina() {
+		const m = oficinaActual;
 		heroe.moviendo = heroe.corriendo = false;
-		const p = m.preguntas[m.preguntaActual];
-		ui.nombre.textContent = `Módulo ${m.nombre}`;
-		ui.retrato.textContent = m.nombre.charAt(0).toUpperCase();
-		ui.retrato.style.background = m.color;
-		ui.texto.textContent = p.pregunta;
-		ui.pista.textContent = `Pregunta ${m.preguntaActual + 1} de ${m.preguntas.length}`;
-		ui.opciones.innerHTML = "";
-		ui.opciones.hidden = false;
+		estado = "transicion";
+		transicion = {
+			t: 0,
+			dur: 0.9,
+			luego: () => {
+				oficinaActual = null;
+				// Completo: sales del otro lado de la reja (ya abierta)
+				heroe.x = m.completo ? m.x + 80 : m.x - 50;
+				heroe.y = 0;
+				heroe.velY = 0;
+				heroe.dir = 1;
+				camara = Math.max(0, heroe.x - W * 0.35);
+				estado = "urbano";
+				actualizarHudUrbano();
+			},
+		};
+	}
+
+	function actualizarHudOficina() {
+		const of = oficinaActual.oficina;
+		const progreso = clamp((heroe.x - of.x0) / (of.terminalX - of.x0), 0, 1);
+		ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
+		ui.hudTexto.textContent = oficinaActual.completo
+			? `Módulo ${oficinaActual.nombre} ✓  ·  Vuelve a la puerta para salir`
+			: `Módulo ${oficinaActual.nombre}  ·  Llega a la computadora del fondo`;
+	}
+
+	const cercaDe = (x, distancia) => Math.abs(heroe.x - x) < distancia && heroeEnSuelo() && heroe.y === 0;
+	const enTerminal = () => estado === "oficina" && cercaDe(oficinaActual.oficina.terminalX - 50, 60);
+	const enSalidaOficina = () => estado === "oficina" && cercaDe(oficinaActual.oficina.x0 + 70, 70);
+	const companeroCerca = () =>
+		estado === "oficina" && cercaDe(oficinaActual.oficina.companero.x, CFG.distanciaParaHablar * 1.3) ? oficinaActual.oficina.companero : null;
+
+	// Preguntas que se hacen en la computadora (menos que antes: config.js →
+	// preguntasPorModulo, por defecto 2).
+	const preguntasDe = (m) => (m.preguntas || []).slice(0, CFG.preguntasPorModulo || 2);
+
+	function abrirTerminal(m) {
+		m.terminalVisitada = true;
+		m.preguntaActual = 0;
+		estado = "terminal";
+		heroe.moviendo = heroe.corriendo = false;
+		ui.terminal.hidden = false;
+		ui.terminalTitulo.textContent = `Terminal Celaque · Módulo ${m.nombre}`;
+		ui.terminalSalir.hidden = true;
+		document.body.classList.add("con-dialogo");
+		if (!preguntasDe(m).length) terminarModulo(m);
+		else mostrarPreguntaTerminal(m);
+	}
+
+	function mostrarPreguntaTerminal(m) {
+		const preguntas = preguntasDe(m);
+		const p = preguntas[m.preguntaActual];
+		ui.terminalProgreso.textContent = `Pregunta ${m.preguntaActual + 1} de ${preguntas.length}`;
+		ui.terminalPregunta.textContent = p.pregunta;
+		ui.terminalPista.textContent = "Elige una respuesta (o presiona 1, 2, 3).";
+		ui.terminalOpciones.innerHTML = "";
 		p.opciones.forEach((texto, i) => {
 			const btn = document.createElement("button");
-			btn.className = "boton opcion-respuesta";
-			btn.textContent = texto;
-			btn.addEventListener("click", (e) => {
-				e.stopPropagation(); // no debe disparar el click-to-advance de #dialogo
-				responderModulo(i, m, btn);
-			});
-			ui.opciones.appendChild(btn);
+			btn.className = "opcion-pc";
+			btn.innerHTML = "";
+			const num = document.createElement("span");
+			num.className = "num-pc";
+			num.textContent = i + 1;
+			btn.append(num, document.createTextNode(texto));
+			btn.addEventListener("click", () => responderTerminal(i, m, btn));
+			ui.terminalOpciones.appendChild(btn);
 		});
-		ui.dialogo.hidden = false;
-		ui.dialogo.classList.remove("arriba");
-		document.body.classList.add("con-dialogo");
 	}
 
 	// Sin vidas ni castigo: la opción equivocada se tacha y se vuelve a
 	// intentar. Es una capacitación, no un examen.
-	function responderModulo(indice, m, btn) {
-		const p = m.preguntas[m.preguntaActual];
+	function responderTerminal(indice, m, btn) {
+		if (btn.disabled) return;
+		const p = preguntasDe(m)[m.preguntaActual];
 		if (indice !== p.correcta) {
 			btn.classList.add("incorrecta");
 			btn.disabled = true;
-			ui.pista.textContent = "Esa no es. ¡Intenta con otra opción!";
-			heroe.golpeado = true;
-			heroe.golpeadoT = 0;
+			ui.terminalPista.textContent = "Esa no es. ¡Intenta con otra opción!";
 			return;
 		}
 		btn.classList.add("correcta");
-		ui.opciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
-		ui.pista.textContent = p.explicacion ? `¡Correcto! ${p.explicacion}` : "¡Correcto!";
-		heroe.atacando = true; // el mismo gesto de "¡bien!" que al vencer a un enemigo
-		heroe.atacandoT = 0;
+		ui.terminalOpciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
+		ui.terminalPista.textContent = p.explicacion ? `¡Correcto! ${p.explicacion}` : "¡Correcto!";
 		setTimeout(() => {
 			m.preguntaActual++;
-			if (m.preguntaActual < m.preguntas.length) abrirPreguntaModulo(m);
-			else completarModulo(m);
+			if (m.preguntaActual < preguntasDe(m).length) mostrarPreguntaTerminal(m);
+			else terminarModulo(m);
 		}, p.explicacion ? 2200 : 900);
 	}
 
-	// Completar un módulo sube de nivel, enciende el edificio y abre su reja.
-	function completarModulo(m) {
-		m.completo = true;
-		m.brillo = 1;
-		ui.opciones.hidden = true;
-		ui.opciones.innerHTML = "";
-		ui.dialogo.hidden = true;
+	// Completar un módulo sube de nivel, enciende su edificio y abre su reja.
+	function terminarModulo(m) {
+		if (!m.completo) {
+			m.completo = true;
+			m.brillo = 1;
+			nivel++;
+			avisos.push({ texto: `¡Nivel ${nivel}! ${m.nombre} ✓`, t: 0 });
+		}
+		ui.terminalProgreso.textContent = "Completado";
+		ui.terminalPregunta.textContent = `¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`;
+		ui.terminalOpciones.innerHTML = "";
+		ui.terminalPista.textContent = "";
+		ui.terminalSalir.hidden = false;
+		ui.terminalSalir.focus();
+	}
+
+	function cerrarTerminal() {
+		ui.terminal.hidden = true;
 		document.body.classList.remove("con-dialogo");
-		estado = "urbano";
-		nivel++;
-		avisos.push({ texto: `¡Nivel ${nivel}! ${m.nombre} ✓`, t: 0 });
-		actualizarHudUrbano();
+		salirDeOficina();
 	}
 
 	// ---------- La Cueva ----------
@@ -1298,6 +1424,7 @@
 	// El medio ancho se escala por S para que la zona "pisable" coincida con el
 	// dibujo (el mundo es 1:1 con la pantalla en horizontal).
 	function obstaculosActivos() {
+		if (oficinaActual) return oficinaActual.oficina.obstaculos;
 		if (vistaUrbana) return [];
 		return dentroCueva ? OBSTACULOS_CUEVA : OBSTACULOS_AFUERA;
 	}
@@ -1403,7 +1530,7 @@
 	// de salir de un borde ("coyote"), y si se presiona justo antes de
 	// aterrizar, el salto sale solo al tocar el piso (ver actualizar).
 	function saltarAccion() {
-		if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano") return;
+		if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano" && estado !== "oficina") return;
 		const recienEnSuelo = tiempo - heroe.ultimoSuelo < 0.14 && heroe.velY <= 0;
 		if (heroeEnSuelo() || recienEnSuelo) {
 			heroe.velY = IMPULSO_SALTO;
@@ -1600,7 +1727,14 @@
 			if (npc) abrirDialogo(npc);
 		} else if (estado === "urbano") {
 			const m = moduloEnPuerta();
-			if (m) abrirModulo(m);
+			if (m) entrarOficina(m);
+		} else if (estado === "oficina") {
+			const companero = companeroCerca();
+			if (enTerminal() && !oficinaActual.completo) abrirTerminal(oficinaActual);
+			else if (companero) abrirDialogo(companero);
+			else if (enSalidaOficina()) salirDeOficina();
+		} else if (estado === "terminal" && !ui.terminalSalir.hidden) {
+			cerrarTerminal();
 		}
 	}
 
@@ -1610,6 +1744,8 @@
 		if (estado === "inicio" || estado === "dialogo") return true;
 		if (estado === "jugando") return !!npcCercano();
 		if (estado === "urbano") return !!moduloEnPuerta();
+		if (estado === "oficina") return (enTerminal() && !oficinaActual.completo) || !!companeroCerca() || enSalidaOficina();
+		if (estado === "terminal") return !ui.terminalSalir.hidden;
 		return false;
 	}
 
@@ -1622,6 +1758,12 @@
 	const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 	window.addEventListener("keydown", (e) => {
+		// En la computadora de la oficina se responde también con 1, 2, 3...
+		if (estado === "terminal" && /^[1-9]$/.test(e.key)) {
+			const btn = ui.terminalOpciones.children[Number(e.key) - 1];
+			if (btn) btn.click();
+			return;
+		}
 		if (TECLAS_IZQ.includes(e.key) || TECLAS_DER.includes(e.key)) {
 			e.preventDefault();
 			if (estado === "inicio") {
@@ -1664,7 +1806,7 @@
 	window.addEventListener(
 		"wheel",
 		(e) => {
-			if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano") return;
+			if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano" && estado !== "oficina") return;
 			const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
 			if (delta === 0) return;
 			entrada.rueda = delta > 0 ? 1 : -1;
@@ -1676,6 +1818,7 @@
 	$("btn-comenzar").addEventListener("click", comenzar);
 	$("btn-reiniciar").addEventListener("click", reiniciar);
 	$("btn-cambiar").addEventListener("click", volverAlInicio);
+	ui.terminalSalir.addEventListener("click", cerrarTerminal);
 	ui.dialogo.addEventListener("click", avanzarDialogo);
 
 	function botonTactil(id, alPresionar, alSoltar) {
@@ -1768,13 +1911,13 @@
 
 		// Agacharse: mostrar la pose de cuclillas mientras se mantiene la flecha
 		// abajo, parado en el piso. (En transición la maneja entrarPorTubo.)
-		if (estado === "jugando" || estado === "cueva" || estado === "urbano") {
+		if (estado === "jugando" || estado === "cueva" || estado === "urbano" || estado === "oficina") {
 			heroe.agachado = entrada.abajo && heroeEnSuelo();
 		}
 
 		if (estado === "transicion") {
 			transicion.t += dt;
-			if (transicion.t >= 3) {
+			if (transicion.t >= (transicion.dur || 3)) {
 				heroe.agachado = false;
 				const luego = transicion.luego;
 				transicion = null;
@@ -1800,7 +1943,7 @@
 				heroe.dir = dir;
 				const viejoX = heroe.x;
 				heroe.x = frenarEnObstaculos(viejoX, clamp(viejoX + dir * velocidad * dt, 40, limite), dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
 				actualizarHud();
 			}
 
@@ -1832,7 +1975,7 @@
 				const viejoX = heroe.x;
 				const tentativo = clamp(viejoX + dir * velocidad * dt, LARGO, limite);
 				heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
-				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
 			}
 
 			if (bloqueante && heroe.x >= limite) abrirPregunta(bloqueante);
@@ -1851,14 +1994,36 @@
 				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 				heroe.dir = dir;
 				heroe.x = clamp(heroe.x + dir * velocidad * dt, LARGO_TOTAL, limiteUrbano());
-				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
+				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
 			}
 
-			// La primera vez que llegas a la puerta de un módulo se abre solo
+			// La primera vez que llegas a la puerta de un módulo entras solo
 			// (después, con E / Espacio / "Hablar" frente a la puerta).
 			const pendiente = moduloPendiente();
-			if (pendiente && !pendiente.visitado && heroe.x >= pendiente.x - 20 && heroeEnSuelo()) abrirModulo(pendiente);
+			if (pendiente && !pendiente.visitado && heroe.x >= pendiente.x - 20 && heroeEnSuelo()) entrarOficina(pendiente);
 			else if (heroe.x >= LARGO_META) ganar();
+		}
+
+		if (estado === "oficina") {
+			const of = oficinaActual.oficina;
+			let dir = (entrada.der ? 1 : 0) - (entrada.izq ? 1 : 0);
+			if (dir === 0 && performance.now() < entrada.ruedaHasta) dir = entrada.rueda;
+			if (heroe.agachado) dir = 0;
+			heroe.moviendo = dir !== 0;
+			heroe.corriendo = heroe.moviendo && entrada.correr;
+			if (heroe.moviendo) {
+				const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
+				heroe.dir = dir;
+				const viejoX = heroe.x;
+				const tentativo = clamp(viejoX + dir * velocidad * dt, of.x0 + 40, of.terminalX - 50);
+				heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
+				heroe.fase += dt * (heroe.corriendo ? 19 : 9);
+				actualizarHudOficina();
+			}
+			// El compañero te habla solo la primera vez; la computadora se
+			// abre sola la primera vez que llegas a ella.
+			if (!of.companero.hablado && heroe.x >= of.companero.x - 100 && heroeEnSuelo()) abrirDialogo(of.companero);
+			else if (!oficinaActual.terminalVisitada && enTerminal()) abrirTerminal(oficinaActual);
 		}
 		for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);
 
@@ -1902,7 +2067,12 @@
 			}
 		}
 
-		const objetivo = Math.max(0, heroe.x - W * 0.35);
+		let objetivo = Math.max(0, heroe.x - W * 0.35);
+		// En la oficina la cámara no se pasa de sus paredes
+		if (oficinaActual) {
+			const of = oficinaActual.oficina;
+			objetivo = clamp(objetivo, of.x0 - 40, Math.max(of.x0 - 40, of.terminalX + 160 - W));
+		}
 		camara += (objetivo - camara) * Math.min(1, dt * 5);
 	}
 
@@ -3108,7 +3278,8 @@
 			ctx.ellipse(sx, baseY + 4 * S, w * 1.12, 6 * S, 0, 0, Math.PI * 2);
 			ctx.fill();
 
-			if (o.tipo === "roca") dibujarRoca(sx, baseY, topY, w);
+			if (MUEBLES[o.tipo]) dibujarMueble(o, sx, baseY, topY, w);
+			else if (o.tipo === "roca") dibujarRoca(sx, baseY, topY, w);
 			else if (o.tipo === "barrera") dibujarBarrera(sx, baseY, topY, w, tono(o.x / LARGO));
 			else dibujarCaja(sx, baseY, topY, w);
 		}
@@ -3696,6 +3867,284 @@
 		}
 	}
 
+	// ---------- Dibujo: oficina (interior de cada módulo) ----------
+	// Todo lo de la pared (ventanas, lámparas, logos, pizarras) está fijo en
+	// coordenadas de mundo, así se mueve con la cámara igual que los muebles.
+	function dibujarFondoOficina(m) {
+		const of = m.oficina;
+		// Pared
+		const pared = ctx.createLinearGradient(0, 0, 0, SUELO);
+		pared.addColorStop(0, "#f4f5f1");
+		pared.addColorStop(1, "#e2e6e1");
+		ctx.fillStyle = pared;
+		ctx.fillRect(0, 0, W, SUELO + 40 * S);
+
+		// Techo con lámparas que brillan
+		ctx.fillStyle = "#d4d9d6";
+		ctx.fillRect(0, 0, W, 34 * S);
+		for (let x = of.x0 + 120; x < of.terminalX + 200; x += 300) {
+			const sx = x - camara;
+			if (sx < -150 || sx > W + 150) continue;
+			const luz = ctx.createLinearGradient(0, 34 * S, 0, 260 * S);
+			luz.addColorStop(0, "rgba(255,255,235,0.55)");
+			luz.addColorStop(1, "rgba(255,255,235,0)");
+			ctx.fillStyle = luz;
+			ctx.beginPath();
+			ctx.moveTo(sx - 45 * S, 34 * S);
+			ctx.lineTo(sx + 45 * S, 34 * S);
+			ctx.lineTo(sx + 120 * S, 260 * S);
+			ctx.lineTo(sx - 120 * S, 260 * S);
+			ctx.fill();
+			ctx.fillStyle = "#ffffff";
+			rectRedondo(sx - 50 * S, 28 * S, 100 * S, 10 * S, 4 * S);
+			ctx.fill();
+		}
+
+		// Ventanales a la ciudad
+		const altoV = Math.min(210 * S, SUELO - 130 * S);
+		for (let x = of.x0 + 260; x < of.terminalX - 100; x += 560) {
+			const sx = x - camara;
+			if (sx < -200 || sx > W + 200) continue;
+			const top = 70 * S;
+			const cielo = ctx.createLinearGradient(0, top, 0, top + altoV);
+			cielo.addColorStop(0, "#8fd3f4");
+			cielo.addColorStop(1, "#d9f1fb");
+			ctx.fillStyle = cielo;
+			ctx.fillRect(sx - 110 * S, top, 220 * S, altoV);
+			ctx.fillStyle = "rgba(0,118,122,0.35)"; // ciudad a lo lejos
+			for (let k = 0; k < 6; k++) {
+				const h = (40 + ((k * 37 + x) % 70)) * S;
+				ctx.fillRect(sx - 110 * S + k * 37 * S, top + altoV - h, 30 * S, h);
+			}
+			ctx.strokeStyle = COLORES.oscuro;
+			ctx.lineWidth = 6 * S;
+			ctx.strokeRect(sx - 110 * S, top, 220 * S, altoV);
+			ctx.lineWidth = 3 * S;
+			linea(sx, top, sx, top + altoV);
+		}
+
+		// Logo de Celaque y nombre del módulo pintados en la pared
+		for (let x = of.x0 + 540; x < of.terminalX - 200; x += 560) {
+			const sx = x - camara;
+			if (sx < -200 || sx > W + 200) continue;
+			const cy = 150 * S;
+			const logo = logoCelaque.elemento;
+			if (logo) dibujarImagenContenida(logo, sx, cy, 80 * S, 80 * S);
+			ctx.fillStyle = COLORES.verde;
+			ctx.font = `bold ${22 * S}px ${FUENTE}`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText("CELAQUE", sx, cy + 62 * S);
+			ctx.fillStyle = COLORES.teal;
+			ctx.font = `${15 * S}px ${FUENTE}`;
+			ctx.fillText(`Módulo ${m.nombre}`, sx, cy + 86 * S);
+		}
+
+		// Zócalo con el color del módulo
+		ctx.fillStyle = m.color;
+		ctx.fillRect(0, SUELO - 22 * S, W, 22 * S);
+		ctx.fillStyle = "rgba(255,255,255,0.25)";
+		ctx.fillRect(0, SUELO - 22 * S, W, 3 * S);
+
+		// Paredes de los extremos
+		ctx.fillStyle = COLORES.oscuro;
+		const izq = of.x0 - camara;
+		if (izq > 0) ctx.fillRect(0, 0, izq, H);
+		const der = of.terminalX + 140 - camara;
+		if (der < W) ctx.fillRect(der, 0, W - der, H);
+	}
+
+	function dibujarSueloOficina() {
+		const piso = ctx.createLinearGradient(0, SUELO, 0, H);
+		piso.addColorStop(0, "#7a8b88");
+		piso.addColorStop(1, "#56625f");
+		ctx.fillStyle = piso;
+		ctx.fillRect(0, SUELO, W, H - SUELO);
+		ctx.fillStyle = "rgba(255,255,255,0.12)";
+		ctx.fillRect(0, SUELO, W, 4 * S);
+		// Losetas de alfombra
+		ctx.strokeStyle = "rgba(0,0,0,0.12)";
+		ctx.lineWidth = 1.5 * S;
+		ctx.beginPath();
+		const paso = 90 * S;
+		const off = ((camara % paso) + paso) % paso;
+		for (let sx = -off; sx < W; sx += paso) linea(sx, SUELO + 6 * S, sx, H);
+		linea(0, SUELO + 50 * S, W, SUELO + 50 * S);
+		ctx.stroke();
+	}
+
+	// Puerta de salida, al inicio de la oficina
+	function dibujarPuertaSalida(m) {
+		const sx = m.oficina.x0 + 70 - camara;
+		if (sx < -80 || sx > W + 80) return;
+		const piso = SUELO + 40 * S;
+		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillRect(sx - 40 * S, piso - 130 * S, 80 * S, 130 * S);
+		ctx.fillStyle = "#b9d9d5";
+		ctx.fillRect(sx - 33 * S, piso - 123 * S, 66 * S, 123 * S);
+		ctx.fillStyle = "#2f9e5f";
+		rectRedondo(sx - 30 * S, piso - 156 * S, 60 * S, 22 * S, 5 * S);
+		ctx.fill();
+		ctx.fillStyle = "#fff";
+		ctx.font = `bold ${12 * S}px ${FUENTE}`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText("SALIDA", sx, piso - 145 * S);
+		if (estado === "oficina" && enSalidaOficina() && m.completo) {
+			dibujarGlobo(sx, piso - 170 * S, esTactil ? "Toca Hablar para salir" : "E · Salir", "#c9f7f1");
+		}
+	}
+
+	// Muebles de oficina (obstáculos). topY es la cara de arriba, donde se
+	// puede parar el héroe; lo que sobresale (respaldo, hojas) es decoración.
+	function dibujarMueble(o, sx, baseY, topY, w) {
+		const alto = baseY - topY;
+		if (o.tipo === "escritorio") {
+			ctx.fillStyle = "#8a6a4a";
+			ctx.fillRect(sx - w + 6 * S, topY + 8 * S, 8 * S, alto - 8 * S);
+			ctx.fillRect(sx + w - 14 * S, topY + 8 * S, 8 * S, alto - 8 * S);
+			ctx.fillStyle = "#a07c58";
+			ctx.fillRect(sx + w * 0.2, topY + 8 * S, w * 0.6, alto * 0.55); // cajonera
+			ctx.fillStyle = "#c89b6d";
+			rectRedondo(sx - w, topY, w * 2, 10 * S, 3 * S);
+			ctx.fill();
+			ctx.fillStyle = "#3a4446"; // laptop cerrada y taza
+			ctx.fillRect(sx - w * 0.6, topY - 4 * S, 36 * S, 4 * S);
+			ctx.fillStyle = COLORES.teal;
+			ctx.fillRect(sx + w * 0.45, topY - 10 * S, 9 * S, 10 * S);
+		} else if (o.tipo === "silla") {
+			ctx.fillStyle = "#2e3a3c";
+			ctx.fillRect(sx - 2 * S, topY + 6 * S, 4 * S, alto - 10 * S);
+			ctx.fillRect(sx - w, baseY - 5 * S, w * 2, 5 * S);
+			ctx.fillStyle = COLORES.verde;
+			rectRedondo(sx - w, topY, w * 2, 9 * S, 4 * S);
+			ctx.fill();
+			rectRedondo(sx - w, topY - 34 * S, 9 * S, 38 * S, 4 * S); // respaldo
+			ctx.fill();
+		} else if (o.tipo === "archivero") {
+			ctx.fillStyle = "#9aa5a6";
+			ctx.fillRect(sx - w, topY, w * 2, alto);
+			ctx.strokeStyle = "#6f7a7b";
+			ctx.lineWidth = 2 * S;
+			for (let k = 1; k < 3; k++) {
+				const y = topY + (alto * k) / 3;
+				linea(sx - w, y, sx + w, y);
+			}
+			ctx.fillStyle = "#e7ecec";
+			for (let k = 0; k < 3; k++) ctx.fillRect(sx - 8 * S, topY + (alto * (k + 0.4)) / 3, 16 * S, 4 * S);
+		} else if (o.tipo === "cajas") {
+			ctx.fillStyle = "#c79a5b";
+			ctx.fillRect(sx - w, topY + alto * 0.45, w * 2, alto * 0.55);
+			ctx.fillStyle = "#d8ad6d";
+			ctx.fillRect(sx - w * 0.75, topY, w * 1.5, alto * 0.45);
+			ctx.fillStyle = "rgba(0,0,0,0.15)";
+			ctx.fillRect(sx - 3 * S, topY, 6 * S, alto * 0.45);
+			ctx.fillRect(sx - 3 * S, topY + alto * 0.45, 6 * S, alto * 0.55);
+		} else if (o.tipo === "impresora") {
+			ctx.fillStyle = "#5e686a";
+			ctx.fillRect(sx - w * 0.85, topY + 26 * S, w * 1.7, alto - 26 * S);
+			ctx.fillStyle = "#eceff0";
+			rectRedondo(sx - w, topY, w * 2, 28 * S, 5 * S);
+			ctx.fill();
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(sx - w * 0.5, topY - 6 * S, w, 8 * S); // hojas
+			ctx.fillStyle = COLORES.claro;
+			circulo(sx + w * 0.65, topY + 10 * S, 3 * S);
+		} else if (o.tipo === "planta") {
+			ctx.fillStyle = "#3f9b5a";
+			for (let k = -2; k <= 2; k++) {
+				ctx.beginPath();
+				ctx.ellipse(sx + k * 7 * S, topY - 6 * S - Math.abs(k) * -3 * S, 7 * S, 18 * S, k * 0.35, 0, Math.PI * 2);
+				ctx.fill();
+			}
+			ctx.fillStyle = "#e9e3d6";
+			ctx.beginPath();
+			ctx.moveTo(sx - w, topY + alto * 0.35);
+			ctx.lineTo(sx + w, topY + alto * 0.35);
+			ctx.lineTo(sx + w * 0.75, baseY);
+			ctx.lineTo(sx - w * 0.75, baseY);
+			ctx.fill();
+		} else if (o.tipo === "dispensador") {
+			ctx.fillStyle = "#e9edee";
+			ctx.fillRect(sx - w, topY + alto * 0.38, w * 2, alto * 0.62);
+			ctx.fillStyle = "rgba(90,180,230,0.75)";
+			rectRedondo(sx - w * 0.8, topY, w * 1.6, alto * 0.4, 6 * S);
+			ctx.fill();
+			ctx.fillStyle = "#4a7fb0";
+			ctx.fillRect(sx - 3 * S, topY + alto * 0.55, 6 * S, 6 * S);
+		}
+	}
+
+	// Compañero del módulo (misma foto teñida que los NPCs del camino)
+	function dibujarCompanero(m) {
+		const n = m.oficina.companero;
+		const sx = n.x - camara;
+		if (sx < -80 || sx > W + 80) return;
+		const pie = SUELO + 36 * S;
+		dibujarNpcFoto(sx, pie, n, heroe.x >= n.x ? 1 : -1);
+		const arriba = pie - 125 * S + Math.sin(tiempo * 3 + n.x) * 3 * S;
+		if (!n.hablado) dibujarGlobo(sx, arriba, "!", "#ffe066");
+		else if (estado === "oficina" && companeroCerca()) dibujarGlobo(sx, arriba, esTactil ? "Hablar" : "E · Hablar", "#fffbea");
+	}
+
+	// Computadora al fondo de la oficina: monitor grande con la Terminal
+	// Celaque (colores y logo de Celaque) sobre su escritorio.
+	function dibujarComputadora(m) {
+		const of = m.oficina;
+		const sx = of.terminalX - camara;
+		if (sx < -200 || sx > W + 200) return;
+		const piso = SUELO + 40 * S;
+		const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
+
+		// Escritorio
+		const topY = piso - 70 * S;
+		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillRect(sx - 80 * S, topY, 160 * S, 70 * S);
+		ctx.fillStyle = COLORES.verde;
+		ctx.fillRect(sx - 90 * S, topY - 8 * S, 180 * S, 10 * S);
+
+		// Monitor
+		const mw = 150 * S;
+		const mh = 100 * S;
+		const my = topY - 30 * S - mh;
+		ctx.fillStyle = "#1c2526";
+		ctx.fillRect(sx - 8 * S, topY - 30 * S, 16 * S, 24 * S);
+		ctx.fillRect(sx - 36 * S, topY - 10 * S, 72 * S, 5 * S);
+		ctx.save();
+		if (!m.completo) {
+			ctx.shadowColor = COLORES.claro;
+			ctx.shadowBlur = (18 + 16 * pulso) * S;
+		}
+		rectRedondo(sx - mw / 2 - 8 * S, my - 8 * S, mw + 16 * S, mh + 16 * S, 8 * S);
+		ctx.fillStyle = "#1c2526";
+		ctx.fill();
+		ctx.restore();
+		const pantalla = ctx.createLinearGradient(0, my, 0, my + mh);
+		pantalla.addColorStop(0, COLORES.teal);
+		pantalla.addColorStop(1, COLORES.oscuro);
+		ctx.fillStyle = pantalla;
+		ctx.fillRect(sx - mw / 2, my, mw, mh);
+		const logo = logoCelaqueBlanco.elemento;
+		if (logo) dibujarImagenContenida(logo, sx, my + mh * 0.4, 46 * S, 46 * S);
+		ctx.fillStyle = "#fff";
+		ctx.font = `bold ${11 * S}px ${FUENTE}`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(m.completo ? "✓ Módulo completado" : "Terminal Celaque", sx, my + mh * 0.82);
+		if (!m.completo && Math.sin(tiempo * 6) > 0) ctx.fillRect(sx + 50 * S, my + mh * 0.78, 6 * S, 9 * S); // cursor
+
+		// Silla de la computadora
+		ctx.fillStyle = COLORES.verde;
+		rectRedondo(sx - 60 * S, piso - 42 * S, 36 * S, 8 * S, 4 * S);
+		ctx.fill();
+		ctx.fillStyle = "#2e3a3c";
+		ctx.fillRect(sx - 44 * S, piso - 34 * S, 4 * S, 30 * S);
+
+		if (estado === "oficina" && enTerminal() && !m.completo) {
+			dibujarGlobo(sx - 50 * S, my - 22 * S, esTactil ? "Toca Hablar para usarla" : "E · Usar computadora", "#c9f7f1");
+		}
+	}
+
 	// ---------- Guías de dirección ----------
 	// Hacia dónde ir ahora: el próximo NPC por conocer (adelante), el
 	// Guardián/tubo de la cueva, el próximo enemigo, la puerta del próximo
@@ -3712,6 +4161,11 @@
 		if (estado === "urbano") {
 			const m = moduloPendiente();
 			return m ? m.x : LARGO_META;
+		}
+		if (estado === "oficina") {
+			const of = oficinaActual.oficina;
+			if (!of.companero.hablado) return of.companero.x;
+			return oficinaActual.completo ? of.x0 + 70 : of.terminalX - 50;
 		}
 		return null;
 	}
@@ -4616,6 +5070,19 @@
 
 		const t = tono(heroe.x / LARGO);
 		// afuera (camino rural) | cueva (oscura) | urbano (al salir, con edificios)
+		// | oficina (adentro de un módulo)
+		if (oficinaActual) {
+			dibujarFondoOficina(oficinaActual);
+			dibujarSueloOficina();
+			dibujarPuertaSalida(oficinaActual);
+			dibujarComputadora(oficinaActual);
+			dibujarGuias();
+			dibujarObstaculos(oficinaActual.oficina.obstaculos);
+			dibujarCompanero(oficinaActual);
+			dibujarHeroe(t);
+			dibujarAvisos(dt);
+			return;
+		}
 		const modo = vistaUrbana ? "urbano" : dentroCueva ? "cueva" : "afuera";
 
 		if (modo === "cueva") {

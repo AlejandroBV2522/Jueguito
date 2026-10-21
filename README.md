@@ -37,8 +37,9 @@ ocupado, usa otro número, por ejemplo 5501.)
 | Elegir personaje (inicio) | ← → o clic en la tarjeta | Tocar la tarjeta |
 | Caminar                 | ← → o A / D (o la rueda del mouse) | Botones ◀ ▶ |
 | Correr                  | Mantener Q mientras caminas | Mantener "Correr" |
-| Saltar                  | ↑ o W                     | Botón "Saltar"     |
-| Hablar / avanzar diálogo | E, Enter o Espacio        | Botón "Hablar" o tocar la caja |
+| Saltar                  | Espacio, ↑ o W            | Botón "Saltar"     |
+| Hablar / entrar / avanzar diálogo | E o Enter (Espacio también, si hay alguien o una puerta enfrente) | Botón "Hablar" o tocar la caja |
+| Responder en la computadora | Clic o teclas 1, 2, 3 | Tocar la opción |
 
 Es un plataformero: cada NPC espera arriba de un andamio y hay que subir
 saltando por los escalones para hablarle (desde el piso no te escucha).
@@ -47,6 +48,23 @@ de concreto que hay que saltar.
 
 Los NPC te hablan solos la primera vez que llegas a su andamio. Después
 puedes volver a hablarles con E.
+
+Para quien no juega seguido: se puede saltar un instante después de salir
+de un borde, y si presionas saltar justo antes de aterrizar el salto sale
+solo. Caer en un hueco de la cueva te regresa justo antes del hueco, sin
+perder vidas. Unas flechas luminosas a los pies del personaje y una columna
+de luz marcan siempre a dónde ir.
+
+### Módulos de capacitación (la calle de Celaque)
+
+Al salir de la cueva llegas a la calle de Celaque. Son 6 módulos: el
+primero (Talento) es el camino y la cueva, y los otros 5 son edificios
+(Proyectos, Procesos, SharePoint, Seguridad e IA). Al llegar a la puerta de
+cada uno entras a su **oficina**: te recibe un compañero, hay muebles que
+saltar, y al fondo una computadora (Terminal Celaque) donde contestas las
+preguntas del módulo. Al terminar vuelves a la calle, subes de nivel y se
+abre la reja para seguir. Al final de la calle está el letrero
+"¿Estás listo?".
 
 ## Personalizar
 
@@ -62,6 +80,15 @@ Todo lo editable está en **`config.js`**:
   herramienta) y `dialogo` (lista de
   frases). Para agregar un NPC nuevo, copia un bloque `{ ... }` y cambia los
   datos. No hay límite de NPCs.
+- `colores`: colores oficiales de Celaque (también están en `style.css`).
+- `MODULOS`: los módulos de la calle de Celaque (nombre, color, logo
+  opcional, lo que dice el compañero de la oficina y las preguntas).
+  `preguntasPorModulo` dice cuántas hace la computadora.
+- `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
+
+El logo de Celaque está en `assets/logos/` (recreado en vector). Si tienen
+los logos oficiales de cada módulo, pónganlos ahí y agréguenlos con `logo`
+en `MODULOS`: se dibujan sin deformar.
 
 ## Archivos
 
