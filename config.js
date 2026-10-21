@@ -13,7 +13,6 @@ window.CONFIG_JUEGO = {
   nombreMeta: "CELAQUE",     // texto del letrero de llegada
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
-  animacionPiernas: "codigo", // "codigo": piernas animadas por partes · "fotos": alterna las 2 fotos de zancada
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
 
   textos: {

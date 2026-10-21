@@ -86,18 +86,9 @@ Todo lo editable está en **`config.js`**:
   `preguntasPorModulo` dice cuántas hace la computadora.
 - `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
 
-- `animacionPiernas`: `"codigo"` (por defecto) anima piernas y brazos por
-  piezas; `"fotos"` vuelve a alternar las fotos de zancada.
-
 **Logos:** el juego los busca en `assets/logos/` con nombres fijos (ver
 `assets/logos/LEEME.md`). Mientras no estén, se ve un recuadro que dice
 "LOGO" en su lugar. Se dibujan sin deformar.
-
-**Animación por piezas:** `tools/partes_personaje.py` corta la foto "de pie"
-de cada personaje en torso, muslos, pantorrillas y (en el chico) brazos, en
-`assets/personaje/partes/`. Si cambia esa foto, hay que ajustar sus medidas y
-volver a correrlo (`python tools/partes_personaje.py --revisar` deja una
-imagen de control para comprobar los cortes).
 
 ## Archivos
 

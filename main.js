@@ -735,100 +735,6 @@
 		chica: SPRITES_HEROE_CHICA,
 	};
 
-	// ---------- Piernas animadas por código ----------
-	// tools/partes_personaje.py corta la foto "de pie" en torso + muslo y
-	// pantorrilla de cada pierna (assets/personaje/partes/, con sus puntos de
-	// giro en partes.js). Al caminar y correr se giran desde la cadera y la
-	// rodilla: un ciclo continuo con el MISMO dibujo que el personaje quieto.
-	// config.js → animacionPiernas: "fotos" vuelve a alternar las 2 fotos de
-	// zancada (caminando / caminando2).
-	for (const [clave, datos] of Object.entries(window.PARTES_PERSONAJE || {})) {
-		const piezas = {};
-		for (const [nombre, p] of Object.entries(datos.piezas)) {
-			piezas[nombre] = { ...p, cargando: cargarImagen(RUTA_PERSONAJE + "partes/" + p.archivo) };
-		}
-		if (SPRITES_POR_PERSONAJE[clave]) SPRITES_POR_PERSONAJE[clave].rig = { ...datos, piezas };
-	}
-	const rigListo = (rig) => rig && CFG.animacionPiernas !== "fotos" && Object.values(rig.piezas).every((p) => p.cargando.elemento);
-
-	// Ángulos de las piernas para la fase de pasos (una vuelta = un paso con
-	// cada pierna). marcha: ~0.45 caminando → 1 corriendo (más zancada y más
-	// rodilla). "caida": cuánto bajar el cuerpo (px de la foto) para que el
-	// pie más bajo quede apoyado en el piso, así el rebote sale solo.
-	function posturaPiernas(rig, fase, marcha) {
-		const r = clamp((marcha - 0.45) / 0.55, 0, 1);
-		const ampMuslo = lerp(0.3, 0.55, r);
-		const ampRodilla = lerp(0.55, 1.25, r);
-		const flexBase = lerp(0.05, 0.22, r);
-		const postura = { caida: Infinity };
-		for (const [lado, desfase] of [["A", 0], ["B", Math.PI]]) {
-			const f = fase + desfase;
-			const muslo = -ampMuslo * Math.sin(f); // negativo = hacia adelante
-			// La rodilla se dobla mientras la pierna pasa hacia adelante
-			const rodilla = flexBase + ampRodilla * Math.pow(Math.max(0, Math.cos(f - 0.5)), 1.5);
-			postura[lado] = { muslo, rodilla };
-			const p = rig.piernas[lado];
-			const dx1 = p.rodilla[0] - p.cadera[0];
-			const dy1 = p.rodilla[1] - p.cadera[1];
-			const dy2 = rig.pie - p.rodilla[1];
-			const pieY = p.cadera[1] + dx1 * Math.sin(muslo) + dy1 * Math.cos(muslo) + dy2 * Math.cos(muslo + rodilla);
-			postura.caida = Math.min(postura.caida, rig.pie - pieY);
-			// Cada brazo va al revés que la pierna de su lado. Al correr, más
-			// balanceo y el codo doblado (como corredor), más aún al ir adelante.
-			const hombro = lerp(0.3, 0.75, r) * Math.sin(f);
-			const codo = -(lerp(0.12, 1.35, r) + lerp(0.25, 0.35, r) * Math.max(0, -Math.sin(f)));
-			postura["brazo" + lado] = { hombro, codo };
-		}
-		return postura;
-	}
-
-	// Pinta el torso y las 4 piezas de las piernas con la misma escala y
-	// ancla que la foto "quieto" (meta), girando cada pieza en su articulación.
-	function pintarRig(rig, meta, k, postura) {
-		const ox = -meta.anclaX * rig.ancho * k;
-		const oy = -meta.abajo * rig.alto * k;
-		const pieza = (nombre) => {
-			const p = rig.piezas[nombre];
-			const img = p.cargando.elemento;
-			ctx.drawImage(img, ox + p.x * k, oy + p.y * k, img.naturalWidth * k, img.naturalHeight * k);
-		};
-		const girar = (punto, angulo) => {
-			const px = ox + punto[0] * k;
-			const py = oy + punto[1] * k;
-			ctx.translate(px, py);
-			ctx.rotate(angulo);
-			ctx.translate(-px, -py);
-		};
-		ctx.translate(0, postura.caida * k);
-		// B (la pierna de atrás en la foto) primero, luego A, y el torso encima
-		for (const lado of ["B", "A"]) {
-			const pierna = rig.piernas[lado];
-			ctx.save();
-			girar(pierna.cadera, postura[lado].muslo);
-			ctx.save();
-			girar(pierna.rodilla, postura[lado].rodilla);
-			pieza("pantorrilla" + lado);
-			ctx.restore();
-			pieza("muslo" + lado);
-			ctx.restore();
-		}
-		// Brazos (si la foto los tiene separados): el de atrás (B) detrás del
-		// torso y el de adelante (A) encima
-		const brazo = (lado) => {
-			const b = rig.brazos && rig.brazos[lado];
-			if (!b) return;
-			ctx.save();
-			girar(b.hombro, postura["brazo" + lado].hombro);
-			pieza("brazo" + lado);
-			girar(b.codo, postura["brazo" + lado].codo);
-			pieza("antebrazo" + lado);
-			ctx.restore();
-		};
-		brazo("B");
-		pieza("torso");
-		brazo("A");
-	}
-
 	// ---------- NPCs con la misma ilustración del héroe ----------
 	// Cada NPC usa la foto "de pie" del Chico o la Chica, recoloreando casco,
 	// chaleco, pantalón y pelo con sus propios colores. Las máscaras de cada
@@ -4972,17 +4878,15 @@
 		// Cerca del cambio (|cos| < ANCHO_FUNDIDO) las 2 fotos se funden, así
 		// no hay un corte seco entre zancadas.
 		// Corriendo (Q) se alternan las fotos de correr (corre / correPaso);
-		// caminando, las piernas por código (ver pintarRig), o si no hay, las
-		// fotos de zancada (caminando / caminando2).
+		// caminando, las fotos de zancada (caminando / caminando2).
 		const recibeGolpe = o.golpeado && sprites.golpeado;
 		const enMarcha = o.moviendo && !recibeGolpe && !o.agachado && !o.atacando && heroeEnSuelo();
 		const fotosCorrer = enMarcha && o.corriendo && sprites.corre && sprites.correPaso && sprites.corre.cargando.elemento && sprites.correPaso.cargando.elemento;
 		const [zancada1, zancada2] = fotosCorrer ? ["corre", "correPaso"] : ["caminando", "caminando2"];
 		const hayZancada2 = sprites[zancada2] && sprites[zancada2] !== sprites[zancada1];
-		const conRig = enMarcha && !fotosCorrer && rigListo(sprites.rig);
 		const ciclo = Math.cos(o.fase);
 		const ANCHO_FUNDIDO = 0.35;
-		const peso2 = enMarcha && hayZancada2 && !conRig ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
+		const peso2 = enMarcha && hayZancada2 ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
 		const pose = recibeGolpe
 			? "golpeado"
 			: o.agachado
@@ -4991,7 +4895,7 @@
 			? "golpe"
 			: !heroeEnSuelo()
 			? "saltando"
-			: o.moviendo && !conRig
+			: o.moviendo
 			? peso2 >= 1
 				? zancada2
 				: zancada1
@@ -5028,20 +4932,11 @@
 		const subida = hayZancada2 ? (1 - ciclo) / 2 : Math.abs(Math.sin(o.fase));
 		// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
 		// tiemble con la cámara al moverse — ver nota en dibujarEnemigoSprite).
-		// Con las piernas por código, el rebote sale solo de apoyar el pie más
-		// bajo (postura.caida), así que no se suma otro.
-		const rebote = conRig
-			? 0
-			: enMarcha
+		const rebote = enMarcha
 			? subida * (1.5 + 4.5 * marcha) * s
 			: o.moviendo
 			? 0
 			: Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
-		// Squash & stretch: aplasta un poco al apoyar, estira en el aire (no
-		// con las piernas por código: deformaría las piezas).
-		const estiro = enMarcha && !conRig ? (subida - 0.5) * 0.06 * marcha : 0;
-		// Se inclina hacia adelante al correr, con un cabeceo leve por paso.
-		const inclinacion = enMarcha ? 0.13 * marcha + Math.sin(o.fase) * 0.025 * marcha : 0;
 		const altoDeseado = 100 * s * embestida * factorAgachado * factorEscalaPropio;
 
 		ctx.save();
@@ -5054,8 +4949,6 @@
 		ctx.fill();
 		ctx.translate(0, -rebote);
 		ctx.scale(o.dir, 1);
-		ctx.rotate(inclinacion);
-		ctx.scale(1 - estiro * 0.6, 1 + estiro);
 		if (pose === "agachado" && sinFotoPropia) ctx.scale(1, 0.55);
 
 		// Gris al inicio del camino, colores vivos al llegar a Celaque — mismo
@@ -5084,9 +4977,7 @@
 			ctx.globalAlpha = alfa;
 			ctx.drawImage(img, -m.anclaX * dw, -m.abajo * dh, dw, dh);
 		};
-		if (conRig) {
-			pintarRig(sprites.rig, meta, k, posturaPiernas(sprites.rig, o.fase, marcha));
-		} else if (el2) {
+		if (el2) {
 			// Fundido cruzado sin "agujeros": la foto que sale queda opaca
 			// hasta la mitad y la que entra se pinta encima; pasada la mitad,
 			// la que entra ya está opaca y la de abajo se desvanece.
