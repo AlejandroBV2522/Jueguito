@@ -20,8 +20,8 @@ for (let x = 120, i = 0; x < FIN_PLANOS - 150; x += 190 + ((i * 41) % 80), i++) 
 // Frases que acompañan la caminata por los planos
 const FRASES_PLANOS = [
 	{ x: 240, texto: "Todo empieza con una idea..." },
-	{ x: 1000, texto: "...las ideas toman tiempo..." },
-	{ x: 1750, texto: "...hasta que un día se encienden." },
+	{ x: 600, texto: "...las ideas toman tiempo..." },
+	{ x: 950, texto: "...hasta que un día se encienden." },
 ];
 const TINTA_PLANO = "rgba(170,178,188,"; // gris apagado, casi sin tinta
 

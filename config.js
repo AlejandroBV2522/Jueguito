@@ -13,7 +13,7 @@
 window.CONFIG_JUEGO = {
   velocidadPersonaje: 120,   // píxeles por segundo (súbelo o bájalo a gusto)
   velocidadCorriendo: 320,   // velocidad mientras se mantiene presionada la Q
-  largoDelCamino: 7000,      // distancia total desde el inicio hasta Celaque
+  largoDelCamino: 6000,      // distancia desde el inicio hasta la entrada de la Cueva
   nombreMeta: "CELAQUE",     // texto del letrero de llegada
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos

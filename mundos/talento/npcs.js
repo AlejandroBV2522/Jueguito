@@ -6,8 +6,8 @@
 
    - nombre:     aparece en la caja de diálogo.
    - posicion:   dónde aparece en el camino. 0 = inicio, 1 = Celaque.
-                 (usa valores entre 0.34 y 0.9, sin repetir: antes de
-                 0.32 está la zona de planos del inicio)
+                 (usa valores entre 0.24 y 0.9, sin repetir: antes de
+                 0.2 está la zona de planos del inicio)
    - apariencia: colores en formato "#RRGGBB". Todos van vestidos de
                  obra, con la misma ilustración del protagonista teñida
                  con estos colores (casco, chaleco, pantalon y pelo):
@@ -26,7 +26,7 @@
 window.NPCS = [
   {
     nombre: "Don Javi",
-    posicion: 0.36, // justo después de la puerta de luz (zona de planos)
+    posicion: 0.25, // justo después de la puerta de luz (zona de planos)
     apariencia: {
       piel: "#c99468", ropa: "#5a7bb5", pantalon: "#3c5a99", pelo: "#dcdcdc", cuerpo: "chico",
       casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "martillo",
@@ -40,7 +40,7 @@ window.NPCS = [
   },
   {
     nombre: "Keidy",
-    posicion: 0.50,
+    posicion: 0.42,
     apariencia: {
       piel: "#ddbfac", ropa: "#6592fd", pantalon: "#5a4a7a", pelo: "#2b1a12", cuerpo: "chica",
       casco: "#ffffff", chaleco: "#c6f432", botas: "#4a3020", herramienta: "plano",
@@ -53,7 +53,7 @@ window.NPCS = [
   },
   {
     nombre: "Mario",
-    posicion: 0.63,
+    posicion: 0.57,
     apariencia: {
       piel: "#d8a47f", ropa: "#e0664f", pantalon: "#2f5fa8", pelo: "#6e6e6e", cuerpo: "chico",
       casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "llave",
@@ -66,7 +66,7 @@ window.NPCS = [
   },
   {
     nombre: "Ingeniero Allan",
-    posicion: 0.76,
+    posicion: 0.72,
     apariencia: {
       piel: "#b98458", ropa: "#3f8f4f", pantalon: "#5b4a2e", pelo: "#3a2616", cuerpo: "chico",
       casco: "#2f80ed", chaleco: "#c6f432", botas: "#3a2616", herramienta: "portapapeles",
@@ -79,7 +79,7 @@ window.NPCS = [
   },
   {
     nombre: "Carlos",
-    posicion: 0.88,
+    posicion: 0.86,
     apariencia: {
       piel: "#e2b08a", ropa: "#2fa3d6", pantalon: "#2d4f7c", pelo: "#a0522d", cuerpo: "chico",
       casco: "#ffffff", chaleco: "#ff7a1a", botas: "#4a3020", herramienta: "plano",

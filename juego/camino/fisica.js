@@ -25,7 +25,7 @@ const corazones = () => "♥".repeat(vidas) + "♡".repeat(Math.max(0, vidasMax(
 let avisos = []; // textos flotantes sobre el héroe ("¡Nivel 2! +1 ♥")
 
 // Zona de planos del inicio: termina en la puerta de luz (en x)
-const FIN_PLANOS = 2200; // largo a propósito: las ideas toman tiempo
+const FIN_PLANOS = 1200; // el tramo gris del inicio (antes 2200: se acortó para llegar antes al color)
 let cruzoPlanos = false;
 let destello = 0; // fogonazo blanco al cruzar la puerta (1 → 0)
 
@@ -71,8 +71,8 @@ const OBSTACULOS_CUEVA = [
 // Igual que los obstáculos de la Cueva: sólidas, hay que saltarlas. Lejos
 // de los andamios de los NPC y del Guardián de la Entrada (LARGO - 260).
 const OBSTACULOS_AFUERA = [
-	{ x: 3050, tipo: "barrera", medioAncho: 38, alto: 60 },
-	{ x: 3950, tipo: "barrera", medioAncho: 38, alto: 60 },
-	{ x: 4850, tipo: "barrera", medioAncho: 38, alto: 70 },
-	{ x: 6450, tipo: "barrera", medioAncho: 38, alto: 70 },
+	{ x: 2050, tipo: "barrera", medioAncho: 38, alto: 60 },
+	{ x: 2950, tipo: "barrera", medioAncho: 38, alto: 60 },
+	{ x: 3850, tipo: "barrera", medioAncho: 38, alto: 70 },
+	{ x: 5450, tipo: "barrera", medioAncho: 38, alto: 70 },
 ];
