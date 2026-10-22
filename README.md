@@ -86,7 +86,7 @@ golpean y sonríe cuando ganas corazones.
 
 Cada mundo tiene un **personaje fijo** (con ★ y su nombre siempre a la
 vista): Nancy Larios en Talento (al inicio del camino), Nazareth Gallardo en
-Proyectos, Luis Morán en SharePoint, Sergio en Seguridad y Keidy Durón en IA.
+Proyectos, Luis Morán en SharePoint, Sergio en Seguridad, Astrid en Procesos y Gracia en IA.
 Se ven en el mapa, en la carta y son quienes te reciben.
 
 Cada oficina es distinta: lo que se ve por el ventanal (obra con grúas,
@@ -117,27 +117,34 @@ vez (se cambia o apaga en `config.js` → `nombrePruebas`).
 
 ## Personalizar
 
-Todo lo editable está en **`config.js`**:
+Lo general está en **`config.js`**:
 
 - `velocidadPersonaje` / `velocidadCorriendo`: qué tan rápido camina y corre.
 - `personajes`: el chico y la chica que se eligen al inicio (colores, pelo
   largo, falda, lazo).
 - `largoDelCamino`: distancia hasta Celaque.
 - `textos`: títulos y mensajes de las pantallas.
-- `NPCS`: la lista de personajes. Cada uno tiene `nombre`, `posicion`
-  (0 = inicio, 1 = Celaque), `apariencia` (colores, casco, chaleco y
-  herramienta) y `dialogo` (lista de
-  frases). Para agregar un NPC nuevo, copia un bloque `{ ... }` y cambia los
-  datos. No hay límite de NPCs.
 - `colores`: paleta oficial de Celaque (también en `style.css` como
   `--cel-...`).
-- `MODULOS`: los mundos del mapa (nombre, sistema y descripción de su
-  carta, ícono, color, logo opcional, el personaje fijo `anfitrion`, cómo es
-  su `oficina` por dentro, la intro y los comentarios de los compañeros, y
-  las preguntas).
 - `nombrePruebas`: el nombre que abre todos los mundos (por defecto Kojima).
   `preguntasPorModulo` dice cuántas hace la computadora.
 - `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
+- La explicación de cada campo de un mundo (sección "Módulos de capacitación").
+
+Lo de cada mundo está en **su carpeta, `mundos/<mundo>/`** (ver
+`mundos/LEEME.md`):
+
+- `mundo.js`: nombre, sistema y descripción de su carta, ícono, color, logo
+  opcional, el personaje fijo `anfitrion`, cómo es su `oficina` por dentro,
+  la intro y los comentarios de los compañeros, y las preguntas.
+- En Talento, además, `npcs.js`: la gente del camino. Cada NPC tiene `nombre`,
+  `posicion` (0 = inicio, 1 = Celaque), `apariencia` (colores, casco, chaleco
+  y herramienta) y `dialogo` (lista de frases). Para agregar uno, copia un
+  bloque `{ ... }` y cambia los datos. No hay límite de NPCs.
+- Y `cueva.js`: los antivalores de la Cueva con sus preguntas.
+
+Para agregar un mundo nuevo se copia una carpeta y se agrega su línea en
+`index.html`. No hace falta tocar el motor (`juego/`).
 
 **Marca:** el juego sigue el manual de marca de Celaque
 (`assets/marca/`): paleta oficial, tipografía Muli y el logo siempre sin
@@ -149,11 +156,17 @@ proyectos). Mientras no estén, se ve un recuadro que dice "LOGO".
 
 - `index.html`: estructura de la página (pantallas, caja de diálogo, controles).
 - `style.css`: estilos de la interfaz.
-- `config.js`: configuración, textos y NPCs.
-- `main.js`: lógica y dibujo del juego.
+- `config.js`: configuración general y textos.
+- `mundos/`: un mundo por carpeta, con su gente, diálogos y preguntas.
+- `juego/`: el motor (lógica y dibujo), en varios archivos; su mapa está en
+  `juego/LEEME.md`.
 - `assets/personaje/mascaras/`: zonas (casco, chaleco, pantalón, pelo) de
   las fotos del protagonista, para teñir a cada NPC con sus colores.
 - `assets/edificios/`: imágenes PNG que se ven al salir de la Cueva, junto
   al letrero de llegada a Celaque.
 - `tools/probar_juego.mjs`: prueba el juego en Chrome sin ventana (teclas reales,
   capturas y errores de JavaScript). Ej.: `node tools/probar_juego.mjs oficinas`.
+- `tools/comparar_capturas.mjs`: corre todos los escenarios y compara cada
+  captura con una base guardada, para cambios que no deben verse distinto.
+- `tools/revisar_proyecto.mjs`: revisa los scripts de `index.html`, la
+  sintaxis, el orden de carga, los datos de cada mundo y las rutas de assets.
