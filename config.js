@@ -8,18 +8,35 @@
 
 window.CONFIG_JUEGO = {
   velocidadPersonaje: 120,   // píxeles por segundo (súbelo o bájalo a gusto)
-  velocidadCorriendo: 240,   // velocidad mientras se mantiene presionada la Q
+  velocidadCorriendo: 320,   // velocidad mientras se mantiene presionada la Q
   largoDelCamino: 7000,      // distancia total desde el inicio hasta Celaque
   nombreMeta: "CELAQUE",     // texto del letrero de llegada
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
+  preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
 
   textos: {
     titulo: "Camino a Celaque",
-    subtitulo: "Camina, conoce a quienes encuentres y devuélvele el color al mundo.",
-    victoriaTitulo: "¡Felicidades!",
-    victoriaTexto: "Bienvenido a Celaque.",
+    subtitulo: "Camina, conoce a quienes encuentres y completa los módulos de tu capacitación.",
+    victoriaTitulo: "¿Estás listo?",
+    victoriaTexto: "¡Bienvenido a Celaque! Completaste todos los módulos de tu capacitación.",
     contadorNpcs: "Personas conocidas",
+    letreroFinal: "¿Estás listo?", // letrero al final de la calle de Celaque
+  },
+
+  /* Paleta corporativa oficial de Celaque (manual de marca). Prioridad a
+     los verdes. Se usa en el dibujo del juego (canvas); los mismos colores
+     están en style.css (--cel-...) para la interfaz. */
+  colores: {
+    verdeProfundo: "#042523",       // texto principal, encabezados, botón primario
+    verdeInstitucional: "#488478",  // acento interactivo, estados informativos
+    grisClaro: "#CCCCCC",           // divisores y bordes suaves
+    beige: "#A99886",               // acentos cálidos y detalles de apoyo
+    blanco: "#FFFFFF",              // fondo principal
+    negro: "#000000",               // texto alternativo
+    // Variantes de interfaz (no oficiales)
+    verdeProfundoHover: "#063330",
+    fondoVerdeClaro: "#e3eeeb",
   },
 
   /* Personajes que se pueden elegir al inicio. Los colores son los que
@@ -48,9 +65,17 @@ window.CONFIG_JUEGO = {
 
    - nombre:     aparece en la caja de diálogo.
    - posicion:   dónde aparece en el camino. 0 = inicio, 1 = Celaque.
-                 (usa valores entre 0.08 y 0.95, sin repetir)
-   - apariencia: colores en formato "#RRGGBB". "sombrero" puede ser un
-                 color o null si no lleva.
+                 (usa valores entre 0.34 y 0.9, sin repetir: antes de
+                 0.32 está la zona de planos del inicio)
+   - apariencia: colores en formato "#RRGGBB". Todos van vestidos de
+                 obra, con la misma ilustración del protagonista teñida
+                 con estos colores (casco, chaleco, pantalon y pelo):
+                   cuerpo:      "chico" o "chica" (qué ilustración usar).
+                   casco:       color del casco (blanco = ingeniero,
+                                amarillo = constructor, azul = técnico).
+                   chaleco:     color del chaleco reflectivo.
+                   botas / herramienta / ropa: solo se usan en el dibujo de
+                                respaldo mientras cargan las imágenes.
    - dialogo:    lista de frases. Cada frase es una "página" del diálogo;
                  el jugador avanza con E / Enter / Espacio o tocando la caja.
    --------------------------------------------------------------------- */
@@ -58,49 +83,64 @@ window.CONFIG_JUEGO = {
 window.NPCS = [
   {
     nombre: "Don Javi",
-    posicion: 0.12,
-    apariencia: { piel: "#c99468", ropa: "#8d8f91", pantalon: "#4e5054", pelo: "#dcdcdc", sombrero: null },
+    posicion: 0.36, // justo después de la puerta de luz (zona de planos)
+    apariencia: {
+      piel: "#c99468", ropa: "#5a7bb5", pantalon: "#3c5a99", pelo: "#dcdcdc", cuerpo: "chico",
+      casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "martillo",
+    },
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 1
-      "Todo se ve tan gris por aquí... hace tiempo que no sale el sol.",
+      "Todo se ve tan gris por aquí... hace tiempo que las fábricas no tienen color.",
       "Dicen que si caminas hacia Celaque, el color vuelve poco a poco.",
-      "Anda, yo te espero aquí.",
+      "Anda, yo te espero aquí. ¡Y nunca te quites el casco!",
     ],
   },
   {
     nombre: "Keidy",
-    posicion: 0.30,
-    apariencia: { piel: "#ddbfac", ropa: "#6592fd", pantalon: "#5a4a7a", pelo: "#2b1a12", sombrero: null },
+    posicion: 0.50,
+    apariencia: {
+      piel: "#ddbfac", ropa: "#6592fd", pantalon: "#5a4a7a", pelo: "#2b1a12", cuerpo: "chica",
+      casco: "#ffffff", chaleco: "#c6f432", botas: "#4a3020", herramienta: "plano",
+    },
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 2
       "¡Hola! ¿Viste? La lluvia ya casi se fue.",
-      "Mira los árboles: empiezan a tener hojas otra vez.",
+      "Mira las bodegas: ya empiezan a pintarse de colores otra vez.",
     ],
   },
   {
     nombre: "Mario",
-    posicion: 0.50,
-    apariencia: { piel: "#d8a47f", ropa: "#e0664f", pantalon: "#6b4b3a", pelo: "#6e6e6e", sombrero: "#e8c872" },
+    posicion: 0.63,
+    apariencia: {
+      piel: "#d8a47f", ropa: "#e0664f", pantalon: "#2f5fa8", pelo: "#6e6e6e", cuerpo: "chico",
+      casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "llave",
+    },
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 3
       "Ya vas a mitad de camino.",
-      "Aquí siembro flores desde que era niña. Llévate un poco de su color.",
+      "Aquí construimos desde hace años. ¿Podemos arreglarlo? ¡Sí, podemos!",
     ],
   },
   {
-    nombre: "Guardabosques Allan",
-    posicion: 0.70,
-    apariencia: { piel: "#b98458", ropa: "#3f8f4f", pantalon: "#5b4a2e", pelo: "#3a2616", sombrero: "#6b8e23" },
+    nombre: "Ingeniero Allan",
+    posicion: 0.76,
+    apariencia: {
+      piel: "#b98458", ropa: "#3f8f4f", pantalon: "#5b4a2e", pelo: "#3a2616", cuerpo: "chico",
+      casco: "#2f80ed", chaleco: "#c6f432", botas: "#3a2616", herramienta: "portapapeles",
+    },
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 4
-      "Este bosque nublado es hogar de muchísimas especies.",
-      "Cuídalo mientras caminas. Celaque ya está cerca.",
+      "Esta zona industrial le da trabajo a muchísima gente.",
+      "Respeta las señales mientras caminas. Celaque ya está cerca.",
     ],
   },
   {
     nombre: "Carlos",
     posicion: 0.88,
-    apariencia: { piel: "#e2b08a", ropa: "#2fa3d6", pantalon: "#2d4f7c", pelo: "#a0522d", sombrero: null },
+    apariencia: {
+      piel: "#e2b08a", ropa: "#2fa3d6", pantalon: "#2d4f7c", pelo: "#a0522d", cuerpo: "chico",
+      casco: "#ffffff", chaleco: "#ff7a1a", botas: "#4a3020", herramienta: "plano",
+    },
     dialogo: [
       // ✏️ Escribe aquí el diálogo del NPC 5
       "¡Lo lograste! Solo un poco más.",
@@ -207,3 +247,204 @@ window.PREGUNTAS_CUEVA = [
     ],
   },
 ];
+
+/* ---------------------------------------------------------------------
+   Módulos de capacitación (la calle de Celaque, al salir de la Cueva)
+   ---------------------------------------------------------------------
+   Son 6 módulos. El primero (Talento) es todo lo anterior: el camino y la
+   Cueva, y ya está completo al salir de ella. Cada uno de los demás es un
+   EDIFICIO: al llegar a su puerta se entra a su OFICINA. Adentro te recibe
+   un compañero (dice la "intro"), hay muebles que saltar, y al fondo una
+   computadora (Terminal Celaque) donde se contestan las preguntas. Al
+   terminar vuelves a la calle con el módulo completo, subes de nivel y se
+   abre la reja para seguir. Fallar no quita vidas: la opción equivocada se
+   tacha y se vuelve a intentar. La computadora hace solo las primeras
+   "preguntasPorModulo" (arriba, en CONFIG_JUEGO) de cada módulo.
+
+   - nombre:      nombre del módulo (se ve en el letrero del edificio).
+   - subtitulo:   texto chico debajo del nombre.
+   - color:       color del edificio y del letrero ("#RRGGBB").
+   - logo:        (opcional) ruta a un PNG/SVG con el logo del módulo, ej.
+                  "assets/logos/Proyectos.png". Se dibuja SIN deformar
+                  (respeta su proporción). Sin logo se usa la inicial.
+   - completoAlSalirDeLaCueva: solo para Talento.
+   - intro:       lo que dice el compañero que te recibe en la oficina.
+   - companero:   (opcional) { nombre: "Ana", cuerpo: "chica" } para el
+                  compañero de la oficina. Sin esto: "Equipo de <módulo>".
+   - preguntas:   { pregunta, opciones, correcta (índice desde 0),
+                    explicacion (opcional, se muestra al acertar) }.
+
+   ✏️ Las preguntas de SharePoint salen de la capacitación "Suite de
+   Microsoft". Las demás son un BORRADOR: cada departamento debe
+   reemplazarlas con su contenido real.
+   --------------------------------------------------------------------- */
+
+window.MODULOS = [
+  {
+    nombre: "Talento",
+    subtitulo: "Celaque: quiénes somos",
+    color: "#488478", // verde institucional
+    completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
+    intro: [],
+    preguntas: [],
+  },
+  {
+    nombre: "Proyectos",
+    subtitulo: "Nuestro trabajo en Wrike",
+    color: "#042523", // verde profundo
+    intro: [
+      "Bienvenido al edificio de Proyectos.",
+      "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
+    ],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área de Proyectos
+        pregunta: "¿Qué es Wrike?",
+        opciones: [
+          "Una plataforma para planear y dar seguimiento a proyectos y tareas en equipo.",
+          "Un programa para editar fotos.",
+          "Una red social personal.",
+        ],
+        correcta: 0,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "Si te asignan una tarea en Wrike, ¿qué es lo correcto?",
+        opciones: [
+          "Ignorarla hasta que alguien pregunte.",
+          "Actualizar su estado y avances para que el equipo sepa cómo va.",
+          "Borrarla si no te gusta.",
+        ],
+        correcta: 1,
+      },
+    ],
+  },
+  {
+    nombre: "Procesos",
+    subtitulo: "Cómo hacemos las cosas",
+    color: "#A99886", // beige
+    intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área de Procesos
+        pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
+        opciones: [
+          "Improvisar sin avisar a nadie.",
+          "Preguntar a tu líder o al área responsable y seguir el proceso establecido.",
+          "Saltarte los pasos que no entiendas.",
+        ],
+        correcta: 1,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "¿Dónde se guardan los documentos de cada proceso?",
+        opciones: [
+          "En la carpeta del departamento en SharePoint.",
+          "En una memoria USB personal.",
+          "En el escritorio de tu computadora.",
+        ],
+        correcta: 0,
+      },
+    ],
+  },
+  {
+    nombre: "SharePoint",
+    subtitulo: "SharePoint, Outlook y Teams",
+    color: "#488478", // verde institucional
+    intro: [
+      "Bienvenido al edificio de Plataformas.",
+      "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
+    ],
+    preguntas: [
+      {
+        pregunta: "¿Qué es SharePoint?",
+        opciones: [
+          "Un juego de Microsoft.",
+          "Una plataforma de Microsoft para almacenar, organizar, compartir y acceder a información desde cualquier dispositivo.",
+          "Un antivirus.",
+        ],
+        correcta: 1,
+      },
+      {
+        pregunta: "¿Cómo se organiza la información en el SharePoint de Celaque?",
+        opciones: [
+          "Cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
+          "Todos los archivos van sueltos en una sola carpeta.",
+          "Cada persona guarda todo en su correo.",
+        ],
+        correcta: 0,
+      },
+      {
+        pregunta: "¿Para qué sirve el historial de versiones de un documento?",
+        opciones: [
+          "Para borrar el documento.",
+          "Para cambiarle el nombre.",
+          "Para rastrear cambios y recuperar versiones anteriores.",
+        ],
+        correcta: 2,
+      },
+      {
+        pregunta: "¿Qué herramienta usas para chatear y tener reuniones con otros colaboradores?",
+        opciones: ["Microsoft Teams.", "El historial de versiones.", "La papelera de reciclaje."],
+        correcta: 0,
+        explicacion: "Y en Outlook gestionas tu correo, calendario, contactos y grupos.",
+      },
+    ],
+  },
+  {
+    nombre: "Seguridad",
+    subtitulo: "Cuidamos la información",
+    color: "#042523", // verde profundo
+    intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área de Seguridad
+        pregunta: "Te llega un correo urgente pidiendo tu contraseña. ¿Qué haces?",
+        opciones: [
+          "La envío rápido para no tener problemas.",
+          "No la comparto y lo reporto al área de Sistemas.",
+          "Se la reenvío a un compañero.",
+        ],
+        correcta: 1,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "¿Qué debes usar para protegerte en la obra?",
+        opciones: ["Nada.", "Equipo de protección personal.", "Solo un casco de juguete."],
+        correcta: 1,
+      },
+    ],
+  },
+  {
+    nombre: "IA",
+    subtitulo: "Inteligencia artificial",
+    color: "#A99886", // beige
+    intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
+    preguntas: [
+      {
+        // ✏️ Borrador: revisar con el área responsable
+        pregunta: "¿Qué debes hacer con una respuesta generada por IA antes de usarla?",
+        opciones: [
+          "Copiarla sin leerla.",
+          "Revisarla y verificar que sea correcta.",
+          "Enviarla a todos los clientes.",
+        ],
+        correcta: 1,
+      },
+      {
+        // ✏️ Borrador
+        pregunta: "¿Se puede pegar información confidencial de la empresa en cualquier herramienta de IA?",
+        opciones: [
+          "Sí, siempre.",
+          "Solo en las herramientas aprobadas por la empresa.",
+          "Sí, si nadie se entera.",
+        ],
+        correcta: 1,
+      },
+    ],
+  },
+];
+
+/* Proyectos de Celaque que se ven como edificios de fondo en la calle
+   (solo decoración, con su nombre en el letrero). */
+window.PROYECTOS_CELAQUE = ["Zorzales", "Astria", "Céfiro"];

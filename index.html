@@ -31,24 +31,53 @@
         </div>
     </div>
 
+    <!-- Terminal Celaque: la computadora del fondo de cada oficina (módulo) -->
+    <div id="terminal" hidden>
+        <div class="monitor">
+            <div class="pantalla-pc">
+                <div class="barra-pc">
+                    <div class="espacio-logo logo-pc" data-logo="assets/logos/celaque-horizontal-blanco.png" role="img" aria-label="Celaque">LOGO</div>
+                    <span id="terminal-titulo"></span>
+                    <span id="terminal-progreso"></span>
+                </div>
+                <div class="cuerpo-pc">
+                    <p id="terminal-pregunta"></p>
+                    <div id="terminal-opciones"></div>
+                    <p id="terminal-pista"></p>
+                    <button id="terminal-salir" class="boton boton-grande" hidden>Volver a la calle <span class="boton-icono" aria-hidden="true">▶</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="pie-monitor"></div>
+    </div>
+
     <!-- Pantalla de inicio -->
     <div id="pantalla-inicio" class="pantalla">
+        <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
         <h1 id="titulo"></h1>
         <p id="subtitulo"></p>
         <div id="selector" role="radiogroup" aria-label="Elige tu personaje">
             <button class="opcion" data-personaje="chico" role="radio"><canvas></canvas><span></span></button>
             <button class="opcion" data-personaje="chica" role="radio"><canvas></canvas><span></span></button>
         </div>
-        <button id="btn-comenzar" class="boton">Comenzar</button>
-        <p class="ayuda">Camina con ← → (o A / D, o la rueda del mouse). Mantén Q para correr.<br>Habla y avanza los diálogos con E, Enter o Espacio.<br>Salta con ↑ y agáchate con ↓ (frente a un tubo, para entrar).</p>
+        <button id="btn-comenzar" class="boton boton-grande">Comenzar <span class="boton-icono" aria-hidden="true">▶</span></button>
+        <div class="ayuda" aria-label="Controles">
+            <span class="tecla-ayuda"><kbd>←</kbd><kbd>→</kbd> Caminar</span>
+            <span class="tecla-ayuda"><kbd>Espacio</kbd> Saltar</span>
+            <span class="tecla-ayuda"><kbd>Q</kbd> Correr</span>
+            <span class="tecla-ayuda"><kbd>E</kbd> Hablar / entrar</span>
+            <span class="tecla-ayuda"><kbd>↓</kbd> Agacharse (en un tubo)</span>
+        </div>
     </div>
 
     <!-- Pantalla de victoria -->
     <div id="pantalla-victoria" class="pantalla" hidden>
+        <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
         <h1 id="victoria-titulo"></h1>
         <p id="victoria-texto"></p>
+        <p class="lema">Tú lo sueñas, juntos lo construimos.</p>
         <div class="botones">
-            <button id="btn-reiniciar" class="boton">Jugar de nuevo</button>
+            <button id="btn-reiniciar" class="boton boton-grande">Jugar de nuevo <span class="boton-icono" aria-hidden="true">↻</span></button>
             <button id="btn-cambiar" class="boton boton-secundario">Cambiar personaje</button>
         </div>
     </div>
@@ -61,7 +90,7 @@
         </div>
         <div class="grupo">
             <button id="btn-correr" class="tactil texto" aria-label="Correr">Correr</button>
-            <button id="btn-hablar" class="tactil texto" aria-label="Hablar">Hablar</button>
+            <button id="btn-hablar" class="tactil texto" aria-label="Hablar o entrar">Hablar</button>
             <button id="btn-saltar" class="tactil texto" aria-label="Saltar">Saltar</button>
             <button id="btn-agachar" class="tactil texto" aria-label="Agachar">Agachar</button>
         </div>

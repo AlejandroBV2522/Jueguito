@@ -1,4 +1,57 @@
-/* Camino a Celaque — estilos. Solo fuentes del sistema, sin recursos externos. */
+/* Camino a Celaque — estilos. Sin recursos externos: la tipografía Muli
+   (oficial de la marca) se carga desde assets/fuentes/. */
+
+/* Tipografía oficial: Muli Bold (titulares), Regular (subtítulos) y Light
+   (cuerpo de texto). */
+@font-face {
+	font-family: "Muli";
+	src: url("assets/fuentes/Muli-Light.ttf") format("truetype");
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Muli";
+	src: url("assets/fuentes/Muli-LightItalic.ttf") format("truetype");
+	font-weight: 300;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Muli";
+	src: url("assets/fuentes/Muli.ttf") format("truetype");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Muli";
+	src: url("assets/fuentes/Muli-Bold.ttf") format("truetype");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Paleta corporativa oficial (manual de marca). Prioridad a los verdes.
+   Los mismos valores están en config.js → CONFIG_JUEGO.colores (canvas). */
+:root {
+	--cel-verde-profundo: #042523; /* texto principal, encabezados, botón primario */
+	--cel-verde-institucional: #488478; /* acento interactivo, estados informativos, borde del botón secundario */
+	--cel-gris-claro: #cccccc; /* divisores y bordes suaves */
+	--cel-beige: #a99886; /* acentos cálidos y detalles de apoyo */
+	--cel-blanco: #ffffff; /* fondo principal */
+	--cel-negro: #000000; /* texto alternativo */
+
+	/* Variantes de interfaz (no oficiales) */
+	--cel-verde-profundo-hover: #063330;
+	--cel-fondo-verde-claro: #e3eeeb;
+	--cel-verde-suave: rgba(72, 132, 120, 0.12);
+
+	--fuente: "Mulish", "Muli", Arial, sans-serif;
+}
 
 * {
 	box-sizing: border-box;
@@ -13,8 +66,10 @@ body {
 	margin: 0;
 	height: 100%;
 	overflow: hidden;
-	background: #8a8e94;
-	font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+	background: var(--cel-verde-profundo);
+	font-family: var(--fuente);
+	font-weight: 300;
+	color: var(--cel-verde-profundo);
 	-webkit-user-select: none;
 	user-select: none;
 }
@@ -27,6 +82,8 @@ body {
 }
 
 /* ---------- Pantallas de inicio y victoria ---------- */
+/* Fondo blanco liso: el manual no permite el logo sobre degradados ni
+   sobre fondos de bajo contraste. */
 .pantalla {
 	position: fixed;
 	inset: 0;
@@ -38,69 +95,199 @@ body {
 	gap: 18px;
 	padding: 24px 16px;
 	text-align: center;
-	color: #fff;
+	color: var(--cel-verde-profundo);
+	background: var(--cel-blanco);
 }
 
 #pantalla-inicio {
-	background: linear-gradient(160deg, rgba(96, 101, 108, 0.88), rgba(118, 150, 124, 0.85));
+	overflow-y: auto;
+	justify-content: safe center; /* si no cabe, se desplaza en vez de cortarse arriba */
 }
 
 #pantalla-victoria {
-	background: radial-gradient(circle at 50% 40%, rgba(255, 250, 210, 0.55), rgba(76, 190, 110, 0.7));
 	animation: aparecer 0.8s ease-out;
+}
+
+/* Espacio para un logo oficial: recuadro punteado que dice LOGO hasta que
+   el archivo exista en assets/logos/ (main.js lo cambia por la imagen). El
+   logo se muestra tal cual: sin sombras, filtros ni transparencias. */
+.espacio-logo {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	border: 2px dashed var(--cel-verde-institucional);
+	border-radius: 12px;
+	color: var(--cel-verde-institucional);
+	font-weight: 700;
+	letter-spacing: 2px;
+}
+
+.espacio-logo.con-logo {
+	border: none;
+}
+
+.espacio-logo img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain; /* respeta la proporción del logo */
+}
+
+/* Logo horizontal (1200 x 217): el alto mínimo digital es 20 px */
+.logo-celaque {
+	width: clamp(220px, 30vw, 320px);
+	aspect-ratio: 1200 / 217;
+	font-size: 1.1rem;
+}
+
+.logo-pc {
+	width: 122px;
+	height: 22px;
+	border-color: rgba(255, 255, 255, 0.8);
+	border-radius: 6px;
+	color: #fff;
+	font-size: 0.65rem;
+	letter-spacing: 1px;
 }
 
 .pantalla h1 {
 	margin: 0;
-	font-size: clamp(2.2rem, 7vw, 5rem);
-	letter-spacing: 1px;
-	text-shadow: 0 4px 18px rgba(30, 60, 40, 0.45);
+	font-size: clamp(2.2rem, 7vw, 4.6rem);
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	color: var(--cel-verde-profundo);
 }
 
 .pantalla p {
 	margin: 0;
 	max-width: 560px;
 	font-size: clamp(1rem, 2.4vw, 1.25rem);
-	text-shadow: 0 2px 8px rgba(30, 60, 40, 0.4);
+	font-weight: 400;
+}
+
+.lema {
+	color: var(--cel-verde-institucional);
+	font-style: italic;
+	font-weight: 300 !important;
 }
 
 .pantalla .ayuda {
-	font-size: 0.95rem;
-	opacity: 0.9;
-	line-height: 1.5;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px 18px;
+	max-width: 640px;
+	font-size: 1rem;
+	font-weight: 300;
 }
 
-.boton {
+.tecla-ayuda {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+kbd {
+	display: inline-block;
+	min-width: 2em;
+	padding: 3px 8px;
+	border-radius: 8px;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
 	font: inherit;
-	font-size: 1.3rem;
-	font-weight: bold;
-	padding: 12px 34px;
-	border: none;
-	border-radius: 999px;
-	color: #fff;
-	background: linear-gradient(180deg, #5fd36f, #2f9e4f);
-	box-shadow: 0 6px 0 #22763a, 0 10px 24px rgba(0, 0, 0, 0.2);
-	cursor: pointer;
-	transition: transform 0.1s;
+	font-weight: 700;
+	box-shadow: 0 3px 0 var(--cel-verde-institucional);
 }
 
-.boton:hover {
-	transform: translateY(-2px);
+/* Botones grandes, con relieve y un brillo que late para invitar a tocarlos.
+   Primario: verde profundo. Secundario: blanco con borde verde institucional. */
+.boton {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	min-height: 60px;
+	font: inherit;
+	font-size: 1.45rem;
+	font-weight: 700;
+	padding: 14px 40px;
+	border: 3px solid var(--cel-verde-profundo);
+	border-radius: 999px;
+	color: var(--cel-blanco);
+	background: var(--cel-verde-profundo);
+	box-shadow: 0 7px 0 var(--cel-verde-institucional), 0 12px 28px rgba(4, 37, 35, 0.25);
+	cursor: pointer;
+	transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+}
+
+.boton:hover,
+.boton:focus-visible {
+	transform: translateY(-3px) scale(1.04);
+	background: var(--cel-verde-profundo-hover);
+	outline: none;
+	box-shadow: 0 10px 0 var(--cel-verde-institucional), 0 0 0 5px var(--cel-verde-suave), 0 16px 32px rgba(4, 37, 35, 0.25);
 }
 
 .boton:active {
-	transform: translateY(3px);
-	box-shadow: 0 3px 0 #22763a;
+	transform: translateY(4px) scale(0.98);
+	box-shadow: 0 3px 0 var(--cel-verde-institucional);
+}
+
+.boton-grande {
+	min-height: 76px;
+	padding: 18px 56px;
+	font-size: clamp(1.5rem, 4vw, 2rem);
+	letter-spacing: 0.5px;
+	animation: latido 1.8s ease-in-out infinite;
+}
+
+.boton-grande:hover,
+.boton-grande:active {
+	animation: none;
+}
+
+.boton-icono {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.6em;
+	height: 1.6em;
+	border-radius: 50%;
+	background: var(--cel-verde-institucional);
+	font-size: 0.8em;
+}
+
+@keyframes latido {
+	0%,
+	100% {
+		box-shadow: 0 7px 0 var(--cel-verde-institucional), 0 0 0 0 rgba(72, 132, 120, 0.45), 0 12px 28px rgba(4, 37, 35, 0.25);
+	}
+	50% {
+		box-shadow: 0 7px 0 var(--cel-verde-institucional), 0 0 0 14px rgba(72, 132, 120, 0), 0 12px 28px rgba(4, 37, 35, 0.25);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.boton-grande {
+		animation: none;
+	}
 }
 
 .boton-secundario {
-	background: linear-gradient(180deg, #ffffff, #e6f5e3);
-	color: #2f7f45;
-	box-shadow: 0 6px 0 #b9d8b4, 0 10px 24px rgba(0, 0, 0, 0.15);
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
+	border-color: var(--cel-verde-institucional);
+	box-shadow: 0 7px 0 var(--cel-gris-claro), 0 12px 28px rgba(4, 37, 35, 0.12);
+}
+
+.boton-secundario:hover,
+.boton-secundario:focus-visible {
+	background: var(--cel-fondo-verde-claro);
+	box-shadow: 0 10px 0 var(--cel-gris-claro), 0 0 0 5px var(--cel-verde-suave);
 }
 
 .boton-secundario:active {
-	box-shadow: 0 3px 0 #b9d8b4;
+	box-shadow: 0 3px 0 var(--cel-gris-claro);
 }
 
 .botones {
@@ -123,13 +310,13 @@ body {
 	align-items: center;
 	gap: 4px;
 	padding: 10px 16px 12px;
-	border: 3px solid rgba(255, 255, 255, 0.35);
+	border: 3px solid var(--cel-gris-claro);
 	border-radius: 18px;
-	background: rgba(255, 255, 255, 0.15);
-	color: #fff;
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
 	font: inherit;
 	font-size: 1.1rem;
-	font-weight: bold;
+	font-weight: 700;
 	cursor: pointer;
 	transition: transform 0.15s, background 0.15s, border-color 0.15s;
 }
@@ -141,12 +328,13 @@ body {
 
 .opcion:hover {
 	transform: translateY(-3px);
+	border-color: var(--cel-verde-institucional);
 }
 
 .opcion[aria-checked="true"] {
-	border-color: #7fe07a;
-	background: rgba(127, 224, 122, 0.3);
-	box-shadow: 0 0 0 4px rgba(127, 224, 122, 0.3);
+	border-color: var(--cel-verde-institucional);
+	background: var(--cel-fondo-verde-claro);
+	box-shadow: 0 0 0 4px var(--cel-verde-suave);
 }
 
 @keyframes aparecer {
@@ -167,20 +355,19 @@ body {
 	left: 50%;
 	transform: translateX(-50%);
 	z-index: 10;
-	width: min(420px, calc(100vw - 32px));
+	width: min(480px, calc(100vw - 32px));
 	padding: 10px 16px;
 	border-radius: 14px;
-	background: rgba(255, 255, 255, 0.35);
-	backdrop-filter: blur(4px);
+	background: var(--cel-verde-profundo);
 	text-align: center;
-	color: #fff;
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+	color: var(--cel-blanco);
 }
 
 .hud-barra {
 	height: 10px;
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.45);
+	background: var(--cel-verde-profundo-hover);
+	box-shadow: inset 0 0 0 1px var(--cel-verde-institucional);
 	overflow: hidden;
 }
 
@@ -188,13 +375,14 @@ body {
 	height: 100%;
 	width: 0;
 	border-radius: 999px;
-	background: linear-gradient(90deg, #9aa0a6, #7fe07a, #2fbf5a);
+	background: var(--cel-verde-institucional);
 	transition: width 0.2s linear;
 }
 
 #hud-texto {
 	margin: 6px 0 0;
 	font-size: 0.95rem;
+	font-weight: 400;
 }
 
 /* ---------- Caja de diálogo ---------- */
@@ -209,10 +397,10 @@ body {
 	align-items: flex-start;
 	width: min(720px, calc(100vw - 32px));
 	padding: 18px 20px;
-	border: 4px solid #3f9f55;
+	border: 3px solid var(--cel-verde-institucional);
 	border-radius: 18px;
-	background: #fffbea;
-	box-shadow: 0 10px 30px rgba(40, 80, 50, 0.35);
+	background: var(--cel-blanco);
+	box-shadow: 0 10px 30px rgba(4, 37, 35, 0.3);
 	cursor: pointer;
 	animation: aparecer 0.25s ease-out;
 }
@@ -229,15 +417,14 @@ body {
 	width: 64px;
 	height: 64px;
 	border-radius: 50%;
-	border: 3px solid #fff;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	border: 3px solid var(--cel-blanco);
+	box-shadow: 0 0 0 2px var(--cel-gris-claro);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	font-size: 1.8rem;
-	font-weight: bold;
-	color: #fff;
-	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+	font-weight: 700;
+	color: var(--cel-blanco);
 }
 
 .dialogo-cuerpo {
@@ -247,9 +434,9 @@ body {
 
 #dialogo-nombre {
 	margin: 0 0 6px;
-	font-weight: bold;
+	font-weight: 700;
 	font-size: 1.1rem;
-	color: #2f7f45;
+	color: var(--cel-verde-profundo);
 }
 
 #dialogo-texto {
@@ -257,14 +444,15 @@ body {
 	min-height: 3em;
 	font-size: 1.15rem;
 	line-height: 1.45;
-	color: #3a3a2e;
+	color: var(--cel-negro);
 }
 
 #dialogo-pista {
 	margin: 8px 0 0;
 	text-align: right;
-	font-size: 0.9rem;
-	color: #6aa56f;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--cel-verde-institucional);
 }
 
 .dialogo-opciones {
@@ -276,9 +464,171 @@ body {
 
 .opcion-respuesta {
 	width: 100%;
+	min-height: 52px;
+	justify-content: flex-start;
 	text-align: left;
-	font-size: 1rem;
-	padding: 8px 14px;
+	font-size: 1.05rem;
+	font-weight: 400;
+	padding: 10px 18px;
+	border-radius: 16px;
+}
+
+.opcion-respuesta.correcta {
+	background: var(--cel-verde-institucional);
+	border-color: var(--cel-verde-institucional);
+	box-shadow: 0 0 0 4px var(--cel-verde-suave);
+}
+
+.opcion-respuesta.incorrecta,
+.opcion-respuesta.incorrecta:hover {
+	background: var(--cel-gris-claro);
+	border-color: var(--cel-gris-claro);
+	color: var(--cel-verde-profundo);
+	text-decoration: line-through;
+	box-shadow: none;
+	transform: none;
+	cursor: default;
+}
+
+/* ---------- Terminal Celaque (computadora de la oficina) ---------- */
+#terminal {
+	position: fixed;
+	inset: 0;
+	z-index: 18;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.55);
+	animation: aparecer 0.3s ease-out;
+}
+
+.monitor {
+	width: min(760px, 100%);
+	padding: 14px;
+	border-radius: 22px;
+	background: #1c2526;
+	box-shadow: 0 0 0 3px #2e3a3c, 0 24px 50px rgba(0, 0, 0, 0.5);
+}
+
+.pie-monitor {
+	width: 120px;
+	height: 26px;
+	background: #1c2526;
+	clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%);
+}
+
+/* Pantalla de color liso (el logo va encima) */
+.pantalla-pc {
+	overflow: hidden;
+	border-radius: 10px;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+}
+
+.barra-pc {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	background: var(--cel-verde-profundo);
+	border-bottom: 1px solid var(--cel-verde-institucional);
+	font-weight: 700;
+}
+
+#terminal-progreso {
+	margin-left: auto;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--cel-fondo-verde-claro);
+	color: var(--cel-verde-profundo);
+	font-size: 0.85rem;
+	font-weight: 700;
+}
+
+.cuerpo-pc {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 20px 22px 22px;
+}
+
+#terminal-pregunta {
+	margin: 0;
+	font-size: clamp(1.15rem, 2.6vw, 1.45rem);
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+#terminal-opciones {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.opcion-pc {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-height: 56px;
+	padding: 10px 16px;
+	border: 2px solid var(--cel-verde-institucional);
+	border-radius: 14px;
+	background: var(--cel-verde-profundo-hover);
+	color: var(--cel-blanco);
+	font: inherit;
+	font-size: 1.05rem;
+	font-weight: 400;
+	text-align: left;
+	cursor: pointer;
+	transition: transform 0.1s, background 0.1s, border-color 0.1s;
+}
+
+.opcion-pc:hover:not(:disabled),
+.opcion-pc:focus-visible {
+	transform: translateX(4px);
+	border-color: var(--cel-fondo-verde-claro);
+	background: var(--cel-verde-institucional);
+	outline: none;
+}
+
+.num-pc {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
+	font-weight: 700;
+}
+
+.opcion-pc.correcta {
+	border-color: var(--cel-fondo-verde-claro);
+	background: var(--cel-verde-institucional);
+}
+
+.opcion-pc.incorrecta {
+	border-color: var(--cel-gris-claro);
+	background: transparent;
+	color: var(--cel-gris-claro);
+	text-decoration: line-through;
+	cursor: default;
+}
+
+#terminal-pista {
+	margin: 0;
+	min-height: 1.4em;
+	color: var(--cel-fondo-verde-claro);
+	font-weight: 700;
+}
+
+#terminal-salir {
+	align-self: center;
+	border-color: var(--cel-blanco);
 }
 
 /* ---------- Controles táctiles ---------- */
@@ -296,18 +646,24 @@ body {
 
 .tactil {
 	pointer-events: auto;
-	min-width: 72px;
-	height: 72px;
-	padding: 0 16px;
-	border: none;
-	border-radius: 20px;
+	min-width: 84px;
+	height: 84px;
+	padding: 0 18px;
+	border: 3px solid var(--cel-verde-institucional);
+	border-radius: 24px;
 	font: inherit;
-	font-size: 1.6rem;
-	font-weight: bold;
-	color: #fff;
-	background: rgba(255, 255, 255, 0.3);
-	backdrop-filter: blur(4px);
+	font-size: 1.9rem;
+	font-weight: 700;
+	color: var(--cel-blanco);
+	background: var(--cel-verde-profundo);
+	box-shadow: 0 5px 0 var(--cel-verde-institucional);
 	touch-action: none;
+}
+
+#btn-saltar {
+	min-width: 104px;
+	background: var(--cel-verde-institucional);
+	border-color: var(--cel-blanco);
 }
 
 #controles-tactiles .grupo {
@@ -320,7 +676,9 @@ body {
 }
 
 .tactil:active {
-	background: rgba(255, 255, 255, 0.55);
+	background: var(--cel-verde-profundo-hover);
+	transform: translateY(3px);
+	box-shadow: 0 2px 0 var(--cel-verde-institucional);
 }
 
 /* Con el diálogo abierto, se ocultan los controles táctiles para no taparlo */
@@ -328,7 +686,43 @@ body.con-dialogo #controles-tactiles {
 	display: none;
 }
 
+/* Pantallas bajas (laptops): todo el inicio cabe sin desplazarse */
+@media (max-height: 760px) {
+	.pantalla {
+		gap: 12px;
+		padding-top: 16px;
+		padding-bottom: 16px;
+	}
+
+	.logo-celaque {
+		width: 220px;
+	}
+
+	.pantalla h1 {
+		font-size: clamp(2rem, 5.5vw, 3.4rem);
+	}
+
+	.opcion canvas {
+		width: 120px;
+		height: 144px;
+	}
+
+	.boton-grande {
+		min-height: 66px;
+		padding: 14px 48px;
+	}
+}
+
 @media (max-width: 600px) {
+	#selector {
+		gap: 12px;
+	}
+
+	.opcion canvas {
+		width: 120px;
+		height: 144px;
+	}
+
 	#dialogo {
 		bottom: 16px;
 		padding: 14px;
