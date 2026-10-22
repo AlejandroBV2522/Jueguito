@@ -99,8 +99,233 @@ body {
 	background: var(--cel-blanco);
 }
 
+/* ---------- Final: bienvenida con el nombre del jugador ---------- */
+/* Encima del mapa (se ven los pétalos detrás). La tarjeta es blanca y lisa
+   porque lleva el logo. */
 #pantalla-victoria {
-	animation: aparecer 0.8s ease-out;
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	overflow-y: auto;
+	background: rgba(4, 37, 35, 0.4);
+	animation: aparecer 0.6s ease-out;
+}
+
+.tarjeta-final {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	width: min(660px, 100%);
+	margin: auto;
+	padding: 40px 28px 26px;
+	overflow: hidden;
+	border: 3px solid var(--cel-verde-institucional);
+	border-radius: 26px;
+	background: var(--cel-blanco);
+	box-shadow: 0 12px 0 var(--cel-verde-profundo), 0 30px 60px rgba(0, 0, 0, 0.35);
+	text-align: center;
+	color: var(--cel-verde-profundo);
+	animation: entrada-final 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+/* Franja de arriba con los colores de la marca */
+.cinta-final {
+	position: absolute;
+	inset: 0 0 auto;
+	height: 14px;
+	background: linear-gradient(90deg, var(--cel-verde-profundo) 0 34%, var(--cel-verde-institucional) 34% 67%, var(--cel-beige) 67%);
+}
+
+.tarjeta-final .logo-celaque {
+	width: 210px;
+}
+
+.final-pre {
+	margin: 6px 0 0;
+	font-size: 0.95rem;
+	font-weight: 700;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	color: var(--cel-beige);
+}
+
+#victoria-bienvenida {
+	margin: 0;
+	font-size: clamp(2rem, 6vw, 3.2rem);
+	font-weight: 700;
+	line-height: 1.1;
+}
+
+.final-nombre {
+	margin: 4px 0 2px;
+	padding: 0 18px 8px;
+	border-bottom: 4px solid var(--cel-beige);
+	font-size: clamp(1.8rem, 6vw, 2.8rem);
+	font-weight: 700;
+	color: var(--cel-verde-institucional);
+	animation: brillo-nombre 2.4s ease-in-out 0.9s infinite;
+}
+
+#victoria-texto {
+	margin: 0;
+	max-width: 480px;
+	font-size: 1.1rem;
+	font-weight: 400;
+}
+
+.final-modulos {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+	margin: 6px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.final-modulos li {
+	padding: 6px 14px;
+	border-radius: 999px;
+	background: var(--cel-fondo-verde-claro);
+	color: var(--cel-verde-profundo);
+	font-weight: 700;
+	font-size: 0.95rem;
+	opacity: 0;
+	animation: aparecer 0.4s ease-out forwards;
+}
+
+.final-modulos li::before {
+	content: "✓ ";
+	color: var(--cel-verde-institucional);
+}
+
+.final-fecha {
+	margin: 0 0 6px;
+	font-size: 0.85rem;
+	color: var(--cel-beige);
+}
+
+@keyframes entrada-final {
+	from {
+		opacity: 0;
+		transform: translateY(40px) scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes brillo-nombre {
+	0%,
+	100% {
+		text-shadow: none;
+	}
+	50% {
+		text-shadow: 0 0 18px rgba(72, 132, 120, 0.45);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tarjeta-final,
+	.final-nombre,
+	.final-modulos li {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+/* Pantallas bajas: la tarjeta final entra completa sin desplazarse */
+@media (max-height: 860px) {
+	.tarjeta-final {
+		gap: 6px;
+		padding: 30px 24px 20px;
+	}
+
+	.tarjeta-final .logo-celaque {
+		width: 170px;
+	}
+
+	#victoria-bienvenida {
+		font-size: clamp(1.8rem, 5vw, 2.4rem);
+	}
+
+	.final-nombre {
+		font-size: clamp(1.6rem, 5vw, 2.2rem);
+	}
+
+	.tarjeta-final .boton-grande {
+		min-height: 60px;
+		padding: 10px 40px;
+		font-size: 1.4rem;
+	}
+}
+
+/* Campo del nombre (en el rectángulo del mapa) */
+.campo-nombre {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--cel-verde-profundo);
+}
+
+.campo-nombre input {
+	width: 100%;
+	min-height: 40px;
+	padding: 6px 14px;
+	border: 2px solid var(--cel-gris-claro);
+	border-radius: 12px;
+	font: inherit;
+	font-size: 1rem;
+	font-weight: 400;
+	text-align: center;
+	color: var(--cel-verde-profundo);
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.campo-nombre input:focus {
+	outline: none;
+	border-color: var(--cel-verde-institucional);
+	box-shadow: 0 0 0 4px var(--cel-verde-suave);
+}
+
+/* Sin nombre al querer entrar: el campo se sacude */
+.campo-nombre.falta input {
+	border-color: var(--cel-beige);
+	animation: sacudir 0.4s;
+}
+
+@keyframes sacudir {
+	25% {
+		transform: translateX(-6px);
+	}
+	75% {
+		transform: translateX(6px);
+	}
+}
+
+/* Empezar de cero, arriba a la derecha del mapa */
+#btn-reiniciar-progreso {
+	position: fixed;
+	top: 14px;
+	right: 16px;
+	z-index: 9;
+}
+
+#btn-reiniciar-progreso.confirmar {
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	border-color: var(--cel-beige);
 }
 
 /* Espacio para un logo oficial: recuadro punteado que dice LOGO hasta que
@@ -389,18 +614,6 @@ kbd {
 	height: 120px;
 }
 
-.boton-texto {
-	border: none;
-	background: none;
-	padding: 2px 6px;
-	font: inherit;
-	font-size: 0.85rem;
-	font-weight: 700;
-	color: var(--cel-beige);
-	text-decoration: underline;
-	cursor: pointer;
-}
-
 .boton-chico {
 	min-height: 44px;
 	padding: 6px 20px;
@@ -636,6 +849,54 @@ kbd {
 	margin: 6px 0 0;
 	font-size: 0.95rem;
 	font-weight: 400;
+}
+
+/* ---------- Barrita del jugador (arriba a la izquierda) ---------- */
+#barra-jugador {
+	position: fixed;
+	top: 14px;
+	left: 16px;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 14px 6px 6px;
+	border: 2px solid var(--cel-verde-institucional);
+	border-radius: 16px;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	pointer-events: none;
+}
+
+#cara-jugador {
+	width: 56px;
+	height: 56px;
+	border-radius: 12px;
+	background: var(--cel-fondo-verde-claro);
+	box-shadow: 0 0 0 2px var(--cel-beige);
+}
+
+#barra-nombre {
+	margin: 0 0 4px;
+	max-width: 180px;
+	overflow: hidden;
+	font-size: 1rem;
+	font-weight: 700;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+#corazones-jugador {
+	display: block;
+	height: 20px;
+	image-rendering: pixelated;
+}
+
+/* Pantallas angostas: debajo de la barra de progreso para no encimarse */
+@media (max-width: 1000px) {
+	#barra-jugador {
+		top: 92px;
+	}
 }
 
 /* ---------- Caja de diálogo ---------- */

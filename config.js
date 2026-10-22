@@ -14,12 +14,15 @@ window.CONFIG_JUEGO = {
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
+  nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos (para probar); "" lo apaga
 
   textos: {
     titulo: "Camino a Celaque",
     subtitulo: "Elige tu personaje y luego un mundo del mapa.",
     victoriaTitulo: "¿Estás listo?",
-    victoriaTexto: "¡Bienvenido a Celaque! Completaste todos los módulos de tu capacitación.",
+    bienvenida: "¡Bienvenido a Celaque!", // título del final, sobre el nombre del jugador
+    pideNombre: "¿Cómo te llamas?",
+    victoriaTexto: "Completaste todos los módulos de tu capacitación.",
     contadorNpcs: "Personas conocidas",
     letreroFinal: "¿Estás listo?", // letrero al final de la calle de Celaque
   },
@@ -279,6 +282,18 @@ window.PREGUNTAS_CUEVA = [
    - intro:       lo que dice el compañero que te recibe en la oficina.
    - companero:   (opcional) { nombre: "Ana", cuerpo: "chica" } para el
                   compañero que te recibe. Sin esto: "Equipo de <módulo>".
+   - anfitrion:   (opcional) el personaje fijo e importante del mundo: se ve
+                  en el mapa y en la carta, y es quien te recibe. Lleva
+                  { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
+                  En Talento espera al inicio del camino ("posicion", igual
+                  que los NPCs); en las oficinas reemplaza al que da la intro.
+   - oficina:     cómo es el interior de su edificio:
+                  vista: lo que se ve por el ventanal: "construccion",
+                         "industria", "nubes" (tan alto que solo hay nubes),
+                         "montana" o "ciudad" (puntas de edificios).
+                  tema:  lo que flota en la oficina y la pizarra: "planos",
+                         "procesos", "documentos", "seguridad" o "ia".
+                  edificio / piso: (opcionales) letrero junto a la salida.
    - comentarios: más compañeros dentro de la oficina, cada uno con
                   { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
                   Caben 2 (el resto no se muestra).
@@ -300,6 +315,17 @@ window.MODULOS = [
     icono: "montana",
     color: "#488478", // verde institucional
     completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
+    anfitrion: {
+      nombre: "Nancy Larios",
+      cuerpo: "chica",
+      posicion: 0.08, // al inicio del camino, en la zona de planos
+      // ✏️ Borrador: revisar con Nancy
+      dialogo: [
+        "¡Hola! Soy Nancy Larios y te doy la bienvenida al módulo de Talento.",
+        "Aquí vas a conocer quiénes somos: nuestro propósito, misión, valores y cultura.",
+        "Recorre el camino, conoce a la gente de la obra y cruza la Cueva. ¡Te espero del otro lado!",
+      ],
+    },
     intro: [],
     preguntas: [],
   },
@@ -312,6 +338,16 @@ window.MODULOS = [
       "Wrike es la plataforma donde planeamos y damos seguimiento al trabajo en equipo: proyectos, tareas, responsables, fechas y avances, todo en un mismo lugar y a la vista de todos.",
     icono: "tablero",
     color: "#042523", // verde profundo
+    oficina: { vista: "construccion", tema: "planos" },
+    anfitrion: {
+      nombre: "Nazareth Gallardo",
+      cuerpo: "chica",
+      // ✏️ Borrador: revisar con Nazareth
+      dialogo: [
+        "¡Hola! Soy Nazareth Gallardo y te doy la bienvenida al edificio de Proyectos.",
+        "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
+      ],
+    },
     intro: [
       "Bienvenido al edificio de Proyectos.",
       "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
@@ -361,6 +397,7 @@ window.MODULOS = [
       "Los procesos describen paso a paso cómo hacemos las cosas en Celaque, para trabajar igual de bien todos los días. Su documentación vive en la carpeta de cada departamento en SharePoint.",
     icono: "engranes",
     color: "#A99886", // beige
+    oficina: { vista: "industria", tema: "procesos" },
     intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
     comentarios: [
       // ✏️ Borrador
@@ -406,6 +443,16 @@ window.MODULOS = [
       "SharePoint es el repositorio principal de información de la empresa: guarda, organiza y comparte documentos desde cualquier dispositivo, con historial de versiones. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
     icono: "nube",
     color: "#488478", // verde institucional
+    oficina: { vista: "nubes", tema: "documentos", edificio: "Torre Atlas", piso: 40 },
+    anfitrion: {
+      nombre: "Luis Morán",
+      cuerpo: "chico",
+      // ✏️ Borrador: revisar con Luis
+      dialogo: [
+        "¡Hola! Soy Luis Morán y te doy la bienvenida al edificio de Plataformas, en lo alto de la Torre Atlas.",
+        "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
+      ],
+    },
     intro: [
       "Bienvenido al edificio de Plataformas.",
       "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
@@ -467,6 +514,16 @@ window.MODULOS = [
       "La información de Celaque es valiosa y cuidarla es trabajo de todos: aprende a reconocer correos sospechosos, a no compartir nunca tus contraseñas y a reportar cualquier incidente al área de Sistemas.",
     icono: "escudo",
     color: "#042523", // verde profundo
+    oficina: { vista: "montana", tema: "seguridad" },
+    anfitrion: {
+      nombre: "Sergio",
+      cuerpo: "chico",
+      // ✏️ Borrador: revisar con Sergio
+      dialogo: [
+        "¡Hola! Soy Sergio y te doy la bienvenida al edificio de Seguridad.",
+        "La información de Celaque es valiosa: cuidarla es trabajo de todos.",
+      ],
+    },
     intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
     comentarios: [
       // ✏️ Borrador
@@ -509,6 +566,16 @@ window.MODULOS = [
       "La inteligencia artificial nos ayuda a trabajar mejor si la usamos con criterio: revisa siempre lo que genera antes de usarlo y comparte información de la empresa solo en las herramientas aprobadas.",
     icono: "chispa",
     color: "#A99886", // beige
+    oficina: { vista: "ciudad", tema: "ia" },
+    anfitrion: {
+      nombre: "Keidy Durón",
+      cuerpo: "chica",
+      // ✏️ Borrador: revisar con Keidy
+      dialogo: [
+        "¡Hola! Soy Keidy Durón y te doy la bienvenida al edificio de IA.",
+        "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio.",
+      ],
+    },
     intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
     comentarios: [
       // ✏️ Borrador

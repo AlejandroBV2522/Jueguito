@@ -79,10 +79,29 @@ hacer. Desde la carta se entra al nivel:
   Te reciben varios compañeros con comentarios, hay muebles que saltar y al
   fondo la Terminal Celaque con las preguntas del módulo.
 
+Antes de entrar hay que escribir tu **nombre** (en el rectángulo del
+centro). Durante el nivel, arriba a la izquierda, se ve una barrita con tu
+nombre, la cara de tu personaje y tus corazones: la cara se queja cuando te
+golpean y sonríe cuando ganas corazones.
+
+Cada mundo tiene un **personaje fijo** (con ★ y su nombre siempre a la
+vista): Nancy Larios en Talento (al inicio del camino), Nazareth Gallardo en
+Proyectos, Luis Morán en SharePoint, Sergio en Seguridad y Keidy Durón en IA.
+Se ven en el mapa, en la carta y son quienes te reciben.
+
+Cada oficina es distinta: lo que se ve por el ventanal (obra con grúas,
+zona industrial, solo nubes desde la Torre Atlas, montaña o puntas de
+edificios al atardecer), lo que flota en el aire (planos, engranes,
+documentos, escudos, una red de IA), la pizarra y un objeto propio.
+
 Al completar un módulo subes de nivel, vuelves al mapa y se abre el
-siguiente mundo. Con los 6 completos aparece "¿Estás listo?". El progreso
-se guarda en el navegador; "Reiniciar progreso" (en el rectángulo del
-centro) lo borra.
+siguiente mundo. Con los 6 completos aparece la tarjeta de bienvenida a
+Celaque con tu nombre. El progreso (y tu nombre) se guarda en el navegador;
+el botón "↻ Empezar de cero", arriba a la derecha del mapa, lo borra todo
+(pide tocarlo dos veces).
+
+**Para probar:** con el nombre **Kojima** se abren todos los mundos de una
+vez (se cambia o apaga en `config.js` → `nombrePruebas`).
 
 ## Personalizar
 
@@ -101,8 +120,10 @@ Todo lo editable está en **`config.js`**:
 - `colores`: paleta oficial de Celaque (también en `style.css` como
   `--cel-...`).
 - `MODULOS`: los mundos del mapa (nombre, sistema y descripción de su
-  carta, ícono, color, logo opcional, la intro y los comentarios de los
-  compañeros de la oficina, y las preguntas).
+  carta, ícono, color, logo opcional, el personaje fijo `anfitrion`, cómo es
+  su `oficina` por dentro, la intro y los comentarios de los compañeros, y
+  las preguntas).
+- `nombrePruebas`: el nombre que abre todos los mundos (por defecto Kojima).
   `preguntasPorModulo` dice cuántas hace la computadora.
 - `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
 
