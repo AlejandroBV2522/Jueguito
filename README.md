@@ -143,3 +143,5 @@ proyectos). Mientras no estén, se ve un recuadro que dice "LOGO".
   las fotos del protagonista, para teñir a cada NPC con sus colores.
 - `assets/edificios/`: imágenes PNG que se ven al salir de la Cueva, junto
   al letrero de llegada a Celaque.
+- `tools/probar_juego.mjs`: prueba el juego en Chrome sin ventana (teclas reales,
+  capturas y errores de JavaScript). Ej.: `node tools/probar_juego.mjs oficinas`.
