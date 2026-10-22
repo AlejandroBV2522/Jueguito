@@ -11,6 +11,7 @@ window.MODULOS.push({
     "SharePoint es el repositorio principal de información de la empresa: guarda, organiza y comparte documentos desde cualquier dispositivo, con historial de versiones. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
   icono: "nube",
   color: "#488478", // verde institucional
+  foto: "assets/edificios/Atlas.png",
   oficina: { vista: "nubes", tema: "documentos", edificio: "Torre Atlas", piso: 40 },
   anfitrion: {
     nombre: "Luis Morán",
@@ -48,6 +49,16 @@ window.MODULOS.push({
       correcta: 1,
     },
     {
+      pregunta: "¿Qué puedes gestionar en tu correo empresarial de Outlook?",
+      opciones: [
+        "Solo los correos que te llegan.",
+        "Los archivos de todos los departamentos.",
+        "Tu correo, tu calendario, tus contactos y grupos, en la web o en la aplicación de escritorio.",
+      ],
+      correcta: 2,
+      explicacion: "En el calendario agendas tus reuniones y capacitaciones con un nuevo evento.",
+    },
+    {
       pregunta: "¿Cómo se organiza la información en el SharePoint de Celaque?",
       opciones: [
         "Cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
@@ -70,6 +81,16 @@ window.MODULOS.push({
       opciones: ["Microsoft Teams.", "El historial de versiones.", "La papelera de reciclaje."],
       correcta: 0,
       explicacion: "Y en Outlook gestionas tu correo, calendario, contactos y grupos.",
+    },
+    {
+      pregunta: "Si tienes documentos de empresas distintas, ¿qué te permite SharePoint?",
+      opciones: [
+        "Guardarlos todos juntos sin control.",
+        "Crear intranets o sitios separados, cada uno con sus propios miembros.",
+        "Nada: solo funciona con una empresa.",
+      ],
+      correcta: 1,
+      explicacion: "Cada sitio se puede personalizar para compartir noticias y recursos.",
     },
   ],
 });

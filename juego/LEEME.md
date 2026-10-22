@@ -43,7 +43,7 @@ Otras reglas:
 | `base/` | `utilidades.js` | `clamp`, `lerp`, `mezclar`, `conAlfa`, `crearAzar`… |
 | `base/` | `paleta.js` | de gris a color según el avance |
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
-| `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas, Lirios) |
+| `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
 | `camino/` | `npcs-y-andamios.js` | la gente del camino, sus andamios, los antivalores |
 | `oficina/` | `modulos.js` | `modulos` (un objeto por mundo), muebles, compañeros, `ESTACIONES` |
 | `camino/` | `letreros.js` | dónde van los letreros de obra |

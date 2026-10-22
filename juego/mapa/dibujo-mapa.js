@@ -266,12 +266,8 @@ function dibujarIconoMundo(tipo, cx, cy, r, col) {
 
 // Edificio de un módulo sobre su meseta (con candado: apagado y gris)
 function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
-	// Torre Atlas y Edificio Lirios son sus fotos reales (assets/edificios/)
-	const foto = /atlas/i.test(m.oficina.edificio)
-		? edificiosSalida[0] && edificiosSalida[0].cargando.elemento
-		: /lirios/i.test(m.oficina.edificio)
-			? imagenLirios.elemento
-			: null;
+	// Con foto real (mundo.js → foto) se dibuja el edificio de verdad
+	const foto = m.fotoImg && m.fotoImg.elemento;
 	if (foto) {
 		const k = Math.min(210 / foto.naturalHeight, 200 / foto.naturalWidth);
 		const w = foto.naturalWidth * k;
@@ -340,6 +336,16 @@ function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
 }
 
 // Talento: el camino por la zona industrial y la Cueva, en miniatura
+// Foto del edificio de Talento, detrás de su escena (la tapan el camino y la cueva)
+function dibujarFotoEscenaTalento(foto, x, y, apagado) {
+	const k = 170 / foto.naturalHeight;
+	const w = foto.naturalWidth * k;
+	ctx.save();
+	if (apagado > 0) ctx.filter = `grayscale(${apagado.toFixed(2)})`;
+	ctx.drawImage(foto, x - w / 2, y - 170, w, 170);
+	ctx.restore();
+}
+
 function dibujarEscenaTalento(bx, by, acercado) {
 	// Montaña de fondo (Celaque)
 	ctx.fillStyle = mezclar(COLORES.verdeInstitucional, COLORES.verdeProfundo, 0.55);
@@ -516,7 +522,11 @@ function dibujarMundoMapa(q, m, i) {
 	const bx = q.x + q.rx * 0.12;
 	const by = q.y + q.ry * 0.22;
 	for (const a of q.arboles) if (a.y < by) dibujarArbolMapa(a, apagado);
-	if (m.completoAlSalirDeLaCueva) dibujarEscenaTalento(bx - 10, by, acercado);
+	if (m.completoAlSalirDeLaCueva) {
+		// Su edificio queda atrás, entre la fábrica y la montaña
+		if (m.fotoImg && m.fotoImg.elemento) dibujarFotoEscenaTalento(m.fotoImg.elemento, bx - 60, by - 14, apagado);
+		dibujarEscenaTalento(bx - 10, by, acercado);
+	}
 	else dibujarEdificioMapa(bx, by, m, i, apagado, acercado);
 	for (const a of q.arboles) if (a.y >= by) dibujarArbolMapa(a, apagado);
 	dibujarAnfitrionMapa(q, m, apagado);

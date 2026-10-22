@@ -9,8 +9,9 @@ window.MODULOS.push({
   subtitulo: "Celaque: quiénes somos",
   sistema: "Cultura Celaque",
   descripcion:
-    "Conoce quiénes somos: el propósito, la misión, los valores y la cultura de Celaque. Recorre el camino por la zona industrial, conoce a la gente de la obra y cruza la Cueva respondiendo a sus guardianes.",
+    "Conoce quiénes somos: nuestro sueño, nuestros valores y la cultura de Celaque. Recorre el camino por la zona industrial, conoce a la gente de la obra y cruza la Cueva respondiendo a sus guardianes.",
   icono: "montana",
+  foto: "assets/edificios/Agalta.png", // Agalta, detrás del camino y la Cueva
   color: "#488478", // verde institucional
   completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
   anfitrion: {
@@ -20,7 +21,7 @@ window.MODULOS.push({
     // ✏️ Borrador: revisar con Nancy
     dialogo: [
       "¡Hola! Soy Nancy Larios y te doy la bienvenida al módulo de Talento.",
-      "Aquí vas a conocer quiénes somos: nuestro propósito, misión, valores y cultura.",
+      "Aquí vas a conocer quiénes somos: nuestro sueño, nuestros valores y nuestra cultura.",
       "Recorre el camino, conoce a la gente de la obra y cruza la Cueva. ¡Te espero del otro lado!",
     ],
   },

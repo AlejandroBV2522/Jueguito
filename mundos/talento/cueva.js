@@ -18,8 +18,11 @@
    - opciones:  lista de respuestas posibles.
    - correcta:  índice (0, 1, 2...) de la respuesta correcta en "opciones".
 
-   Las preguntas del enemigo 4 y el jefe final son genéricas — reemplázalas
-   con el contenido real de la capacitación cuando lo tengas listo.
+   ✏️ Salen de la "Inducción Nuevos Ingresos": el sueño de Celaque ("Ser la
+   fuente que desarrolla Honduras") y sus 4 valores (Buenas Vibras,
+   Logrador, Creatividad y Comunicación Directa). Cada antivalor es lo
+   opuesto a un valor y se vence eligiendo cómo actuaría ese valor. Las
+   situaciones son un borrador que Talento debe validar.
    --------------------------------------------------------------------- */
 
 "use strict";
@@ -27,79 +30,94 @@
 window.PREGUNTAS_CUEVA = [
   {
     nombre: "Guardián de la Entrada",
-    antivalor: "La Mediocridad", // ✏️ Borrador: lo opuesto a la calidad
+    antivalor: "La Mala Vibra", // ✏️ Borrador: lo opuesto a Buenas Vibras
     posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
     escala: 1.4, // centinela de piedra: grande e imponente, el primer reto
     factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
     apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
-    pregunta: "¿Cuál es la misión de Celaque?",
+    // Valor: Buenas Vibras
+    pregunta: "Un compañero llega desanimado porque algo le salió mal. ¿Qué haces?",
     opciones: [
-      "Vender productos sin calidad.",
-      "Brindar productos y servicios con calidad.",
-      "Competir con los clientes.",
+      "Me quejo con él de todo lo que sale mal en la oficina.",
+      "Lo escucho, lo animo y le ofrezco una mano: las buenas vibras se contagian.",
+      "Lo ignoro: no es mi problema.",
     ],
     correcta: 1,
   },
   {
     nombre: "Murciélago de la Cueva",
-    antivalor: "El Individualismo", // ✏️ Borrador: lo opuesto al trabajo en equipo
+    antivalor: "El Chisme", // ✏️ Borrador: lo opuesto a Comunicación Directa
     posicion: 0.22,
     escala: 0.6, // el más débil: el más chico
     apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
-    pregunta: "¿Cuál es uno de los valores de Celaque?",
-    opciones: ["Trabajo en equipo.", "Desorden.", "Irresponsabilidad."],
+    // Valor: Comunicación Directa
+    pregunta: "No estás de acuerdo con cómo un compañero hizo una tarea. ¿Qué haces?",
+    opciones: [
+      "Se lo digo directamente a él, con respeto, y buscamos juntos cómo mejorarla.",
+      "Lo comento con otros a sus espaldas.",
+      "Me quedo callado y dejo que el problema crezca.",
+    ],
     correcta: 0,
   },
   {
     nombre: "Guerrero Esqueleto",
-    antivalor: "La Imprudencia", // ✏️ Borrador: lo opuesto a la seguridad
+    antivalor: "El Conformismo", // ✏️ Borrador: lo opuesto a Creatividad
     posicion: 0.39,
     escala: 1.05,
     apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
-    pregunta: "¿Qué debes usar para protegerte en el trabajo?",
+    // Valor: Creatividad
+    pregunta: "Ves que una tarea de tu área se podría hacer de una forma más sencilla. ¿Qué haces?",
     opciones: [
-      "Equipo de protección personal.",
-      "Nada.",
-      "Solo un casco de juguete.",
+      "Nada: siempre se ha hecho así.",
+      "Espero a que a alguien más se le ocurra.",
+      "Propongo la idea a mi equipo y la probamos.",
     ],
-    correcta: 0,
+    correcta: 2,
   },
   {
-    // ✏️ Marcador de posición: reemplazar con contenido real de la capacitación
     nombre: "Golem de Piedra",
-    antivalor: "La Improvisación", // ✏️ Borrador: lo opuesto a seguir los procesos
+    antivalor: "La Mediocridad", // ✏️ Borrador: lo opuesto a Logrador
     posicion: 0.645,
     escala: 1.3,
     factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
-    pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
+    // Valor: Logrador (y los ORCs de la inducción)
+    pregunta: "Tienes un ORC difícil este trimestre. ¿Qué haría un Logrador?",
     opciones: [
-      "Preguntar y seguir el proceso establecido.",
-      "Improvisar sin avisar a nadie.",
-      "Ignorarlo si nadie se da cuenta.",
+      "Lo dejo para el final y entrego lo que salga.",
+      "Lo divido en pasos medibles, le doy seguimiento y lo cumplo a tiempo.",
+      "Lo cambio por uno más fácil sin avisar.",
     ],
-    correcta: 0,
+    correcta: 1,
   },
   {
-    // ✏️ Marcador de posición: jefe final, combina temas anteriores.
-    // Trae 2 preguntas ("preguntas" en vez de "pregunta") — hay que
-    // responder las 2 en orden para vencerlo, una tras otra.
+    // Jefe final: trae 2 preguntas ("preguntas" en vez de "pregunta") —
+    // hay que responder las 2 en orden para vencerlo, una tras otra.
     nombre: "Guardián de Celaque",
-    antivalor: "La Indiferencia", // ✏️ Borrador: jefe final, lo opuesto al compromiso
+    antivalor: "La Indiferencia", // ✏️ Borrador: jefe final, lo opuesto al sueño de Celaque
     posicion: 0.865,
     escala: 2.2, // jefe final: el gigante de la Cueva
     factorFrente: 0.5, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     apariencia: { piel: "#c9a876", ropa: "#7a2f3f", pantalon: "#2e2e2e", pelo: "#1a1a1a", sombrero: null },
+    // El sueño y los 4 valores, tal como vienen en la inducción
     preguntas: [
       {
-        pregunta: "¿Cuál es uno de los valores de Celaque?",
-        opciones: ["Trabajo en equipo.", "Individualismo.", "Competencia interna."],
-        correcta: 0,
+        pregunta: "¿Cuál es el sueño de Celaque?",
+        opciones: [
+          "Construir el edificio más alto del país.",
+          "Ser la fuente que desarrolla Honduras.",
+          "Vender la mayor cantidad de apartamentos.",
+        ],
+        correcta: 1,
       },
       {
-        pregunta: "¿Qué debes usar para protegerte en el trabajo?",
-        opciones: ["Equipo de protección personal.", "Nada, no hace falta.", "Solo si alguien te ve."],
+        pregunta: "¿Cuáles son los valores de Celaque?",
+        opciones: [
+          "Buenas Vibras, Logrador, Creatividad y Comunicación Directa.",
+          "Rapidez, Silencio, Obediencia y Rutina.",
+          "Competencia, Individualismo, Prisa y Perfección.",
+        ],
         correcta: 0,
       },
     ],

@@ -6,14 +6,15 @@ carpeta. El motor del juego (`juego/`) no se toca.
 
 | Carpeta | Mundo | Archivos |
 |---|---|---|
-| `talento/` | 1 · Talento: el camino y la Cueva | `mundo.js` (anfitriona y carta), `npcs.js` (gente del camino), `cueva.js` (antivalores y sus preguntas) |
-| `proyectos/` | 2 · Proyectos (Wrike) | `mundo.js`, `tema.js` (planos, tablero de tareas, maqueta) |
+| `talento/` | 1 · Talento: el camino y la Cueva (Agalta) | `mundo.js` (anfitriona y carta), `npcs.js` (gente del camino), `cueva.js` (antivalores y sus preguntas) |
+| `proyectos/` | 2 · Proyectos (Wrike, Distrito Artemisa) | `mundo.js`, `tema.js` (planos, tablero de tareas, maqueta) |
 | `procesos/` | 3 · Procesos (Edificio Lirios) | `mundo.js`, `tema.js` (engranes, diagrama de flujo, banda transportadora) |
 | `sharepoint/` | 4 · SharePoint, Outlook y Teams (Torre Atlas) | `mundo.js`, `tema.js` (documentos a la nube, carpetas, servidor) |
-| `seguridad/` | 5 · Seguridad (estación del antivirus) | `mundo.js`, `tema.js` (escudos, lista de chequeo, cámaras) |
-| `ia/` | 6 · IA (estación del robot) | `mundo.js`, `tema.js` (red de nodos, red neuronal, hologramas) |
+| `seguridad/` | 5 · Seguridad (Acacias San Ignacio, estación del antivirus) | `mundo.js`, `tema.js` (escudos, lista de chequeo, cámaras) |
+| `ia/` | 6 · IA (Zorzales del Merendón, estación del robot) | `mundo.js`, `tema.js` (red de nodos, red neuronal, hologramas) |
 
-Un `mundo.js` tiene la carta del mapa, el anfitrión (★), los compañeros de la
+Un `mundo.js` tiene la carta del mapa, la foto de su edificio (`foto`, en
+`assets/edificios/`, ya sin cielo), el anfitrión (★), los compañeros de la
 oficina con sus diálogos y las preguntas de la computadora. Qué significa
 cada campo está explicado en `config.js`, en la sección "Módulos de
 capacitación".

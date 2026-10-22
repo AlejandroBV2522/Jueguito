@@ -86,7 +86,7 @@ golpean y sonríe cuando ganas corazones.
 
 Cada mundo tiene un **personaje fijo** (con ★ y su nombre siempre a la
 vista): Nancy Larios en Talento (al inicio del camino), Nazareth Gallardo en
-Proyectos, Luis Morán en SharePoint, Sergio en Seguridad y Keidy Durón en IA.
+Proyectos, Luis Morán en SharePoint, Sergio en Seguridad, Astrid en Procesos y Gracia en IA.
 Se ven en el mapa, en la carta y son quienes te reciben.
 
 Cada oficina es distinta: lo que se ve por el ventanal (obra con grúas,

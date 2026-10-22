@@ -12,7 +12,17 @@ window.MODULOS.push({
     "Los procesos describen paso a paso cómo hacemos las cosas en Celaque, para trabajar igual de bien todos los días. Su documentación vive en la carpeta de cada departamento en SharePoint.",
   icono: "engranes",
   color: "#A99886", // beige
+  foto: "assets/edificios/Lirios.png",
   oficina: { vista: "industria", tema: "procesos", edificio: "Edificio Lirios" },
+  anfitrion: {
+    nombre: "Astrid",
+    cuerpo: "chica",
+    // ✏️ Borrador: revisar con Astrid
+    dialogo: [
+      "¡Hola! Soy Astrid y te doy la bienvenida al edificio de Procesos, en el Edificio Lirios.",
+      "Los procesos nos ayudan a trabajar igual de bien, todos los días.",
+    ],
+  },
   intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
   comentarios: [
     // ✏️ Borrador

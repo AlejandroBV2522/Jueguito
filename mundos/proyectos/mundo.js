@@ -12,7 +12,8 @@ window.MODULOS.push({
     "Wrike es la plataforma donde planeamos y damos seguimiento al trabajo en equipo: proyectos, tareas, responsables, fechas y avances, todo en un mismo lugar y a la vista de todos.",
   icono: "tablero",
   color: "#042523", // verde profundo
-  oficina: { vista: "construccion", tema: "planos" },
+  foto: "assets/edificios/DistritoArtemisa.png",
+  oficina: { vista: "construccion", tema: "planos", edificio: "Distrito Artemisa" },
   anfitrion: {
     nombre: "Nazareth Gallardo",
     cuerpo: "chica",

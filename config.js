@@ -105,6 +105,10 @@ window.TEMAS_OFICINA = {};
    - icono:       dibujo en la fachada del edificio del mapa: "montana",
                   "tablero", "engranes", "nube", "escudo" o "chispa".
    - color:       color del edificio ("#RRGGBB").
+   - foto:        (opcional) foto real de su edificio en el mapa, ya sin
+                  cielo (PNG transparente y recortado), ej.
+                  "assets/edificios/Agalta.png". Sin foto se dibuja un
+                  edificio genérico del color del módulo.
    - logo:        (opcional) ruta a un PNG/SVG con el logo del módulo, ej.
                   "assets/logos/Proyectos.png". Se dibuja SIN deformar
                   (respeta su proporción). Sin logo se ve el recuadro "LOGO".
@@ -126,8 +130,6 @@ window.TEMAS_OFICINA = {};
                          "seguridad" o "ia". Cada tema está dibujado en el
                          tema.js de la carpeta de su mundo (window.TEMAS_OFICINA).
                   edificio / piso: (opcionales) letrero junto a la salida.
-                         Si el edificio es "Torre Atlas" o "Edificio Lirios",
-                         en el mapa se ve su foto real (assets/edificios/).
                   estacion: dónde se contestan las preguntas: "computadora"
                          (por defecto), "robot" (cada acierto arma una pieza
                          del asistente de IA) o "antivirus" (cada acierto arma

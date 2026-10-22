@@ -12,7 +12,8 @@ window.MODULOS.push({
     "La información de Celaque es valiosa y cuidarla es trabajo de todos: aprende a reconocer correos sospechosos, a no compartir nunca tus contraseñas y a reportar cualquier incidente al área de Sistemas.",
   icono: "escudo",
   color: "#042523", // verde profundo
-  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus" },
+  foto: "assets/edificios/Acacias.png",
+  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", edificio: "Acacias San Ignacio" },
   anfitrion: {
     nombre: "Sergio",
     cuerpo: "chico",

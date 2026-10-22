@@ -12,13 +12,14 @@ window.MODULOS.push({
     "La inteligencia artificial nos ayuda a trabajar mejor si la usamos con criterio: revisa siempre lo que genera antes de usarlo y comparte información de la empresa solo en las herramientas aprobadas.",
   icono: "chispa",
   color: "#A99886", // beige
-  oficina: { vista: "ciudad", tema: "ia", estacion: "robot" },
+  foto: "assets/edificios/Zorzales.png",
+  oficina: { vista: "ciudad", tema: "ia", estacion: "robot", edificio: "Zorzales del Merendón" },
   anfitrion: {
-    nombre: "Keidy Durón",
+    nombre: "Gracia",
     cuerpo: "chica",
-    // ✏️ Borrador: revisar con Keidy
+    // ✏️ Borrador: revisar con Gracia
     dialogo: [
-      "¡Hola! Soy Keidy Durón y te doy la bienvenida al edificio de IA.",
+      "¡Hola! Soy Gracia y te doy la bienvenida al edificio de IA.",
       "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio.",
     ],
   },

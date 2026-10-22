@@ -132,6 +132,8 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		// Sin "logo" en su mundo.js se busca assets/logos/modulo-<nombre>.png
 		rutaLogo,
 		logoImg: cargarImagen(rutaLogo),
+		// Foto real de su edificio en el mapa (mundo.js → foto)
+		fotoImg: d.foto ? cargarImagen(d.foto) : null,
 		oficina: {
 			x0,
 			terminalX: x0 + LARGO_OFICINA,
