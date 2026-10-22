@@ -193,7 +193,7 @@ function dibujarArbolMapa(a, apagado) {
 	circulo(a.x - a.tam * 0.3, a.y - a.tam * 1.3, a.tam * 0.45);
 }
 
-// Íconos simples para la fachada de cada edificio (config.js → icono)
+// Íconos simples para la fachada de cada edificio (mundo.js → icono)
 function dibujarIconoMundo(tipo, cx, cy, r, col) {
 	ctx.save();
 	ctx.fillStyle = col;

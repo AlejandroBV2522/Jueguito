@@ -2,7 +2,7 @@
 "use strict";
 
 // ---------- Mundo ----------
-// Personaje fijo e importante de un mundo (config.js → MODULOS[].anfitrion):
+// Personaje fijo e importante de un mundo (mundo.js → anfitrion):
 // casco blanco y chaleco verde institucional, con su nombre siempre a la vista.
 function aparienciaAnfitrion(a, k) {
 	return {

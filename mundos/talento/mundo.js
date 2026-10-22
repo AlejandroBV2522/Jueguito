@@ -2,6 +2,8 @@
    Su gente del camino está en npcs.js y los antivalores en cueva.js.
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
+"use strict";
+
 window.MODULOS.push({
   nombre: "Talento",
   subtitulo: "Celaque: quiénes somos",

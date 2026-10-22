@@ -55,7 +55,7 @@ const DECORACION_OFICINA = [
 	{ d: 2440, tipo: "especial" }, // propio de cada tema (maqueta, robot...)
 ];
 const COLORES_PELO = ["#1f1a17", "#3b2414", "#5a2a14", "#2b1a12"];
-// Dónde se contestan las preguntas al fondo de cada oficina (config.js →
+// Dónde se contestan las preguntas al fondo de cada oficina (mundo.js →
 // oficina.estacion). Las preguntas son las mismas; cambia la figurita.
 const ESTACIONES = {
 	computadora: {
@@ -129,7 +129,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		visitado: false, // ya se entró solo una vez al llegar a la puerta
 		terminalVisitada: false,
 		brillo: 0, // destello al completarlo (1 → 0)
-		// Sin "logo" en config.js se busca assets/logos/modulo-<nombre>.png
+		// Sin "logo" en su mundo.js se busca assets/logos/modulo-<nombre>.png
 		rutaLogo,
 		logoImg: cargarImagen(rutaLogo),
 		oficina: {
@@ -140,7 +140,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 				return { x: x0 + dist, tipo, ...MUEBLES[tipo] };
 			}),
 			decoracion: DECORACION_OFICINA.map((o) => ({ x: x0 + o.d, tipo: o.tipo })),
-			// Cómo se ve por dentro (config.js → oficina)
+			// Cómo se ve por dentro (mundo.js → oficina)
 			vista: (d.oficina && d.oficina.vista) || "ciudad",
 			tema: (d.oficina && d.oficina.tema) || "planos",
 			edificio: (d.oficina && d.oficina.edificio) || "",

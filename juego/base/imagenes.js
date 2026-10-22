@@ -179,7 +179,7 @@ function cargarImagen(ruta) {
 // bien en cualquier computadora y forma de abrir el juego. La función de
 // recorte queda disponible por si se agregan más edificios en .jpg.
 // Lirios.png = Lirios.jpg sin el cielo (horneado igual que Atlas): es el
-// edificio de un módulo en el mapa (config.js → oficina.edificio).
+// edificio de un módulo en el mapa (mundo.js → oficina.edificio).
 const imagenLirios = cargarImagen(RUTA_EDIFICIOS + "Lirios.png");
 const EDIFICIOS_SALIDA_DATOS = [{ nombre: "Atlas.png", x: LARGO_META + 220, altoBase: 450, alfa: 1 }];
 const edificiosSalida = EDIFICIOS_SALIDA_DATOS.map((d) => ({

@@ -1,6 +1,8 @@
 /* Mundo 5 · Seguridad: oficina con la estación del antivirus.
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
+"use strict";
+
 window.MODULOS.push({
   nombre: "Seguridad",
   subtitulo: "Cuidamos la información",

@@ -35,7 +35,7 @@ const todos = (carpeta) =>
 				.filter((f) => f.endsWith(".js"))
 				.map((f) => `${carpeta}/${f.replace(/\\/g, "/")}`)
 		: [];
-const archivos = ["config.js", "main.js", ...todos("mundos"), ...todos("juego")].filter((f) => existsSync(join(RAIZ, f)));
+const archivos = ["config.js", ...todos("mundos"), ...todos("juego")].filter((f) => existsSync(join(RAIZ, f)));
 for (const f of archivos) if (!scripts.includes(f)) problemas.push(`${f} existe pero index.html no lo carga`);
 
 // 2. Sintaxis
@@ -64,6 +64,12 @@ for (const s of scripts.filter((s) => (s === "config.js" || s.startsWith("mundos
 	}
 }
 const w = contexto.window;
+// Dos tema.js que registran el mismo tema: el segundo pisa al primero en
+// silencio (pasa si se copia la carpeta de un mundo y no se cambia el nombre)
+const temasDe = {};
+for (const s of scripts.filter((s) => s.startsWith("mundos/") && existsSync(join(RAIZ, s))))
+	for (const m of leer(s).matchAll(/window\.TEMAS_OFICINA\.(\w+)\s*=/g)) (temasDe[m[1]] = temasDe[m[1]] || []).push(s);
+for (const [tema, donde] of Object.entries(temasDe)) if (donde.length > 1) problemas.push(`el tema "${tema}" se registra en ${donde.join(" y en ")}: el último pisa al otro`);
 const mundos = w.MODULOS || [];
 const npcs = w.NPCS || [];
 const cueva = w.PREGUNTAS_CUEVA || [];

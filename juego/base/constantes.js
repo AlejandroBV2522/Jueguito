@@ -8,7 +8,7 @@ const INICIO_X = 80;
 const LARGO_CUEVA = 5200; // tramo de la Cueva, después del camino (más largo = enemigos más separados)
 const LARGO_TOTAL = LARGO + LARGO_CUEVA;
 // Calle de Celaque (al salir de la Cueva): un edificio por cada módulo de
-// capacitación (config.js → MODULOS) y, al final, el letrero de llegada.
+// capacitación (window.MODULOS, de mundos/<mundo>/mundo.js) y, al final, el letrero de llegada.
 const MODULOS_DATOS = window.MODULOS || [];
 const PRIMER_MODULO = LARGO_TOTAL + 420;
 const ESPACIO_MODULO = 640;

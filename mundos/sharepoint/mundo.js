@@ -1,6 +1,8 @@
 /* Mundo 4 · SharePoint: oficina en lo alto de la Torre Atlas (SharePoint, Outlook y Teams).
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
+"use strict";
+
 window.MODULOS.push({
   nombre: "SharePoint",
   subtitulo: "SharePoint, Outlook y Teams",

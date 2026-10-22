@@ -1,6 +1,8 @@
 /* Mundo 3 · Procesos: oficina en el Edificio Lirios.
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
+"use strict";
+
 window.MODULOS.push({
   nombre: "Procesos",
   subtitulo: "Cómo hacemos las cosas",

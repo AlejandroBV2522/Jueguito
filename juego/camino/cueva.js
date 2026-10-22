@@ -148,7 +148,7 @@ function anchoFrenteEnemigo(en) {
 	// El enemigo se voltea para mirar al héroe que se acerca por la
 	// izquierda: el lado que sobresale hacia él es (1 - anclaX) del ancho.
 	// En los enemigos anchos (Golem, Jefe) esa mitad incluye brazos/cola
-	// extendidos que no son el "cuerpo" real — factorFrente (en config.js,
+	// extendidos que no son el "cuerpo" real — factorFrente (en mundos/talento/cueva.js,
 	// por defecto 1) la recorta para que el héroe se acerque más, como con
 	// los enemigos más chicos.
 	const factorFrente = en.factorFrente ?? 1;

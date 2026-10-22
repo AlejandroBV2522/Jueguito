@@ -8,6 +8,8 @@
    No necesitas tocar el motor (juego/) para agregar o cambiar NPCs.
    ===================================================================== */
 
+"use strict";
+
 window.CONFIG_JUEGO = {
   velocidadPersonaje: 120,   // píxeles por segundo (súbelo o bájalo a gusto)
   velocidadCorriendo: 320,   // velocidad mientras se mantiene presionada la Q
@@ -62,10 +64,10 @@ window.CONFIG_JUEGO = {
   },
 };
 
-/* Listas que llenan los archivos de mundos/ (cargados en index.html, en
+/* Listas que completan los archivos de mundos/ (cargados en index.html, en
    orden, después de este archivo):
-   - NPCS: la gente del camino de Talento (mundos/talento/npcs.js).
-   - PREGUNTAS_CUEVA: los antivalores de la Cueva (mundos/talento/cueva.js).
+   - NPCS: la gente del camino de Talento (la define entera mundos/talento/npcs.js).
+   - PREGUNTAS_CUEVA: los antivalores de la Cueva (los define entera mundos/talento/cueva.js).
    - MODULOS: un mundo del mapa por archivo (mundos/<mundo>/mundo.js).
    - TEMAS_OFICINA: cómo se ve cada oficina por dentro (mundos/<mundo>/tema.js). */
 window.NPCS = [];

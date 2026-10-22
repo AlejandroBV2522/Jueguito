@@ -624,7 +624,7 @@ function dibujarProyectos() {
 }
 
 // Letrero de cada módulo (encima del edificio): logo + nombre + subtítulo.
-// El logo (si el módulo trae uno en config.js) se dibuja sin deformar.
+// El logo (si el módulo trae uno en su mundo.js) se dibuja sin deformar.
 function dibujarLetreroModulo(m, sx, abajo, encendido) {
 	ctx.font = `bold ${20 * S}px ${FUENTE}`;
 	const anchoNombre = ctx.measureText(m.nombre).width;

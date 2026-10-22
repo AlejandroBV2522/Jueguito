@@ -320,7 +320,7 @@ function vistaMontana(horizonte, abajo, cl) {
 }
 
 // Lo que se ve por el ventanal (recortado al vidrio). Cambia por edificio
-// (config.js → MODULOS[].oficina.vista).
+// (mundo.js → oficina.vista).
 function dibujarVistaVentanal(arriba, abajo, horizonte, g, cl, dt, vista) {
 	const alto = abajo - arriba;
 	ctx.save();
@@ -372,12 +372,12 @@ function dibujarVistaVentanal(arriba, abajo, horizonte, g, cl, dt, vista) {
 	ctx.restore();
 }
 
-// Cada tema (config.js → oficina.tema) está en mundos/<mundo>/tema.js y
+// Cada tema (mundo.js → oficina.tema) está en mundos/<mundo>/tema.js y
 // se registra en window.TEMAS_OFICINA: qué flota en el aire, la pizarra y
 // el objeto propio de la oficina.
 const TEMAS = window.TEMAS_OFICINA || {};
 
-// Lo que flota en el aire de cada oficina (config.js → oficina.tema):
+// Lo que flota en el aire de cada oficina (mundo.js → oficina.tema):
 // planos que vuelan, engranes, documentos que suben a la nube, escudos o
 // una red de nodos. Se mueven solos y un poco con la cámara.
 const FLOTANTES = Array.from({ length: 11 }, (_, k) => ({
@@ -415,7 +415,8 @@ function dibujarPizarraTema(tema, x0, y0, w, h) {
 	ctx.lineWidth = 2 * S;
 	ctx.strokeStyle = COLORES.verdeProfundo;
 	ctx.fillStyle = COLORES.verdeProfundo;
-	const t = TEMAS[tema];
+	// Con un tema que no existe se ve el tablero de tareas (el de "planos"), como siempre
+	const t = TEMAS[tema] || TEMAS.planos;
 	if (t && t.pizarra) t.pizarra(x0, y0, w, h);
 }
 

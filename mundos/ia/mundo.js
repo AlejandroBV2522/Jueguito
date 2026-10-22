@@ -1,6 +1,8 @@
 /* Mundo 6 · IA: oficina con la estación del robot de IA.
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
+"use strict";
+
 window.MODULOS.push({
   nombre: "IA",
   subtitulo: "Inteligencia artificial",

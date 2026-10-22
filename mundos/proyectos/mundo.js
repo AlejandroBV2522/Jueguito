@@ -1,6 +1,8 @@
 /* Mundo 2 · Proyectos: oficina de Wrike.
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
+"use strict";
+
 window.MODULOS.push({
   nombre: "Proyectos",
   subtitulo: "Nuestro trabajo en Wrike",

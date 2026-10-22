@@ -14,18 +14,22 @@ superior se comparten entre todos los archivos de la página. Por eso un
 archivo puede usar lo que declara otro sin importarlo.
 
 Una regla importante: **al cargar, un archivo solo ve lo que ya se cargó**.
-Llamar desde una función a algo de otro archivo siempre funciona, porque las
-funciones corren después, cuando todo ya está cargado. Pero el código que
-corre en el momento de cargar (un `const x = algo()` de nivel superior, un
-`forEach` suelto) solo puede usar archivos anteriores en `index.html`. Si
-no, el navegador da `ReferenceError: X is not defined`.
-`node tools/revisar_proyecto.mjs` lo revisa solo.
+El código que corre en el momento de cargar (un `const x = algo()` de nivel
+superior, un `forEach` suelto) solo puede usar archivos anteriores en
+`index.html`. Si no, el navegador da `ReferenceError: X is not defined`.
+Lo mismo vale para los eventos que se registran al cargar (un clic, una
+tecla): entre un archivo y el siguiente el navegador puede atender un
+evento. Por eso `interfaz/selector.js` y `controles.js`, que conectan los
+eventos, van al final, justo antes de `bucle.js`. Una función que solo se
+llama desde el bucle o desde otra función puede usar cualquier archivo.
+`node tools/revisar_proyecto.mjs` revisa todo esto.
 
 Otras reglas:
 
 - Cada archivo empieza con `"use strict";`.
-- Los nombres de nivel superior no se pueden repetir entre archivos: dos
-  `const` iguales dan error al cargar.
+- Los nombres de nivel superior no se pueden repetir entre archivos. A
+  veces da error al cargar y a veces no: dos `function` iguales se pisan en
+  silencio (gana la última). `revisar_proyecto.mjs` lo avisa.
 - Un archivo nuevo va en `index.html`. Si no está ahí, no se carga
   (`revisar_proyecto.mjs` también lo avisa).
 - `juego/bucle.js` va siempre al final, porque arranca el juego.
@@ -47,12 +51,10 @@ Otras reglas:
 | `camino/` | `zona-industrial.js`, `decoracion-cueva.js` | lo que hay en cada zona |
 | `base/` | `estado.js` | `estado`, `heroe`, `camara`, `entrada`, `dlg` |
 | `interfaz/` | `interfaz.js` | `ui` (elementos HTML), `ponerLogo`, HUD |
-| `interfaz/` | `selector.js` | personaje, `iniciarTalento`, `iniciarOficina`, `reiniciarHeroe` |
 | `interfaz/` | `dialogos.js` | diálogos con los NPC |
 | `oficina/` | `oficina.js` | entrar y salir de la oficina, la terminal y sus preguntas |
 | `mapa/` | `mapa.js` | progreso guardado, `completarModulo`, carta, `entrarMundo`, `volverAlMapa` |
 | `camino/` | `cueva.js` | tubos, colisiones, peleas con antivalores, `accion` |
-| — | `controles.js` | teclado, rueda y botones táctiles |
 | — | `actualizar.js` | `actualizar(dt)`: física y lógica de cada cuadro |
 | `dibujo/` | `formas.js` | `circulo`, `linea`, `rectRedondo` |
 | `dibujo/` | `escenario.js` | cielo, nubes, Celaque, tubos |
@@ -66,6 +68,8 @@ Otras reglas:
 | `mapa/` | `dibujo-mapa.js` | el mapa de mundos, el delfín |
 | `dibujo/` | `efectos.js` | mariposas, lluvia, pétalos y `dibujar(dt)` |
 | `interfaz/` | `barra-jugador.js` | la barrita con la cara y los corazones |
+| `interfaz/` | `selector.js` | personaje, `iniciarTalento`, `iniciarOficina`, `reiniciarHeroe` (conecta eventos: va al final) |
+| — | `controles.js` | teclado, rueda y botones táctiles (conecta eventos: va al final) |
 | — | `bucle.js` | arranque y bucle principal |
 
 ## Antes de entregar un cambio

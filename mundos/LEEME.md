@@ -35,7 +35,7 @@ Lo marcado con `✏️ Borrador` todavía debe revisarlo el área responsable.
 3. Para que la oficina se vea distinta, cambia en su `tema.js` el nombre del
    tema (`window.TEMAS_OFICINA.<tema>`) y pon ese mismo nombre en
    `oficina.tema` de su `mundo.js`. Si prefieres reusar el tema de otro
-   mundo, borra el `tema.js` y usa el nombre de ese tema.
+   mundo, borra el `tema.js` (y su línea en `index.html`) y usa el nombre de ese tema.
 4. En `index.html`, agrega sus `<script defer src="mundos/<carpeta>/...">`
    junto a los demás. El orden de esas líneas es el orden de los mundos en el mapa.
 5. Revisa con `node tools/revisar_proyecto.mjs`: avisa si falta un script,

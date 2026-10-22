@@ -22,6 +22,8 @@
    con el contenido real de la capacitación cuando lo tengas listo.
    --------------------------------------------------------------------- */
 
+"use strict";
+
 window.PREGUNTAS_CUEVA = [
   {
     nombre: "Guardián de la Entrada",

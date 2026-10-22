@@ -171,7 +171,7 @@ function dibujarEnemigos() {
 		const arriba = pie - 110 * S * (e.escala || 1) + Math.sin(tiempo * 3 + e.x) * 3 * S;
 		if (!e.derrotado && e.cayendo === 0) {
 			dibujarGlobo(sx, arriba, esTactil ? "Toca para pelear" : "E · Pelear", "#ffb3b3");
-			// Lo que se combate: un antivalor (config.js → antivalor)
+			// Lo que se combate: un antivalor (mundos/talento/cueva.js → antivalor)
 			if (e.antivalor) dibujarPlacaImportante(sx, arriba - 46 * S, e.antivalor, true);
 		}
 	}

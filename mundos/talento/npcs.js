@@ -21,6 +21,8 @@
                  el jugador avanza con E / Enter / Espacio o tocando la caja.
    --------------------------------------------------------------------- */
 
+"use strict";
+
 window.NPCS = [
   {
     nombre: "Don Javi",
