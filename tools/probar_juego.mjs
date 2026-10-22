@@ -11,12 +11,19 @@
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina y muestra la tarjeta final
 //   estaciones  arma el robot de IA y el antivirus de Seguridad (capturas a medias y al final)
+//   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
 // (densidad, por defecto 1) y MOVIL=1 (pantalla táctil). Las capturas quedan
 // en la carpeta indicada (por defecto ./capturas, que no se sube a git).
 // Sale con código 1 si hubo errores de JavaScript (los 404 de logos que
 // todavía no existen se ignoran).
+//
+// Reloj fijo (por defecto): el juego no corre solo, avanza cuadro por cuadro
+// cuando la prueba lo pide, con el mismo azar (Math.random) y la misma fecha
+// siempre. Así cada corrida saca capturas idénticas, sin importar qué tan
+// rápida sea la máquina (lo usa tools/comparar_capturas.mjs). RELOJ=real
+// deja correr el juego en tiempo real, como en un navegador normal.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -33,7 +40,87 @@ const MOVIL = process.env.MOVIL === "1";
 const PUERTO_WEB = 5600 + Math.floor(Math.random() * 300);
 const PUERTO_CDP = 9400 + Math.floor(Math.random() * 300);
 const CLAVE = "camino-a-celaque:progreso";
+const FIJO = process.env.RELOJ !== "real";
 mkdirSync(salida, { recursive: true });
+
+// Se inyecta antes que los scripts del juego (solo en la prueba, el juego no
+// cambia): reemplaza requestAnimationFrame, setTimeout, performance.now, Date
+// y Math.random por versiones que solo avanzan con window.__avanzar(ms).
+// Las animaciones CSS también se pausan y se adelantan a mano.
+const RELOJ_FIJO = `(() => {
+	let reloj = 0;
+	let sig = 1;
+	let semilla = 20261022;
+	Math.random = () => {
+		semilla = (semilla + 0x6d2b79f5) | 0;
+		let t = semilla;
+		t = Math.imul(t ^ (t >>> 15), t | 1);
+		t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+	const BASE = Date.UTC(2026, 9, 22, 16, 0, 0);
+	const DateReal = Date;
+	window.Date = class extends DateReal {
+		constructor(...a) {
+			if (a.length) super(...a);
+			else super(BASE + reloj);
+		}
+		static now() {
+			return BASE + reloj;
+		}
+	};
+	performance.now = () => reloj;
+	let marcos = [];
+	const timers = new Map();
+	window.requestAnimationFrame = (fn) => (marcos.push(fn), marcos.length);
+	window.cancelAnimationFrame = () => {};
+	window.setTimeout = (fn, ms, ...args) => {
+		timers.set(sig, { t: reloj + (Number(ms) || 0), fn, args });
+		return sig++;
+	};
+	window.clearTimeout = (id) => timers.delete(id);
+	const llamar = (fn, args) => {
+		try {
+			fn(...args);
+		} catch (e) {
+			console.error((e && e.stack) || String(e));
+		}
+	};
+	// El cursor del campo del nombre parpadea con su propio reloj: se oculta
+	document.addEventListener("DOMContentLoaded", () => {
+		const hoja = new CSSStyleSheet();
+		hoja.replaceSync("* { caret-color: transparent !important; }");
+		document.adoptedStyleSheets = [...document.adoptedStyleSheets, hoja];
+	});
+	const vistas = new WeakSet();
+	function animacionesCss(ms) {
+		for (const a of document.getAnimations()) {
+			if (!vistas.has(a)) {
+				vistas.add(a);
+				a.pause();
+				a.currentTime = 0;
+			}
+			a.currentTime = (a.currentTime || 0) + ms;
+		}
+	}
+	window.__avanzar = (ms) => {
+		const fin = reloj + ms;
+		while (reloj < fin - 1e-6) {
+			const paso = Math.min(1000 / 60, fin - reloj);
+			reloj += paso;
+			const listos = [...timers].filter(([, tm]) => tm.t <= reloj).sort((a, b) => a[1].t - b[1].t || a[0] - b[0]);
+			for (const [id, tm] of listos) {
+				timers.delete(id);
+				llamar(tm.fn, tm.args);
+			}
+			const cuadro = marcos;
+			marcos = [];
+			for (const fn of cuadro) llamar(fn, [reloj]);
+			animacionesCss(paso);
+		}
+		return reloj;
+	};
+})();`;
 
 const NAVEGADORES = [
 	"C:/Program Files/Google/Chrome/Application/chrome.exe",
@@ -98,7 +185,23 @@ const cmd = (method, params = {}) =>
 		pendientes.set(i, r);
 		ws.send(JSON.stringify({ id: i, method, params }));
 	});
-const evalua = async (expr) => (await cmd("Runtime.evaluate", { expression: expr, returnByValue: true })).result?.result?.value;
+const evalua = async (expr) => (await cmd("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
+// Deja correr el juego ms milisegundos: con reloj fijo, cuadro por cuadro;
+// si no, esperando de verdad. ahora() es el tiempo del juego que ya pasó.
+let virtual = 0;
+async function paso(ms) {
+	if (!FIJO) return espera(ms);
+	virtual += ms;
+	await evalua(`window.__avanzar(${ms})`);
+}
+const ahora = () => (FIJO ? virtual : Date.now());
+// Tras cargar la página: espera de verdad a que bajen imágenes y fuentes
+// (con reloj fijo el juego no ha dibujado nada todavía).
+async function cargada() {
+	await espera(1500);
+	await evalua(`Promise.all(["300 1em Muli", "italic 300 1em Muli", "400 1em Muli", "700 1em Muli"].map((f) => document.fonts.load(f)))`);
+	virtual = 0;
+}
 let n = 0;
 async function foto(nombre) {
 	const r = await cmd("Page.captureScreenshot", { format: "png" });
@@ -106,7 +209,7 @@ async function foto(nombre) {
 	writeFileSync(ruta, Buffer.from(r.result.data, "base64"));
 	console.log("captura:", ruta);
 }
-const CODIGOS = { Enter: 13, Escape: 27, ArrowRight: 39, ArrowLeft: 37, ArrowUp: 38, " ": 32, e: 69, q: 81, 1: 49, 2: 50, 3: 51 };
+const CODIGOS = { Enter: 13, Escape: 27, ArrowRight: 39, ArrowLeft: 37, ArrowUp: 38, ArrowDown: 40, " ": 32, e: 69, q: 81, 1: 49, 2: 50, 3: 51 };
 async function tecla(key, tipo) {
 	const code = key === " " ? "Space" : key.length > 1 ? key : /\d/.test(key) ? "Digit" + key : "Key" + key.toUpperCase();
 	const base = { key, code, windowsVirtualKeyCode: CODIGOS[key], nativeVirtualKeyCode: CODIGOS[key] };
@@ -121,24 +224,24 @@ async function conProgreso(datos) {
 	await evalua(`localStorage.setItem(${JSON.stringify(CLAVE)}, ${JSON.stringify(JSON.stringify(datos))})`);
 	await evalua(`localStorage.setItem("camino-a-celaque:ayuda-vista", "1")`); // sin el "Cómo se juega"
 	await cmd("Page.reload");
-	await espera(1500);
+	await cargada();
 }
 // Del mapa general a un nivel: flechas hasta el mundo, acercar, carta, entrar
 async function entrarAlMundo(indice) {
 	for (let k = 0; k < indice; k++) await tecla("ArrowRight");
 	await tecla("Enter");
-	await espera(1300);
+	await paso(1300);
 	await tecla("Enter");
-	await espera(400);
+	await paso(400);
 	await tecla("Enter");
-	await espera(1500);
+	await paso(1500);
 }
 // Recorre una oficina: camina saltando, avanza diálogos y contesta la terminal
 async function jugarOficina(limite = 60000, fotoTerminal = "") {
-	const t0 = Date.now();
-	let ultimoSalto = 0;
+	const t0 = ahora();
+	let ultimoSalto = -Infinity;
 	let respuestas = 0;
-	while (Date.now() - t0 < limite) {
+	while (ahora() - t0 < limite) {
 		if (await visible("#terminal")) {
 			await tecla("ArrowRight", "up");
 			if (await visible("#terminal-salir")) {
@@ -147,28 +250,105 @@ async function jugarOficina(limite = 60000, fotoTerminal = "") {
 			}
 			for (const k of ["1", "2", "3"]) {
 				await tecla(k);
-				await espera(250);
+				await paso(250);
 			}
 			if (fotoTerminal) {
-				await espera(700);
+				await paso(700);
 				await foto(`${fotoTerminal}-terminal-${++respuestas}`);
 			}
-			await espera(2500);
+			await paso(2500);
 			continue;
 		}
 		if (await visible("#dialogo")) {
 			await tecla("Enter");
-			await espera(120);
+			await paso(120);
 			continue;
 		}
 		await tecla("ArrowRight", "down");
-		if (Date.now() - ultimoSalto > 450) {
+		if (ahora() - ultimoSalto > 450) {
 			await tecla("ArrowUp");
-			ultimoSalto = Date.now();
+			ultimoSalto = ahora();
 		}
-		await espera(60);
+		await paso(60);
 	}
 	await tecla("ArrowRight", "up");
+	return false;
+}
+// Talento completo: camina saltando, avanza diálogos, responde bien a cada
+// antivalor (busca la opción correcta en config.js) y se agacha en los tubos.
+// Saca una captura al entrar a la Cueva, en cada pregunta y al salir al mapa.
+// Lee todo lo que necesita de la página en una sola consulta por paso.
+const LEER_TALENTO = `(() => {
+	const ver = (s) => { const e = document.querySelector(s); return !!e && !e.hidden && getComputedStyle(e).display !== "none"; };
+	return {
+		fin: /"completos":\\["Talento"/.test(localStorage.getItem(${JSON.stringify(CLAVE)}) || ""),
+		hud: (document.querySelector("#hud-texto") || {}).textContent || "",
+		opciones: ver("#dialogo-opciones"),
+		dialogo: ver("#dialogo"),
+		pregunta: (document.querySelector("#dialogo-texto") || {}).textContent || "",
+	};
+})()`;
+// Hace clic en la opción correcta según config.js (pregunta + opciones, porque
+// el jefe repite una pregunta de otro antivalor)
+const RESPONDER_BIEN = `(() => {
+	const botones = [...document.querySelectorAll("#dialogo-opciones button")];
+	const texto = document.querySelector("#dialogo-texto").textContent;
+	const p = window.PREGUNTAS_CUEVA.flatMap((d) => d.preguntas || [d]).find((q) => q.pregunta === texto && q.opciones.every((o, i) => botones[i] && botones[i].textContent === o));
+	if (!p) return false;
+	botones[p.correcta].click();
+	return true;
+})()`;
+async function jugarTalento(limite = 400000) {
+	const t0 = ahora();
+	let ultimoSalto = -Infinity;
+	let ultimoAviso = 0;
+	let enCueva = false;
+	let preguntas = 0;
+	let ultimaPregunta = "";
+	while (ahora() - t0 < limite) {
+		const p = await evalua(LEER_TALENTO);
+		if (p.fin) {
+			await tecla("ArrowRight", "up");
+			await tecla("q", "up");
+			await paso(2500);
+			await foto("de-vuelta-al-mapa");
+			return true;
+		}
+		if (ahora() - ultimoAviso >= 20000) {
+			ultimoAviso = ahora();
+			console.log(`  ${Math.round((ahora() - t0) / 1000)} s de juego · ${p.hud}`);
+		}
+		if (!enCueva && /Antivalores vencidos/.test(p.hud)) {
+			enCueva = true;
+			await foto("dentro-de-la-cueva");
+		}
+		if (p.opciones) {
+			await tecla("ArrowRight", "up");
+			if (p.pregunta !== ultimaPregunta) {
+				ultimaPregunta = p.pregunta;
+				await foto(`pregunta-${++preguntas}`);
+			}
+			if (!(await evalua(RESPONDER_BIEN))) throw new Error("No encontré la respuesta de: " + p.pregunta);
+			await paso(1200);
+			continue;
+		}
+		if (p.dialogo) {
+			await tecla("Enter");
+			await paso(120);
+			continue;
+		}
+		await tecla("ArrowRight", "down");
+		await tecla("q", "down"); // corriendo: hay huecos que solo se pasan así
+		if (ahora() - ultimoSalto > 450) {
+			await tecla("ArrowUp");
+			ultimoSalto = ahora();
+		}
+		await tecla("ArrowDown"); // solo hace algo parado sobre un tubo
+		await paso(60);
+	}
+	await tecla("ArrowRight", "up");
+	await tecla("q", "up");
+	await foto("se-quedo-aqui");
 	return false;
 }
 
@@ -177,53 +357,60 @@ try {
 	await cmd("Runtime.enable");
 	await cmd("Log.enable");
 	await cmd("Page.enable");
+	if (FIJO) await cmd("Page.addScriptToEvaluateOnNewDocument", { source: RELOJ_FIJO });
 	if (MOVIL) await cmd("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 2 });
 	await cmd("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: DPR, mobile: MOVIL });
 	await cmd("Page.navigate", { url: `http://127.0.0.1:${PUERTO_WEB}/index.html` });
-	await espera(1500);
+	await cargada();
 
 	if (escenario === "mapa") {
 		await evalua("localStorage.clear()");
 		await cmd("Page.reload");
-		await espera(1500);
+		await cargada();
+		await paso(100);
 		await foto("como-se-juega");
 		console.log("se abre 'Cómo se juega':", await visible("#ayuda"));
 		await tecla("Enter");
-		await espera(400);
+		await paso(400);
 		await foto("general");
 		// El delfín del mapa sale a los ~6 s (huevo de pascua)
-		await espera(4800);
+		await paso(4800);
 		for (let k = 0; k < 4; k++) {
-			await espera(450);
+			await paso(450);
 			await foto("buscando-delfin");
 		}
 		console.log("al cerrar la ayuda, el foco va al campo del nombre:", (await evalua("document.activeElement.id")) === "nombre-jugador");
 		await cmd("Input.insertText", { text: "Prueba" });
 		await tecla("Enter");
 		await tecla("Enter");
-		await espera(1300);
+		await paso(1300);
 		await foto("acercado");
 		await tecla("Enter");
-		await espera(500);
+		await paso(500);
 		await foto("carta");
 		console.log("carta:", await texto("#carta-titulo"));
 		await tecla("Enter");
-		await espera(1600);
+		await paso(1600);
 		await foto("nivel");
 		console.log("hud:", await texto("#hud-texto"));
 	} else if (escenario === "talento") {
 		await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: "Prueba" });
 		await entrarAlMundo(0);
 		await tecla("ArrowRight", "down");
-		await espera(4300);
+		await paso(4300);
 		await tecla("ArrowRight", "up");
-		await espera(900);
+		await paso(900);
 		await foto("primer-personaje");
 		for (let k = 0; k < 8; k++) {
 			await tecla("Enter");
-			await espera(150);
+			await paso(150);
 		}
 		await foto("tras-dialogo");
+	} else if (escenario === "cueva") {
+		await conProgreso({ completos: [], nivel: 0, personaje: "chica", nombre: "Prueba" });
+		await entrarAlMundo(0);
+		console.log("Talento completado (salió al mapa):", await jugarTalento());
+		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
 	} else if (escenario === "oficina") {
 		await conProgreso({ completos: ["Talento"], nivel: 3, personaje: "chica", nombre: "Prueba" });
 		await entrarAlMundo(1);
@@ -231,7 +418,7 @@ try {
 		console.log("terminal completada:", await jugarOficina());
 		await foto("terminal-fin");
 		await tecla("Enter");
-		await espera(2500);
+		await paso(2500);
 		await foto("mapa-desbloqueo");
 		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
 	} else if (escenario === "oficinas") {
@@ -241,7 +428,7 @@ try {
 			await conProgreso({ completos: [], nivel: 0, personaje: "chica", nombre: pruebas });
 			await entrarAlMundo(i);
 			await tecla("ArrowRight", "down");
-			await espera(2600);
+			await paso(2600);
 			await tecla("ArrowRight", "up");
 			await foto(`mundo${i + 1}`);
 		}
@@ -253,7 +440,7 @@ try {
 			await entrarAlMundo(i);
 			console.log(`mundo ${i + 1} completado:`, await jugarOficina(60000, `mundo${i + 1}`));
 			await tecla("Enter");
-			await espera(1500);
+			await paso(1500);
 		}
 	} else if (escenario === "victoria") {
 		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");
@@ -261,7 +448,7 @@ try {
 		await entrarAlMundo(nombres.length - 1);
 		console.log("última oficina completada:", await jugarOficina());
 		await tecla("Enter");
-		await espera(4500);
+		await paso(4500);
 		await foto("final");
 		console.log("tarjeta final visible:", await visible("#pantalla-victoria"));
 	} else {
