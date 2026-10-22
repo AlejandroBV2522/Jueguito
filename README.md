@@ -90,9 +90,21 @@ Proyectos, Luis Morán en SharePoint, Sergio en Seguridad y Keidy Durón en IA.
 Se ven en el mapa, en la carta y son quienes te reciben.
 
 Cada oficina es distinta: lo que se ve por el ventanal (obra con grúas,
-zona industrial, solo nubes desde la Torre Atlas, montaña o puntas de
-edificios al atardecer), lo que flota en el aire (planos, engranes,
-documentos, escudos, una red de IA), la pizarra y un objeto propio.
+zona industrial con el edificio Lirios, solo nubes desde la Torre Atlas,
+montaña o puntas de edificios al atardecer), lo que flota en el aire
+(planos, engranes, documentos, escudos, una red de IA), la pizarra y un
+objeto propio. Al fondo, las preguntas se contestan en la computadora, salvo
+en IA (cada acierto le pone piezas al robot asistente hasta que saluda) y en
+Seguridad (cada acierto completa el escudo antivirus y espanta a los virus).
+
+En la Cueva cada enemigo es un **antivalor**, lo opuesto a lo que promueve
+Celaque (La Mediocridad, El Individualismo, La Imprudencia, La
+Improvisación y, de jefe final, La Indiferencia).
+
+La primera vez se abre **"¿Cómo se juega?"**; después está en el botón de
+arriba a la izquierda del mapa. Y hay sorpresas escondidas: un delfín que
+salta del mar en el mapa (tócalo) y una avioneta por la ventana de la Torre
+Atlas.
 
 Al completar un módulo subes de nivel, vuelves al mapa y se abre el
 siguiente mundo. Con los 6 completos aparece la tarjeta de bienvenida a

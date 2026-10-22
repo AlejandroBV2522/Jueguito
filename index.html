@@ -50,6 +50,7 @@
                     <span id="terminal-progreso"></span>
                 </div>
                 <div class="cuerpo-pc">
+                    <canvas id="terminal-figura" hidden aria-hidden="true"></canvas>
                     <p id="terminal-pregunta"></p>
                     <div id="terminal-opciones"></div>
                     <p id="terminal-pista"></p>
@@ -73,6 +74,26 @@
             <span id="nombre-pregunta"></span>
             <input id="nombre-jugador" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Escribe tu nombre">
         </label>
+    </div>
+
+    <!-- Cómo se juega: se abre sola la primera vez -->
+    <button id="btn-ayuda" class="boton boton-secundario boton-chico" aria-haspopup="dialog">? Cómo se juega</button>
+    <div id="ayuda" hidden role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo">
+        <div class="carta ayuda-carta">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+            <h2 id="ayuda-titulo">¿Cómo se juega?</h2>
+            <p class="ayuda-objetivo"><strong>Tu objetivo:</strong> completar los 6 mundos de tu capacitación y llegar a Celaque.</p>
+            <ol class="ayuda-pasos">
+                <li><span class="ayuda-num">1</span><span><strong>Escribe tu nombre</strong> y elige tu personaje en el centro del mapa.</span></li>
+                <li><span class="ayuda-num">2</span><span><strong>Toca un mundo abierto.</strong> Los que tienen candado se abren al terminar el anterior.</span></li>
+                <li><span class="ayuda-num">3</span><span><strong>Toca su edificio</strong> para ver de qué trata y entra.</span></li>
+                <li><span class="ayuda-num">4</span><span><strong>Habla con el equipo</strong> (★ es quien te recibe) y responde bien al final del nivel.</span></li>
+            </ol>
+            <p class="ayuda-controles solo-teclado"><kbd>←</kbd><kbd>→</kbd> Caminar · <kbd>Espacio</kbd> Saltar · <kbd>Q</kbd> Correr · <kbd>E</kbd> Hablar</p>
+            <p class="ayuda-controles solo-tactil">Usa los botones de la pantalla para caminar, saltar, correr y hablar.</p>
+            <button id="ayuda-cerrar" class="boton boton-grande">¡A jugar! <span class="boton-icono" aria-hidden="true">▶</span></button>
+        </div>
     </div>
 
     <!-- Empezar de cero: borra el progreso guardado en este navegador -->

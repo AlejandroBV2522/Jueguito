@@ -351,6 +351,32 @@
 		{ d: 2440, tipo: "especial" }, // propio de cada tema (maqueta, robot...)
 	];
 	const COLORES_PELO = ["#1f1a17", "#3b2414", "#5a2a14", "#2b1a12"];
+	// Dónde se contestan las preguntas al fondo de cada oficina (config.js →
+	// oficina.estacion). Las preguntas son las mismas; cambia la figurita.
+	const ESTACIONES = {
+		computadora: {
+			lugar: "a la computadora",
+			titulo: "Terminal Celaque",
+			usar: "Usar computadora",
+			carta: (n) => `Contesta ${n} preguntas en la Terminal Celaque.`,
+			fin: "",
+		},
+		robot: {
+			lugar: "al taller de IA",
+			titulo: "Taller de IA · Arma al asistente",
+			usar: "Armar al asistente",
+			carta: (n) => `Arma al asistente de IA: cada una de las ${n} respuestas correctas le pone piezas.`,
+			fin: "¡El asistente de IA está listo para ayudarte!",
+		},
+		antivirus: {
+			lugar: "al laboratorio",
+			titulo: "Laboratorio de Seguridad · Arma el antivirus",
+			usar: "Armar el antivirus",
+			carta: (n) => `Arma el antivirus: cada una de las ${n} respuestas correctas completa el escudo.`,
+			fin: "¡Antivirus activado! La información está protegida.",
+		},
+	};
+	const PIEZAS_ESTACION = 6; // partes del robot o del escudo
 	function companeroOficina(d, i, k, x0) {
 		if (k === 0 && d.anfitrion) {
 			// El personaje fijo del mundo es quien te recibe
@@ -415,6 +441,7 @@
 				tema: (d.oficina && d.oficina.tema) || "planos",
 				edificio: (d.oficina && d.oficina.edificio) || "",
 				piso: (d.oficina && d.oficina.piso) || 0,
+				estacion: ESTACIONES[d.oficina && d.oficina.estacion] ? d.oficina.estacion : "computadora",
 				// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
 				companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0)),
 			},
@@ -709,6 +736,9 @@
 	// guardado como PNG transparente y recortado, para que se vea igual de
 	// bien en cualquier computadora y forma de abrir el juego. La función de
 	// recorte queda disponible por si se agregan más edificios en .jpg.
+	// Lirios.png = Lirios.jpg sin el cielo (horneado igual que Atlas); se ve
+	// por el ventanal de la oficina con vista industrial.
+	const imagenLirios = cargarImagen(RUTA_EDIFICIOS + "Lirios.png");
 	const EDIFICIOS_SALIDA_DATOS = [{ nombre: "Atlas.png", x: LARGO_META + 220, altoBase: 450, alfa: 1 }];
 	const edificiosSalida = EDIFICIOS_SALIDA_DATOS.map((d) => ({
 		cargando: cargarImagen(RUTA_EDIFICIOS + d.nombre),
@@ -1193,6 +1223,8 @@
 		opciones: $("dialogo-opciones"),
 		panel: $("mapa-panel"),
 		reiniciarProgreso: $("btn-reiniciar-progreso"),
+		ayuda: $("ayuda"),
+		btnAyuda: $("btn-ayuda"),
 		nombreJugador: $("nombre-jugador"),
 		nombreEtiqueta: $("nombre-etiqueta"),
 		victoriaNombre: $("victoria-nombre"),
@@ -1220,6 +1252,7 @@
 		terminalOpciones: $("terminal-opciones"),
 		terminalPista: $("terminal-pista"),
 		terminalSalir: $("terminal-salir"),
+		terminalFigura: $("terminal-figura"),
 	};
 
 	// Logos en la pantalla (inicio, victoria, computadora): el oficial si ya
@@ -1247,7 +1280,7 @@
 	function actualizarHudCueva() {
 		const derrotados = enemigos.filter((e) => e.derrotado).length;
 		ui.hudRelleno.style.width = ((derrotados / enemigos.length) * 100).toFixed(1) + "%";
-		ui.hudTexto.textContent = `Nivel ${nivel}  ·  Vidas: ${corazones()}  ·  Enemigos vencidos: ${derrotados} / ${enemigos.length}`;
+		ui.hudTexto.textContent = `Nivel ${nivel}  ·  Vidas: ${corazones()}  ·  Antivalores vencidos: ${derrotados} / ${enemigos.length}`;
 	}
 
 	// ---------- Selector de personaje ----------
@@ -1538,7 +1571,7 @@
 		ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
 		ui.hudTexto.textContent = oficinaActual.completo
 			? `Módulo ${oficinaActual.nombre} ✓  ·  Vuelve a la puerta para salir`
-			: `Módulo ${oficinaActual.nombre}  ·  Llega a la computadora del fondo`;
+			: `Módulo ${oficinaActual.nombre}  ·  Llega ${ESTACIONES[oficinaActual.oficina.estacion].lugar} del fondo`;
 	}
 
 	const cercaDe = (x, distancia) => Math.abs(heroe.x - x) < distancia && heroeEnSuelo() && heroe.y === 0;
@@ -1554,10 +1587,15 @@
 	function abrirTerminal(m) {
 		m.terminalVisitada = true;
 		m.preguntaActual = 0;
+		m.aciertos = 0;
 		estado = "terminal";
 		heroe.moviendo = heroe.corriendo = false;
 		ui.terminal.hidden = false;
-		ui.terminalTitulo.textContent = `Terminal Celaque · Módulo ${m.nombre}`;
+		const est = m.oficina.estacion;
+		ui.terminal.classList.toggle("estacion-robot", est === "robot");
+		ui.terminal.classList.toggle("estacion-antivirus", est === "antivirus");
+		ui.terminalFigura.hidden = est === "computadora";
+		ui.terminalTitulo.textContent = est === "computadora" ? `${ESTACIONES[est].titulo} · Módulo ${m.nombre}` : ESTACIONES[est].titulo;
 		ui.terminalSalir.hidden = true;
 		document.body.classList.add("con-dialogo");
 		if (!preguntasDe(m).length) terminarModulo(m);
@@ -1598,18 +1636,23 @@
 		btn.classList.add("correcta");
 		ui.terminalOpciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
 		ui.terminalPista.textContent = p.explicacion ? `¡Correcto! ${p.explicacion}` : "¡Correcto!";
+		// Robot o antivirus: la pieza nueva entra ya (ver dibujarFiguraTerminal)
+		m.aciertos = m.preguntaActual + 1;
+		m.ultimoAcierto = tiempo;
+		const conFigura = m.oficina.estacion !== "computadora";
 		setTimeout(() => {
 			m.preguntaActual++;
 			if (m.preguntaActual < preguntasDe(m).length) mostrarPreguntaTerminal(m);
 			else terminarModulo(m);
-		}, p.explicacion ? 2200 : 900);
+		}, p.explicacion ? 2200 : conFigura ? 1400 : 900);
 	}
 
 	// Completar un módulo sube de nivel y abre el siguiente mundo del mapa.
 	function terminarModulo(m) {
 		m.desbloqueo = completarModulo(m);
 		ui.terminalProgreso.textContent = "Completado";
-		ui.terminalPregunta.textContent = `¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`;
+		const fin = ESTACIONES[m.oficina.estacion].fin;
+		ui.terminalPregunta.textContent = `${fin ? fin + " " : ""}¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`;
 		ui.terminalOpciones.innerHTML = "";
 		ui.terminalPista.textContent = "";
 		ui.terminalSalir.hidden = false;
@@ -1650,6 +1693,8 @@
 		fase: 0,
 		moviendo: false,
 		dir: 1,
+		// Huevo de pascua: un delfín que salta del mar de vez en cuando
+		delfin: { t: -1, x: 0, y: 0, dir: 1, proxima: 6, cx: 0, cy: 0 },
 	};
 	// Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
 	const modoPruebas = () => !!CFG.nombrePruebas && nombreJugador.toLowerCase() === CFG.nombrePruebas.toLowerCase();
@@ -1718,6 +1763,7 @@
 		m.completo = true;
 		m.brillo = 1;
 		nivel++;
+		vidas = vidasMax(); // el corazón nuevo llega lleno
 		avisoMapa(`¡Nivel ${nivel}! ${m.nombre} ✓`); // se ve al volver al mapa
 		if (todosCompletos()) mapa.victoriaPendiente = true;
 		guardarProgreso();
@@ -1762,6 +1808,8 @@
 	function ocultarMapaUI() {
 		ui.panel.classList.add("oculto");
 		ui.reiniciarProgreso.hidden = true;
+		ui.btnAyuda.hidden = true;
+		ui.ayuda.hidden = true;
 		ui.mapaBarra.hidden = true;
 		ui.mapaAyuda.hidden = true;
 		ui.carta.hidden = true;
@@ -1774,6 +1822,7 @@
 		const general = mapa.foco < 0 && mapa.zObjetivo === 0;
 		ui.panel.classList.toggle("oculto", !general);
 		ui.mapaAyuda.hidden = !general;
+		ui.btnAyuda.hidden = !general;
 		ui.reiniciarProgreso.hidden = !general || !(modulos.some((m) => m.completo) || nombreJugador);
 		const acercado = mapa.foco >= 0 && mapa.zObjetivo === 1 && !mapa.carta;
 		ui.mapaBarra.hidden = !acercado;
@@ -1803,6 +1852,29 @@
 		ui.nombreJugador.focus();
 		avisoMapa("Escribe tu nombre para empezar");
 		return true;
+	}
+
+	// Cómo se juega: se abre sola la primera vez (se recuerda en el navegador)
+	const CLAVE_AYUDA = "camino-a-celaque:ayuda-vista";
+	function abrirAyuda() {
+		ui.ayuda.hidden = false;
+		$("ayuda-cerrar").focus();
+	}
+	function cerrarAyuda() {
+		ui.ayuda.hidden = true;
+		try {
+			localStorage.setItem(CLAVE_AYUDA, "1");
+		} catch (e) {
+			/* sin almacenamiento: se volverá a mostrar */
+		}
+		if (!nombreJugador) ui.nombreJugador.focus();
+	}
+	function ayudaYaVista() {
+		try {
+			return localStorage.getItem(CLAVE_AYUDA) === "1";
+		} catch (e) {
+			return false;
+		}
 	}
 
 	// Elegir un mundo: con candado se sacude; abierto, el mapa se acerca.
@@ -1862,10 +1934,13 @@
 		ui.cartaDescripcion.textContent = m.descripcion || "";
 		const anfitrion = m.anfitrionNpc ? [`Te recibe ${m.anfitrionNpc.nombre} ★`] : [];
 		const pasos = m.completoAlSalirDeLaCueva
-			? [`Recorre el camino y conoce a ${npcs.length} personas de la obra.`, `Cruza la Cueva respondiendo a sus ${enemigos.length} guardianes.`]
+			? [
+					`Recorre el camino y conoce a ${npcs.length} personas de la obra.`,
+					`Cruza la Cueva y vence a ${enemigos.length} antivalores (como ${enemigos.map((e) => e.antivalor).filter(Boolean).slice(0, 2).join(" y ")}) respondiendo bien.`,
+				]
 			: [
 					`Habla con ${m.oficina.companeros.length} compañeros de la oficina.`,
-					`Contesta ${preguntasDe(m).length} preguntas en la Terminal Celaque.`,
+					ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length),
 				];
 		ui.cartaLista.innerHTML = "";
 		for (const texto of [...anfitrion, ...pasos]) {
@@ -1931,6 +2006,20 @@
 		} else if (mapa.victoriaPendiente && mapa.foco < 0 && estado === "mapa") {
 			mapa.victoriaPendiente = false;
 			ganar();
+		}
+
+		// El delfín: salta (t de 0 a 1 en 1.6 s) y vuelve a aparecer en otro lado
+		const d = mapa.delfin;
+		if (d.t >= 0) {
+			d.t += dt / 1.6;
+			if (d.t >= 1) {
+				d.t = -1;
+				d.proxima = 9 + Math.random() * 12;
+			}
+		} else if ((d.proxima -= dt) <= 0) {
+			const p = lugarDeMar();
+			d.proxima = 2;
+			if (p) Object.assign(d, { x: p.x, y: p.y, dir: Math.random() < 0.5 ? 1 : -1, t: 0 });
 		}
 
 		// La ficha del héroe camina hasta su mundo (en unidades del mapa)
@@ -2151,8 +2240,9 @@
 		heroe.moviendo = heroe.corriendo = false;
 		dlg.enemigo = enemigo;
 		const p = enemigo.preguntas[enemigo.preguntaActual];
-		ui.nombre.textContent = enemigo.nombre;
-		ui.retrato.textContent = enemigo.nombre.charAt(0).toUpperCase();
+		const titulo = enemigo.antivalor || enemigo.nombre;
+		ui.nombre.textContent = enemigo.antivalor ? `${titulo} ✗` : titulo;
+		ui.retrato.textContent = titulo.replace(/^(El|La|Los|Las)\s+/, "").charAt(0).toUpperCase();
 		ui.retrato.style.background = enemigo.apariencia.ropa;
 		ui.texto.textContent = p.pregunta;
 		const vidasTexto = `Vidas: ${corazones()}`;
@@ -2331,6 +2421,14 @@
 	const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 	window.addEventListener("keydown", (e) => {
+		// Con "Cómo se juega" abierto, Enter, Espacio o Esc lo cierran
+		if (!ui.ayuda.hidden) {
+			if (e.key === "Enter" || e.key === "Escape" || e.key === " ") {
+				e.preventDefault();
+				cerrarAyuda();
+			}
+			return;
+		}
 		// Escribiendo el nombre: las teclas son para el campo (Enter o Esc lo cierran)
 		if (e.target === ui.nombreJugador) {
 			if (e.key === "Enter" || e.key === "Escape") ui.nombreJugador.blur();
@@ -2433,6 +2531,11 @@
 		ui.reiniciarProgreso.classList.remove("confirmar");
 		ui.reiniciarProgreso.textContent = "↻ Empezar de cero";
 	}
+	ui.btnAyuda.addEventListener("click", abrirAyuda);
+	$("ayuda-cerrar").addEventListener("click", cerrarAyuda);
+	ui.ayuda.addEventListener("click", (e) => {
+		if (e.target === ui.ayuda) cerrarAyuda();
+	});
 	ui.nombreJugador.addEventListener("input", () => {
 		const antes = modoPruebas();
 		nombreJugador = ui.nombreJugador.value.trim();
@@ -2453,6 +2556,7 @@
 	// agua aleja la vista.
 	canvas.addEventListener("click", (e) => {
 		if (estado !== "mapa" || mapa.carta) return;
+		if (delfinEnPantalla(e.clientX, e.clientY)) return avisoMapa("¡Encontraste al delfín de Celaque!");
 		const i = mundoEnPantalla(e.clientX, e.clientY);
 		if (mapa.foco >= 0 && mapa.zObjetivo === 1) {
 			if (i === mapa.foco) abrirCarta(i);
@@ -4736,6 +4840,18 @@
 		ctx.fillRect(0, horizonte, W, abajo - horizonte);
 		const franja = ANCHO_VISTA * S;
 		const base = modulo(-cl * 0.18, franja);
+		// El edificio Lirios se asoma detrás de las fábricas (un poco más lento: está más lejos)
+		const lirios = imagenLirios.elemento;
+		if (lirios) {
+			const alto = (abajo - horizonte) * 1.35;
+			const ancho = alto * (lirios.naturalWidth / lirios.naturalHeight);
+			const franjaL = franja * 1.2;
+			ctx.globalAlpha = 0.82; // la bruma industrial lo cubre un poco
+			for (let x = modulo(W * 0.55 - cl * 0.12, franjaL) - franjaL; x < W; x += franjaL) {
+				if (x + ancho >= 0) ctx.drawImage(lirios, x, abajo - alto, ancho, alto);
+			}
+			ctx.globalAlpha = 1;
+		}
 		for (let rep = -1; base + rep * franja < W; rep++) {
 			for (const f of INDUSTRIA_VISTA) {
 				const x = base + rep * franja + f.x * S;
@@ -4800,6 +4916,9 @@
 			[horizonte + (abajo - horizonte) * 0.35, 44, 0.16, 7, "#f1f7fa"],
 			[horizonte + (abajo - horizonte) * 0.72, 60, 0.3, 11, "#ffffff"],
 		];
+		// Huevo de pascua: una avioneta con letrero cruza cada tanto
+		const vuelo = modulo(tiempo, 26);
+		if (vuelo < 9) dibujarAvioneta(-260 * S + (vuelo / 9) * (W + 520 * S), arriba + (horizonte - arriba) * 0.35 + Math.sin(tiempo * 2) * 4 * S);
 		for (const [y, r, f, vel, col] of capas) {
 			const paso = r * 1.5 * S;
 			const off = modulo(cl * f + tiempo * vel * S, paso);
@@ -4807,6 +4926,36 @@
 			ctx.fillRect(0, y, W, abajo - y);
 			for (let x = -off - paso, k = 0; x < W + paso; x += paso, k++) circulo(x, y + Math.sin(k * 1.7) * 6 * S, (r + Math.sin(k * 2.3) * r * 0.35) * S);
 		}
+	}
+
+	function dibujarAvioneta(x, y) {
+		const texto = "¡Bienvenido a Celaque!";
+		ctx.font = `700 ${12 * S}px ${FUENTE}`;
+		const ancho = ctx.measureText(texto).width + 20 * S;
+		const bx = x - 70 * S - ancho;
+		ctx.strokeStyle = "#5e686a";
+		ctx.lineWidth = 1.2 * S;
+		linea(x - 30 * S, y, bx + ancho, y + 2 * S);
+		ctx.fillStyle = COLORES.beige;
+		ctx.fillRect(bx, y - 9 * S, ancho, 20 * S);
+		ctx.fillStyle = COLORES.verdeProfundo;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(texto, bx + ancho / 2, y + 1 * S);
+		ctx.fillStyle = COLORES.blanco;
+		rectRedondo(x - 34 * S, y - 7 * S, 56 * S, 14 * S, 7 * S);
+		ctx.fill();
+		ctx.fillStyle = COLORES.verdeInstitucional;
+		ctx.beginPath();
+		ctx.moveTo(x - 30 * S, y - 4 * S);
+		ctx.lineTo(x - 38 * S, y - 18 * S);
+		ctx.lineTo(x - 26 * S, y - 4 * S);
+		ctx.fill(); // cola
+		ctx.fillRect(x - 10 * S, y - 2 * S, 16 * S, 18 * S * 0.3); // ala
+		ctx.fillStyle = "#9fdcff";
+		for (let k = 0; k < 3; k++) ctx.fillRect(x - 14 * S + k * 9 * S, y - 4 * S, 5 * S, 4 * S);
+		ctx.fillStyle = "#5e686a";
+		ctx.fillRect(x + 22 * S, y - 6 * S, 2 * S, 12 * S * (0.5 + 0.5 * Math.sin(tiempo * 40))); // hélice
 	}
 
 	// Montaña cercana: cordilleras con bosque de pinos y bruma entre ellas
@@ -5193,42 +5342,30 @@
 				circulo(sx + 46 * S, piso - 42 * S, 3 * S);
 			}
 		} else if (tema === "ia") {
-			// Robot asistente que saluda
-			const flota = Math.sin(tiempo * 2) * 4 * S;
-			ctx.fillStyle = "rgba(4,37,35,0.18)";
-			ctx.beginPath();
-			ctx.ellipse(sx, piso - 2 * S, 26 * S, 6 * S, 0, 0, Math.PI * 2);
-			ctx.fill();
-			ctx.save();
-			ctx.translate(sx, piso - 30 * S + flota);
-			ctx.fillStyle = COLORES.blanco;
-			rectRedondo(-24 * S, -50 * S, 48 * S, 46 * S, 12 * S); // cuerpo
-			ctx.fill();
-			ctx.strokeStyle = COLORES.verdeInstitucional;
-			ctx.lineWidth = 3 * S;
-			ctx.stroke();
-			rectRedondo(-20 * S, -92 * S, 40 * S, 34 * S, 10 * S); // cabeza
-			ctx.fill();
-			ctx.stroke();
+			// Pantallas holográficas con datos que se mueven
 			ctx.fillStyle = COLORES.verdeProfundo;
-			rectRedondo(-15 * S, -86 * S, 30 * S, 20 * S, 7 * S);
+			ctx.fillRect(sx - 34 * S, piso - 14 * S, 68 * S, 14 * S);
+			ctx.fillStyle = conAlfa("#7fd6c8", 0.14);
+			ctx.beginPath();
+			ctx.moveTo(sx - 28 * S, piso - 14 * S);
+			ctx.lineTo(sx + 28 * S, piso - 14 * S);
+			ctx.lineTo(sx + 56 * S, piso - 150 * S);
+			ctx.lineTo(sx - 56 * S, piso - 150 * S);
 			ctx.fill();
-			const parpadeo = modulo(tiempo, 3) < 0.15 ? 0.3 : 1;
-			ctx.fillStyle = "#7fd6c8";
-			ctx.fillRect(-10 * S, -80 * S, 6 * S, 7 * S * parpadeo);
-			ctx.fillRect(4 * S, -80 * S, 6 * S, 7 * S * parpadeo);
-			linea(0, -92 * S, 0, -104 * S);
-			ctx.fillStyle = Math.sin(tiempo * 4) > 0 ? "#7fd6c8" : COLORES.verdeInstitucional;
-			circulo(0, -106 * S, 4 * S);
-			ctx.strokeStyle = COLORES.verdeInstitucional;
-			ctx.lineWidth = 5 * S;
-			ctx.lineCap = "round";
-			const saludo = Math.sin(tiempo * 4) * 0.5;
-			linea(-24 * S, -40 * S, -36 * S, -22 * S);
-			linea(24 * S, -40 * S, 24 * S + Math.cos(-1.1 + saludo) * 20 * S, -40 * S + Math.sin(-1.1 + saludo) * 20 * S);
-			ctx.lineCap = "butt";
-			dibujarIconoMundo("chispa", 0, -27 * S, 9 * S, COLORES.verdeInstitucional);
-			ctx.restore();
+			for (let k = 0; k < 2; k++) {
+				const x0 = sx - 50 * S + k * 52 * S;
+				const y0 = piso - 140 * S + k * 40 * S + Math.sin(tiempo * 1.5 + k) * 4 * S;
+				ctx.fillStyle = conAlfa("#7fd6c8", 0.3);
+				ctx.fillRect(x0, y0, 48 * S, 34 * S);
+				ctx.strokeStyle = conAlfa("#c9fff6", 0.8);
+				ctx.lineWidth = 1.5 * S;
+				ctx.strokeRect(x0, y0, 48 * S, 34 * S);
+				ctx.fillStyle = conAlfa("#c9fff6", 0.85);
+				for (let b = 0; b < 4; b++) {
+					const h = (6 + (Math.sin(tiempo * 2 + b + k * 2) * 0.5 + 0.5) * 18) * S;
+					ctx.fillRect(x0 + 6 * S + b * 10 * S, y0 + 30 * S - h, 6 * S, h);
+				}
+			}
 		}
 	}
 
@@ -5775,6 +5912,13 @@
 		if (sx < -200 || sx > W + 200) return;
 		const piso = SUELO + 40 * S;
 		const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
+		const tocar = esTactil ? "Toca Hablar para usarla" : `E · ${ESTACIONES[of.estacion].usar}`;
+		if (of.estacion !== "computadora") {
+			// IA y Seguridad: en vez de computadora, lo que se va armando
+			const alto = dibujarEstacionArmable(m, sx, piso);
+			if (estado === "oficina" && enTerminal() && !m.completo) dibujarGlobo(sx - 50 * S, piso - alto - 6 * S, tocar, COLORES.fondoVerdeClaro);
+			return;
+		}
 
 		// Escritorio
 		const topY = piso - 70 * S;
@@ -5817,8 +5961,284 @@
 		ctx.fillRect(sx - 44 * S, piso - 34 * S, 4 * S, 30 * S);
 
 		if (estado === "oficina" && enTerminal() && !m.completo) {
-			dibujarGlobo(sx - 50 * S, my - 22 * S, esTactil ? "Toca Hablar para usarla" : "E · Usar computadora", COLORES.fondoVerdeClaro);
+			dibujarGlobo(sx - 50 * S, my - 22 * S, tocar, COLORES.fondoVerdeClaro);
 		}
+	}
+
+	// ---------- Dibujo: estaciones que se arman (robot de IA, antivirus) ----------
+	// Cuántas piezas lleva armadas una estación (de PIEZAS_ESTACION) y desde
+	// cuál entran animadas por el último acierto.
+	function piezasEstacion(m) {
+		const total = Math.max(1, preguntasDe(m).length);
+		if (m.completo && !(estado === "terminal" && m.aciertos < total)) return { piezas: PIEZAS_ESTACION, antes: PIEZAS_ESTACION, listo: true };
+		const aciertos = m.aciertos || 0;
+		return {
+			piezas: Math.floor((aciertos / total) * PIEZAS_ESTACION),
+			antes: Math.floor((Math.max(0, aciertos - 1) / total) * PIEZAS_ESTACION),
+			listo: aciertos >= total,
+		};
+	}
+
+	// 0..1: cuánto entró la pieza k (las nuevas caen desde arriba, una tras otra)
+	function entradaPieza(m, k, est) {
+		if (k < est.antes) return 1;
+		return suave(0, 1, (tiempo - (m.ultimoAcierto || 0) - (k - est.antes) * 0.18) / 0.45);
+	}
+
+	// Robot asistente armado por partes: 0 base, 1 cuerpo, 2 y 3 brazos,
+	// 4 cabeza, 5 cara y antena. Lo que falta se ve punteado.
+	function dibujarRobotArmado(cx, piso, m, est) {
+		const u = S;
+		const listo = est.listo && est.piezas >= PIEZAS_ESTACION;
+		const flota = listo ? Math.sin(tiempo * 2) * 3 * u : 0;
+		ctx.save();
+		ctx.translate(cx, piso);
+		// Silueta de lo que falta
+		ctx.save();
+		ctx.setLineDash([5 * u, 4 * u]);
+		ctx.strokeStyle = conAlfa(COLORES.blanco, 0.55);
+		ctx.lineWidth = 2 * u;
+		if (est.piezas < 2) ctx.strokeRect(-24 * u, -62 * u, 48 * u, 46 * u);
+		if (est.piezas < 5) ctx.strokeRect(-20 * u, -100 * u, 40 * u, 34 * u);
+		ctx.restore();
+		const pieza = (k, dibujo) => {
+			if (k >= est.piezas) return;
+			const e = entradaPieza(m, k, est);
+			if (e <= 0) return;
+			ctx.save();
+			ctx.globalAlpha = e;
+			ctx.translate(0, -(1 - e) * 60 * u + (k > 0 ? flota : 0));
+			dibujo();
+			ctx.restore();
+		};
+		pieza(0, () => {
+			ctx.fillStyle = COLORES.verdeProfundo;
+			rectRedondo(-28 * u, -16 * u, 56 * u, 14 * u, 7 * u);
+			ctx.fill();
+			ctx.fillStyle = COLORES.grisClaro;
+			for (const x of [-16, 0, 16]) circulo(x * u, -9 * u, 4 * u);
+		});
+		pieza(1, () => {
+			ctx.fillStyle = COLORES.blanco;
+			rectRedondo(-24 * u, -62 * u, 48 * u, 46 * u, 12 * u);
+			ctx.fill();
+			ctx.strokeStyle = COLORES.verdeInstitucional;
+			ctx.lineWidth = 3 * u;
+			ctx.stroke();
+			dibujarIconoMundo("chispa", 0, -39 * u, 10 * u, COLORES.verdeInstitucional);
+		});
+		ctx.lineCap = "round";
+		pieza(2, () => {
+			ctx.strokeStyle = COLORES.verdeInstitucional;
+			ctx.lineWidth = 6 * u;
+			linea(-24 * u, -52 * u, -38 * u, -30 * u);
+		});
+		pieza(3, () => {
+			ctx.strokeStyle = COLORES.verdeInstitucional;
+			ctx.lineWidth = 6 * u;
+			const ang = listo ? -1.1 + Math.sin(tiempo * 5) * 0.5 : 1.0; // saluda al terminar
+			linea(24 * u, -52 * u, 24 * u + Math.cos(ang) * 22 * u, -52 * u + Math.sin(ang) * 22 * u);
+		});
+		ctx.lineCap = "butt";
+		pieza(4, () => {
+			ctx.fillStyle = COLORES.blanco;
+			rectRedondo(-20 * u, -100 * u, 40 * u, 34 * u, 10 * u);
+			ctx.fill();
+			ctx.strokeStyle = COLORES.verdeInstitucional;
+			ctx.lineWidth = 3 * u;
+			ctx.stroke();
+			ctx.fillStyle = COLORES.verdeProfundo;
+			rectRedondo(-15 * u, -94 * u, 30 * u, 20 * u, 7 * u);
+			ctx.fill();
+		});
+		pieza(5, () => {
+			const parpadeo = modulo(tiempo, 3) < 0.15 ? 0.3 : 1;
+			ctx.save();
+			if (listo) {
+				ctx.shadowColor = "#7fd6c8";
+				ctx.shadowBlur = 12 * u;
+			}
+			ctx.fillStyle = "#7fd6c8";
+			ctx.fillRect(-10 * u, -88 * u, 6 * u, 7 * u * parpadeo);
+			ctx.fillRect(4 * u, -88 * u, 6 * u, 7 * u * parpadeo);
+			ctx.restore();
+			ctx.strokeStyle = COLORES.verdeInstitucional;
+			ctx.lineWidth = 3 * u;
+			linea(0, -100 * u, 0, -112 * u);
+			ctx.fillStyle = Math.sin(tiempo * 4) > 0 ? "#7fd6c8" : COLORES.beige;
+			circulo(0, -114 * u, 4 * u);
+		});
+		if (listo) {
+			ctx.fillStyle = "rgba(255,236,150,0.9)";
+			for (let k = 0; k < 4; k++) {
+				const ang = tiempo * 2 + (k * Math.PI) / 2;
+				dibujarIconoMundo("chispa", Math.cos(ang) * 52 * u, -58 * u + Math.sin(ang) * 44 * u, 6 * u, "#ffe8a0");
+			}
+		}
+		ctx.restore();
+	}
+
+	// Escudo antivirus: se llena por franjas con cada acierto y los virus que
+	// lo rodean van desapareciendo; al terminar brilla con su ✓.
+	function trazarEscudo(cx, cy, r) {
+		ctx.beginPath();
+		ctx.moveTo(cx, cy - r);
+		ctx.lineTo(cx + r * 0.85, cy - r * 0.65);
+		ctx.quadraticCurveTo(cx + r * 0.8, cy + r * 0.55, cx, cy + r);
+		ctx.quadraticCurveTo(cx - r * 0.8, cy + r * 0.55, cx - r * 0.85, cy - r * 0.65);
+		ctx.closePath();
+	}
+
+	function dibujarEscudoArmado(cx, cy, r, m, est) {
+		const listo = est.listo && est.piezas >= PIEZAS_ESTACION;
+		// Virus que quedan (uno menos por pieza armada)
+		for (let k = 0; k < PIEZAS_ESTACION; k++) {
+			const quita = k < est.piezas ? entradaPieza(m, k, est) : 0;
+			if (quita >= 1) continue;
+			const ang = k * 1.05 + tiempo * 0.6;
+			const d = r * (1.35 + 0.1 * Math.sin(tiempo * 3 + k)) + quita * r;
+			const vx = cx + Math.cos(ang) * d;
+			const vy = cy + Math.sin(ang) * d * 0.8;
+			ctx.save();
+			ctx.globalAlpha = 1 - quita;
+			ctx.translate(vx, vy);
+			ctx.rotate(tiempo * 2 + k);
+			ctx.strokeStyle = "#e3262b";
+			ctx.lineWidth = 2 * S;
+			for (let p = 0; p < 6; p++) {
+				const a = (p / 6) * Math.PI * 2;
+				linea(Math.cos(a) * 5 * S, Math.sin(a) * 5 * S, Math.cos(a) * 10 * S, Math.sin(a) * 10 * S);
+			}
+			ctx.fillStyle = "#e3262b";
+			circulo(0, 0, 6 * S);
+			ctx.fillStyle = COLORES.blanco;
+			circulo(-2 * S, -1.5 * S, 1.4 * S);
+			circulo(2 * S, -1.5 * S, 1.4 * S);
+			ctx.restore();
+		}
+		ctx.save();
+		if (listo) {
+			ctx.shadowColor = COLORES.verdeInstitucional;
+			ctx.shadowBlur = (16 + 12 * Math.sin(tiempo * 3)) * S;
+		}
+		trazarEscudo(cx, cy, r);
+		ctx.fillStyle = listo ? COLORES.verdeProfundo : conAlfa(COLORES.verdeProfundo, 0.25);
+		ctx.fill();
+		ctx.restore();
+		ctx.save();
+		trazarEscudo(cx, cy, r);
+		ctx.clip();
+		const banda = (r * 2) / PIEZAS_ESTACION;
+		for (let k = 0; k < est.piezas && !listo; k++) {
+			const e = entradaPieza(m, k, est);
+			// Las franjas se llenan de abajo hacia arriba
+			const y = cy + r - (k + 1) * banda;
+			ctx.fillStyle = e < 1 ? mezclar(COLORES.blanco, COLORES.verdeInstitucional, e) : COLORES.verdeInstitucional;
+			ctx.fillRect(cx - r, y + (1 - e) * banda, r * 2, banda * e + 1);
+		}
+		if (!listo) {
+			// Línea de escaneo que sube y baja
+			const y = cy + Math.sin(tiempo * 2) * r;
+			ctx.fillStyle = "rgba(227,238,235,0.8)";
+			ctx.fillRect(cx - r, y, r * 2, 3 * S);
+		}
+		ctx.restore();
+		trazarEscudo(cx, cy, r);
+		ctx.save();
+		if (!listo) ctx.setLineDash([6 * S, 5 * S]);
+		ctx.strokeStyle = listo ? COLORES.beige : COLORES.blanco;
+		ctx.lineWidth = 3 * S;
+		ctx.stroke();
+		ctx.restore();
+		if (listo) {
+			ctx.strokeStyle = COLORES.blanco;
+			ctx.lineWidth = 6 * S;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(cx - r * 0.38, cy);
+			ctx.lineTo(cx - r * 0.08, cy + r * 0.3);
+			ctx.lineTo(cx + r * 0.42, cy - r * 0.3);
+			ctx.stroke();
+			ctx.lineCap = "butt";
+		}
+	}
+
+	// La estación al fondo de la oficina, en el mundo (en vez de la computadora)
+	function dibujarEstacionArmable(m, sx, piso) {
+		const est = piezasEstacion(m);
+		const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
+		if (m.oficina.estacion === "robot") {
+			// Plataforma de armado con luz y un brazo de taller
+			ctx.save();
+			if (!m.completo) {
+				ctx.shadowColor = COLORES.verdeInstitucional;
+				ctx.shadowBlur = (16 + 14 * pulso) * S;
+			}
+			ctx.fillStyle = COLORES.verdeProfundo;
+			rectRedondo(sx - 70 * S, piso - 24 * S, 140 * S, 24 * S, 8 * S);
+			ctx.fill();
+			ctx.restore();
+			ctx.fillStyle = conAlfa("#7fd6c8", 0.18 + 0.1 * pulso);
+			ctx.beginPath();
+			ctx.moveTo(sx - 60 * S, piso - 24 * S);
+			ctx.lineTo(sx + 60 * S, piso - 24 * S);
+			ctx.lineTo(sx + 40 * S, piso - 170 * S);
+			ctx.lineTo(sx - 40 * S, piso - 170 * S);
+			ctx.fill();
+			ctx.strokeStyle = "#5e686a";
+			ctx.lineWidth = 6 * S;
+			ctx.lineCap = "round";
+			const giro = Math.sin(tiempo * 1.5) * 0.3;
+			linea(sx + 90 * S, piso, sx + 90 * S, piso - 120 * S);
+			linea(sx + 90 * S, piso - 120 * S, sx + 90 * S - Math.cos(giro) * 46 * S, piso - 120 * S - Math.sin(giro) * 30 * S);
+			ctx.lineCap = "butt";
+			ctx.save();
+			const tmp = S;
+			S = tmp * 1.25;
+			dibujarRobotArmado(sx, piso - 24 * tmp, m, est);
+			S = tmp;
+			ctx.restore();
+			return 200 * S;
+		}
+		// Antivirus: pedestal con el escudo flotando en un holograma
+		ctx.fillStyle = COLORES.verdeProfundo;
+		ctx.beginPath();
+		ctx.moveTo(sx - 46 * S, piso);
+		ctx.lineTo(sx + 46 * S, piso);
+		ctx.lineTo(sx + 32 * S, piso - 50 * S);
+		ctx.lineTo(sx - 32 * S, piso - 50 * S);
+		ctx.fill();
+		ctx.fillStyle = conAlfa("#7fd6c8", 0.16 + 0.1 * pulso);
+		ctx.beginPath();
+		ctx.moveTo(sx - 30 * S, piso - 50 * S);
+		ctx.lineTo(sx + 30 * S, piso - 50 * S);
+		ctx.lineTo(sx + 70 * S, piso - 200 * S);
+		ctx.lineTo(sx - 70 * S, piso - 200 * S);
+		ctx.fill();
+		dibujarEscudoArmado(sx, piso - 125 * S + Math.sin(tiempo * 1.5) * 4 * S, 46 * S, m, est);
+		return 210 * S;
+	}
+
+	// La figurita dentro de la ventana de la terminal (lienzo #terminal-figura)
+	function dibujarFiguraTerminal(m) {
+		const lienzo = ui.terminalFigura;
+		const ancho = 240;
+		const alto = 150;
+		if (lienzo.width !== ancho * DPR || lienzo.height !== alto * DPR) {
+			lienzo.width = ancho * DPR;
+			lienzo.height = alto * DPR;
+		}
+		const anteriorCtx = ctx;
+		const anteriorS = S;
+		ctx = lienzo.getContext("2d");
+		ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+		ctx.clearRect(0, 0, ancho, alto);
+		S = 1;
+		const est = piezasEstacion(m);
+		if (m.oficina.estacion === "robot") dibujarRobotArmado(ancho / 2, alto - 8, m, est);
+		else dibujarEscudoArmado(ancho / 2, alto / 2, 52, m, est);
+		ctx = anteriorCtx;
+		S = anteriorS;
 	}
 
 	// ---------- Letreros de obra ----------
@@ -6205,6 +6625,8 @@
 			const arriba = pie - 110 * S * (e.escala || 1) + Math.sin(tiempo * 3 + e.x) * 3 * S;
 			if (!e.derrotado && e.cayendo === 0) {
 				dibujarGlobo(sx, arriba, esTactil ? "Toca para pelear" : "E · Pelear", "#ffb3b3");
+				// Lo que se combate: un antivalor (config.js → antivalor)
+				if (e.antivalor) dibujarPlacaImportante(sx, arriba - 46 * S, e.antivalor, true);
 			}
 		}
 	}
@@ -6657,25 +7079,27 @@
 
 	// Globito de pista ("!", "E · Hablar", "↑ · Saltar"...). Más grande y con
 	// un halo de luz que late, para que se vea desde lejos.
-	// Placa con el nombre del personaje fijo de cada mundo (siempre visible)
-	function dibujarPlacaImportante(x, y, nombre) {
+	// Placa con el nombre del personaje fijo de cada mundo (siempre visible).
+	// enemigo = true: la de un antivalor de la Cueva (negra, con ✗ en rojo).
+	function dibujarPlacaImportante(x, y, nombre, enemigo) {
 		ctx.font = `700 ${14 * S}px ${FUENTE}`;
 		const ancho = ctx.measureText(nombre).width + 40 * S;
 		const alto = 26 * S;
+		const acento = enemigo ? "#e3262b" : COLORES.beige;
 		ctx.save();
-		ctx.shadowColor = conAlfa(COLORES.beige, 0.8);
+		ctx.shadowColor = conAlfa(acento, 0.8);
 		ctx.shadowBlur = 12 * S;
-		ctx.fillStyle = COLORES.verdeProfundo;
+		ctx.fillStyle = enemigo ? COLORES.negro : COLORES.verdeProfundo;
 		rectRedondo(x - ancho / 2, y - alto / 2, ancho, alto, 13 * S);
 		ctx.fill();
 		ctx.restore();
-		ctx.strokeStyle = COLORES.beige;
+		ctx.strokeStyle = acento;
 		ctx.lineWidth = 2 * S;
 		ctx.stroke();
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillStyle = COLORES.beige;
-		ctx.fillText("★", x - ancho / 2 + 15 * S, y + 1 * S);
+		ctx.fillStyle = acento;
+		ctx.fillText(enemigo ? "✗" : "★", x - ancho / 2 + 15 * S, y + 1 * S);
 		ctx.fillStyle = COLORES.blanco;
 		ctx.fillText(nombre, x + 8 * S, y + 1 * S);
 	}
@@ -7543,6 +7967,79 @@
 		ctx.restore();
 	}
 
+	// Un punto del mar lejos de las mesetas (para el delfín), o null
+	function lugarDeMar() {
+		const lejos = (q, x, y) => ((x - q.x) / (q.rx + 110)) ** 2 + ((y - q.y) / (q.ry + ACANTILADO + 90)) ** 2 > 1;
+		for (let k = 0; k < 25; k++) {
+			const x = 80 + Math.random() * (MAPA_ANCHO - 160);
+			const y = 90 + Math.random() * (MAPA_ALTO - 160);
+			if (lejos(mesetaCentro, x, y) && mesetas.every((q) => lejos(q, x, y))) return { x, y };
+		}
+		return null;
+	}
+
+	function dibujarDelfin() {
+		const d = mapa.delfin;
+		if (d.t < 0) return;
+		const p = d.t;
+		// Salpicadura al salir y al entrar al agua
+		for (const [cuando, lado] of [
+			[p, -1],
+			[1 - p, 1],
+		]) {
+			if (cuando > 0.25) continue;
+			const a = 1 - cuando / 0.25;
+			ctx.strokeStyle = `rgba(255,255,255,${(0.85 * a).toFixed(3)})`;
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.ellipse(d.x + lado * 70 * d.dir, d.y, 14 + (1 - a) * 22, 5 + (1 - a) * 6, 0, 0, Math.PI * 2);
+			ctx.stroke();
+		}
+		const x = d.x + (p - 0.5) * 140 * d.dir;
+		const y = d.y - Math.sin(p * Math.PI) * 80;
+		d.cx = x;
+		d.cy = y;
+		const ang = Math.atan2(-80 * Math.PI * Math.cos(p * Math.PI), 140 * d.dir);
+		ctx.save();
+		ctx.translate(x, y);
+		ctx.rotate(ang);
+		ctx.scale(1, d.dir);
+		ctx.fillStyle = "#6f8fa6";
+		ctx.beginPath();
+		ctx.moveTo(-6, -9);
+		ctx.lineTo(4, -23);
+		ctx.lineTo(10, -8);
+		ctx.fill(); // aleta
+		ctx.beginPath();
+		ctx.moveTo(-28, 0);
+		ctx.lineTo(-42, -10);
+		ctx.lineTo(-38, 0);
+		ctx.lineTo(-42, 10);
+		ctx.closePath();
+		ctx.fill(); // cola
+		ctx.beginPath();
+		ctx.ellipse(0, 0, 30, 10, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.beginPath();
+		ctx.ellipse(31, 2, 8, 4, 0, 0, Math.PI * 2);
+		ctx.fill(); // hocico
+		ctx.fillStyle = "#dfe8ee";
+		ctx.beginPath();
+		ctx.ellipse(4, 5, 22, 4.5, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = "#1a1a1a";
+		circulo(20, -3, 2);
+		ctx.restore();
+	}
+
+	// ¿El toque cayó sobre el delfín? (en px de pantalla)
+	function delfinEnPantalla(px, py) {
+		const d = mapa.delfin;
+		if (d.t < 0) return false;
+		const v = vistaMapa();
+		return Math.hypot((px - v.ox) / v.k - d.cx, (py - v.oy) / v.k - d.cy) < 45;
+	}
+
 	// Ficha del héroe elegido, parada (o caminando) sobre su mundo
 	function dibujarHeroeMapa() {
 		if (mapa.heroeX === null) return;
@@ -7589,6 +8086,7 @@
 		const sAntes = S;
 		S = 1;
 		dibujarOlasMapa();
+		dibujarDelfin();
 		dibujarCentroMapa();
 		mesetas.forEach((q, i) => dibujarMesetaBase(q, apagadoMundo(i)));
 		dibujarCaminosMapa();
@@ -7935,6 +8433,7 @@
 	// ---------- Bucle principal ----------
 	cargarProgreso();
 	abrirMapa();
+	if (!ayudaYaVista()) abrirAyuda();
 	let ultimo = performance.now();
 	function bucle(ahora) {
 		const dt = Math.min(0.05, (ahora - ultimo) / 1000);
@@ -7944,6 +8443,7 @@
 		dibujar(dt);
 		if (estado === "mapa" && mapa.foco < 0) dibujarVistasPrevias();
 		actualizarBarraJugador(dt);
+		if (estado === "terminal" && oficinaActual && !ui.terminalFigura.hidden) dibujarFiguraTerminal(oficinaActual);
 		requestAnimationFrame(bucle);
 	}
 	requestAnimationFrame(bucle);

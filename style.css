@@ -314,6 +314,123 @@ body {
 	}
 }
 
+/* ---------- Cómo se juega ---------- */
+#btn-ayuda {
+	position: fixed;
+	top: 14px;
+	left: 16px;
+	z-index: 9;
+}
+
+#ayuda {
+	position: fixed;
+	inset: 0;
+	z-index: 21;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.5);
+	animation: aparecer 0.3s ease-out;
+}
+
+.ayuda-carta {
+	position: relative;
+	align-items: center;
+	overflow: hidden;
+	padding-top: 34px;
+	text-align: center;
+	animation: entrada-final 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.ayuda-carta .logo-celaque {
+	width: 170px;
+}
+
+#ayuda-titulo {
+	margin: 0;
+	font-size: clamp(1.6rem, 4vw, 2.1rem);
+	font-weight: 700;
+}
+
+.ayuda-objetivo {
+	margin: 0;
+	padding: 10px 16px;
+	border-radius: 14px;
+	background: var(--cel-fondo-verde-claro);
+	font-size: 1.05rem;
+	font-weight: 400;
+}
+
+.ayuda-pasos {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	text-align: left;
+}
+
+.ayuda-pasos li {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-weight: 400;
+	line-height: 1.35;
+}
+
+.ayuda-num {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border: 3px solid var(--cel-beige);
+	border-radius: 50%;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	font-weight: 700;
+}
+
+.ayuda-controles {
+	margin: 0;
+	font-size: 0.95rem;
+	color: var(--cel-verde-institucional);
+}
+
+.ayuda-controles kbd {
+	min-width: 1.6em;
+	padding: 1px 6px;
+	border-radius: 6px;
+	box-shadow: 0 2px 0 var(--cel-verde-institucional);
+}
+
+.solo-tactil {
+	display: none;
+}
+
+@media (pointer: coarse) {
+	.solo-tactil {
+		display: block;
+	}
+
+	.solo-teclado {
+		display: none;
+	}
+}
+
+@media (max-height: 560px) {
+	.ayuda-carta .logo-celaque {
+		display: none;
+	}
+
+	.ayuda-pasos {
+		gap: 4px;
+	}
+}
+
 /* Empezar de cero, arriba a la derecha del mapa */
 #btn-reiniciar-progreso {
 	position: fixed;
@@ -1138,6 +1255,32 @@ kbd {
 	min-height: 1.4em;
 	color: var(--cel-fondo-verde-claro);
 	font-weight: 700;
+}
+
+/* Estaciones que no son computadora: la figurita que se arma va arriba */
+#terminal-figura {
+	align-self: center;
+	width: 240px;
+	height: 150px;
+}
+
+#terminal.estacion-robot .monitor,
+#terminal.estacion-antivirus .monitor {
+	border-radius: 26px;
+	background: var(--cel-verde-institucional);
+	box-shadow: 0 0 0 3px var(--cel-beige), 0 24px 50px rgba(0, 0, 0, 0.5);
+}
+
+#terminal.estacion-robot .pie-monitor,
+#terminal.estacion-antivirus .pie-monitor {
+	display: none;
+}
+
+@media (max-height: 640px) {
+	#terminal-figura {
+		width: 160px;
+		height: 100px;
+	}
 }
 
 #terminal-salir {

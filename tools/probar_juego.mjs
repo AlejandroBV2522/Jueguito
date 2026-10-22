@@ -10,6 +10,7 @@
 //   oficina   juega la oficina de Proyectos completa y vuelve al mapa
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina y muestra la tarjeta final
+//   estaciones  arma el robot de IA y el antivirus de Seguridad (capturas a medias y al final)
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
 // (densidad, por defecto 1) y MOVIL=1 (pantalla táctil). Las capturas quedan
@@ -118,6 +119,7 @@ const visible = (sel) => evalua(`(() => { const e = document.querySelector(${JSO
 const texto = (sel) => evalua(`(document.querySelector(${JSON.stringify(sel)}) || {}).textContent`);
 async function conProgreso(datos) {
 	await evalua(`localStorage.setItem(${JSON.stringify(CLAVE)}, ${JSON.stringify(JSON.stringify(datos))})`);
+	await evalua(`localStorage.setItem("camino-a-celaque:ayuda-vista", "1")`); // sin el "Cómo se juega"
 	await cmd("Page.reload");
 	await espera(1500);
 }
@@ -132,16 +134,24 @@ async function entrarAlMundo(indice) {
 	await espera(1500);
 }
 // Recorre una oficina: camina saltando, avanza diálogos y contesta la terminal
-async function jugarOficina(limite = 60000) {
+async function jugarOficina(limite = 60000, fotoTerminal = "") {
 	const t0 = Date.now();
 	let ultimoSalto = 0;
+	let respuestas = 0;
 	while (Date.now() - t0 < limite) {
 		if (await visible("#terminal")) {
 			await tecla("ArrowRight", "up");
-			if (await visible("#terminal-salir")) return true;
+			if (await visible("#terminal-salir")) {
+				if (fotoTerminal) await foto(fotoTerminal + "-terminal-fin");
+				return true;
+			}
 			for (const k of ["1", "2", "3"]) {
 				await tecla(k);
 				await espera(250);
+			}
+			if (fotoTerminal) {
+				await espera(700);
+				await foto(`${fotoTerminal}-terminal-${++respuestas}`);
 			}
 			await espera(2500);
 			continue;
@@ -176,10 +186,18 @@ try {
 		await evalua("localStorage.clear()");
 		await cmd("Page.reload");
 		await espera(1500);
-		await foto("general");
+		await foto("como-se-juega");
+		console.log("se abre 'Cómo se juega':", await visible("#ayuda"));
 		await tecla("Enter");
-		await espera(500);
-		console.log("sin nombre, el foco va al campo:", (await evalua("document.activeElement.id")) === "nombre-jugador");
+		await espera(400);
+		await foto("general");
+		// El delfín del mapa sale a los ~6 s (huevo de pascua)
+		await espera(4800);
+		for (let k = 0; k < 4; k++) {
+			await espera(450);
+			await foto("buscando-delfin");
+		}
+		console.log("al cerrar la ayuda, el foco va al campo del nombre:", (await evalua("document.activeElement.id")) === "nombre-jugador");
 		await cmd("Input.insertText", { text: "Prueba" });
 		await tecla("Enter");
 		await tecla("Enter");
@@ -226,6 +244,16 @@ try {
 			await espera(2600);
 			await tecla("ArrowRight", "up");
 			await foto(`mundo${i + 1}`);
+		}
+	} else if (escenario === "estaciones") {
+		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
+		const mundos = await evalua("window.MODULOS.map((m, i) => (m.oficina && m.oficina.estacion && m.oficina.estacion !== 'computadora' ? i : -1)).filter((i) => i >= 0)");
+		for (const i of mundos) {
+			await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
+			await entrarAlMundo(i);
+			console.log(`mundo ${i + 1} completado:`, await jugarOficina(60000, `mundo${i + 1}`));
+			await tecla("Enter");
+			await espera(1500);
 		}
 	} else if (escenario === "victoria") {
 		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");

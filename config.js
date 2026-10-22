@@ -160,7 +160,9 @@ window.NPCS = [
    seguir avanzando; fallar resta una vida (hay 3) y repite la misma
    pregunta. El último es el "jefe final".
 
-   - nombre:    aparece en la caja de diálogo, igual que los NPCs.
+   - nombre:    nombre de la criatura (también elige su foto: no cambiarlo).
+   - antivalor: lo que se combate: el opuesto de un valor de Celaque. Es el
+                nombre que se ve sobre el enemigo y en la caja de diálogo.
    - posicion:  dónde aparece (0 a 1 = dentro de la cueva, sin repetir).
                 El primer enemigo puede llevar un valor negativo (ej. -0.05)
                 para quedar afuera, justo antes de la entrada — bloquea el
@@ -177,6 +179,7 @@ window.NPCS = [
 window.PREGUNTAS_CUEVA = [
   {
     nombre: "Guardián de la Entrada",
+    antivalor: "La Mediocridad", // ✏️ Borrador: lo opuesto a la calidad
     posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
     escala: 1.4, // centinela de piedra: grande e imponente, el primer reto
     factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
@@ -192,6 +195,7 @@ window.PREGUNTAS_CUEVA = [
   },
   {
     nombre: "Murciélago de la Cueva",
+    antivalor: "El Individualismo", // ✏️ Borrador: lo opuesto al trabajo en equipo
     posicion: 0.22,
     escala: 0.6, // el más débil: el más chico
     apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
@@ -201,6 +205,7 @@ window.PREGUNTAS_CUEVA = [
   },
   {
     nombre: "Guerrero Esqueleto",
+    antivalor: "La Imprudencia", // ✏️ Borrador: lo opuesto a la seguridad
     posicion: 0.39,
     escala: 1.05,
     apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
@@ -215,6 +220,7 @@ window.PREGUNTAS_CUEVA = [
   {
     // ✏️ Marcador de posición: reemplazar con contenido real de la capacitación
     nombre: "Golem de Piedra",
+    antivalor: "La Improvisación", // ✏️ Borrador: lo opuesto a seguir los procesos
     posicion: 0.645,
     escala: 1.3,
     factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
@@ -232,6 +238,7 @@ window.PREGUNTAS_CUEVA = [
     // Trae 2 preguntas ("preguntas" en vez de "pregunta") — hay que
     // responder las 2 en orden para vencerlo, una tras otra.
     nombre: "Guardián de Celaque",
+    antivalor: "La Indiferencia", // ✏️ Borrador: jefe final, lo opuesto al compromiso
     posicion: 0.865,
     escala: 2.2, // jefe final: el gigante de la Cueva
     factorFrente: 0.5, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
@@ -294,6 +301,10 @@ window.PREGUNTAS_CUEVA = [
                   tema:  lo que flota en la oficina y la pizarra: "planos",
                          "procesos", "documentos", "seguridad" o "ia".
                   edificio / piso: (opcionales) letrero junto a la salida.
+                  estacion: dónde se contestan las preguntas: "computadora"
+                         (por defecto), "robot" (cada acierto arma una pieza
+                         del asistente de IA) o "antivirus" (cada acierto arma
+                         una parte del escudo).
    - comentarios: más compañeros dentro de la oficina, cada uno con
                   { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
                   Caben 2 (el resto no se muestra).
@@ -514,7 +525,7 @@ window.MODULOS = [
       "La información de Celaque es valiosa y cuidarla es trabajo de todos: aprende a reconocer correos sospechosos, a no compartir nunca tus contraseñas y a reportar cualquier incidente al área de Sistemas.",
     icono: "escudo",
     color: "#042523", // verde profundo
-    oficina: { vista: "montana", tema: "seguridad" },
+    oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus" },
     anfitrion: {
       nombre: "Sergio",
       cuerpo: "chico",
@@ -566,7 +577,7 @@ window.MODULOS = [
       "La inteligencia artificial nos ayuda a trabajar mejor si la usamos con criterio: revisa siempre lo que genera antes de usarlo y comparte información de la empresa solo en las herramientas aprobadas.",
     icono: "chispa",
     color: "#A99886", // beige
-    oficina: { vista: "ciudad", tema: "ia" },
+    oficina: { vista: "ciudad", tema: "ia", estacion: "robot" },
     anfitrion: {
       nombre: "Keidy Durón",
       cuerpo: "chica",
