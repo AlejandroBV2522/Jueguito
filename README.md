@@ -5,7 +5,9 @@ Juego de navegador: el protagonista camina desde un mundo gris y lluvioso hasta
 constructores (NPC) en el camino. Al inicio todo es gris (smog y lluvia); a
 medida que avanza, las fábricas, bodegas y grúas recuperan sus colores.
 
-Todo el código es propio: no usa librerías, fuentes ni enlaces de terceros.
+Todo el código es propio: no usa librerías ni enlaces de terceros. La
+tipografía (Muli) y los logos son los oficiales de Celaque y van incluidos en
+el proyecto (`assets/fuentes/`, `assets/logos/`).
 Casi todo se dibuja con `<canvas>`; la llegada a Celaque (al salir de la
 Cueva) usa unas pocas imágenes PNG propias (`assets/edificios/`). La página
 bloquea cualquier carga externa (Content-Security-Policy en `index.html`),
@@ -80,15 +82,18 @@ Todo lo editable está en **`config.js`**:
   herramienta) y `dialogo` (lista de
   frases). Para agregar un NPC nuevo, copia un bloque `{ ... }` y cambia los
   datos. No hay límite de NPCs.
-- `colores`: colores oficiales de Celaque (también están en `style.css`).
+- `colores`: paleta oficial de Celaque (también en `style.css` como
+  `--cel-...`).
 - `MODULOS`: los módulos de la calle de Celaque (nombre, color, logo
   opcional, lo que dice el compañero de la oficina y las preguntas).
   `preguntasPorModulo` dice cuántas hace la computadora.
 - `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
 
-**Logos:** el juego los busca en `assets/logos/` con nombres fijos (ver
-`assets/logos/LEEME.md`). Mientras no estén, se ve un recuadro que dice
-"LOGO" en su lugar. Se dibujan sin deformar.
+**Marca:** el juego sigue el manual de marca de Celaque
+(`assets/marca/`): paleta oficial, tipografía Muli y el logo siempre sin
+deformar, sin transparencias y sobre fondos lisos. Los logos están en
+`assets/logos/`; ahí mismo, `LEEME.md` lista los que faltan (módulos y
+proyectos). Mientras no estén, se ve un recuadro que dice "LOGO".
 
 ## Archivos
 

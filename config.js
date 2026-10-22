@@ -24,14 +24,19 @@ window.CONFIG_JUEGO = {
     letreroFinal: "¿Estás listo?", // letrero al final de la calle de Celaque
   },
 
-  /* Colores oficiales de Celaque (tomados de la presentación institucional).
-     Los de la pantalla (botones, cajas) están repetidos en style.css. */
+  /* Paleta corporativa oficial de Celaque (manual de marca). Prioridad a
+     los verdes. Se usa en el dibujo del juego (canvas); los mismos colores
+     están en style.css (--cel-...) para la interfaz. */
   colores: {
-    oscuro: "#032420",  // verde casi negro (fondos, textos fuertes)
-    verde: "#0b5c58",   // verde Celaque (logo)
-    teal: "#00767a",    // turquesa de SharePoint / sitios
-    claro: "#3fb3ad",   // turquesa claro (brillos, guías)
-    crema: "#f3efe6",   // fondo claro de cajas
+    verdeProfundo: "#042523",       // texto principal, encabezados, botón primario
+    verdeInstitucional: "#488478",  // acento interactivo, estados informativos
+    grisClaro: "#CCCCCC",           // divisores y bordes suaves
+    beige: "#A99886",               // acentos cálidos y detalles de apoyo
+    blanco: "#FFFFFF",              // fondo principal
+    negro: "#000000",               // texto alternativo
+    // Variantes de interfaz (no oficiales)
+    verdeProfundoHover: "#063330",
+    fondoVerdeClaro: "#e3eeeb",
   },
 
   /* Personajes que se pueden elegir al inicio. Los colores son los que
@@ -278,7 +283,7 @@ window.MODULOS = [
   {
     nombre: "Talento",
     subtitulo: "Celaque: quiénes somos",
-    color: "#00767a",
+    color: "#488478", // verde institucional
     completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
     intro: [],
     preguntas: [],
@@ -286,7 +291,7 @@ window.MODULOS = [
   {
     nombre: "Proyectos",
     subtitulo: "Nuestro trabajo en Wrike",
-    color: "#0b5c58",
+    color: "#042523", // verde profundo
     intro: [
       "Bienvenido al edificio de Proyectos.",
       "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
@@ -317,7 +322,7 @@ window.MODULOS = [
   {
     nombre: "Procesos",
     subtitulo: "Cómo hacemos las cosas",
-    color: "#2f8f6f",
+    color: "#A99886", // beige
     intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
     preguntas: [
       {
@@ -345,7 +350,7 @@ window.MODULOS = [
   {
     nombre: "SharePoint",
     subtitulo: "SharePoint, Outlook y Teams",
-    color: "#00767a",
+    color: "#488478", // verde institucional
     intro: [
       "Bienvenido al edificio de Plataformas.",
       "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
@@ -389,7 +394,7 @@ window.MODULOS = [
   {
     nombre: "Seguridad",
     subtitulo: "Cuidamos la información",
-    color: "#1f6f8b",
+    color: "#042523", // verde profundo
     intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
     preguntas: [
       {
@@ -413,7 +418,7 @@ window.MODULOS = [
   {
     nombre: "IA",
     subtitulo: "Inteligencia artificial",
-    color: "#4b5fa8",
+    color: "#A99886", // beige
     intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
     preguntas: [
       {

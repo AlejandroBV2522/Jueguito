@@ -2,3 +2,6 @@
 .claude/agents/
 .claude/handoffs/
 
+
+# Fuentes de la marca (manual PDF y logo editable .ai): solo locales, pesan mucho
+assets/marca/

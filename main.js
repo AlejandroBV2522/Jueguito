@@ -17,7 +17,19 @@
 	const PRIMER_MODULO = LARGO_TOTAL + 420;
 	const ESPACIO_MODULO = 640;
 	const LARGO_META = PRIMER_MODULO + MODULOS_DATOS.length * ESPACIO_MODULO + 80;
-	const COLORES = CFG.colores || { oscuro: "#032420", verde: "#0b5c58", teal: "#00767a", claro: "#3fb3ad", crema: "#f3efe6" };
+	// Paleta oficial de Celaque (config.js → colores; ver manual de marca)
+	const COLORES = CFG.colores || {
+		verdeProfundo: "#042523",
+		verdeInstitucional: "#488478",
+		grisClaro: "#CCCCCC",
+		beige: "#A99886",
+		blanco: "#FFFFFF",
+		negro: "#000000",
+		verdeProfundoHover: "#063330",
+		fondoVerdeClaro: "#e3eeeb",
+	};
+	// Tipografía oficial (Muli, cargada en style.css desde assets/fuentes/)
+	const FUENTE = `"Muli", "Mulish", Arial, sans-serif`;
 
 	// ---------- Física del salto (real: gravedad + colisión contra los tubos) ----------
 	// Unidades de mundo (iguales a heroe.x), independientes de S — se multiplican
@@ -259,8 +271,12 @@
 
 	// Logos oficiales (los pone el equipo en assets/logos/; ver README). Si
 	// todavía no están, en su lugar se dibuja un recuadro que dice "LOGO".
-	const logoCelaque = cargarImagen(RUTA_LOGOS + "celaque.png");
-	const logoCelaqueBlanco = cargarImagen(RUTA_LOGOS + "celaque-blanco.png");
+	// Manual de marca: el logo va siempre sobre un fondo liso de buen
+	// contraste (nunca degradado ni foto), sin transparencias ni deformarlo,
+	// y en pantalla con al menos 20 px de alto (horizontal).
+	const logoCelaque = cargarImagen(RUTA_LOGOS + "celaque-horizontal-verde-profundo.png");
+	const logoCelaqueBlanco = cargarImagen(RUTA_LOGOS + "celaque-horizontal-blanco.png");
+	const ALTO_MIN_LOGO = 20;
 	// Interior de cada módulo: una oficina propia en una franja del mundo
 	// aparte (muy lejos de la calle, para que no se mezclen), recorrida de
 	// izquierda a derecha: entrada → compañero → muebles → computadora.
@@ -2728,7 +2744,7 @@
 
 	function dibujarCota(x1, y1, x2, y2, texto) {
 		linea(x1, y1, x2, y2);
-		ctx.font = `${12 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+		ctx.font = `${12 * S}px ${FUENTE}`;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillText(texto, (x1 + x2) / 2 + (x1 === x2 ? -14 * S : 0), (y1 + y2) / 2 + (y1 === y2 ? -10 * S : 0));
@@ -2842,7 +2858,7 @@
 			ctx.restore();
 		}
 
-		ctx.font = `italic ${22 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+		ctx.font = `italic ${22 * S}px ${FUENTE}`;
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
 		ctx.fillStyle = TINTA_PLANO + "0.5)";
@@ -2947,7 +2963,7 @@
 			ctx.globalAlpha = alfa;
 			ctx.translate(x, y);
 			ctx.scale(zoom, zoom);
-			ctx.font = `bold ${24 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+			ctx.font = `bold ${24 * S}px ${FUENTE}`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.lineWidth = 5 * S;
@@ -3660,18 +3676,21 @@
 		ctx.drawImage(img, cx - (w * k) / 2, cy - (h * k) / 2, w * k, h * k);
 	}
 
-	const FUENTE = `"Trebuchet MS", "Segoe UI", sans-serif`;
 
 	// Dibuja el logo (si su archivo ya está) o, mientras tanto, un recuadro
 	// punteado que dice "LOGO" del mismo tamaño, para ver dónde va a quedar.
 	function dibujarLogoOEspacio(carga, cx, cy, ancho, alto, claro) {
 		const img = carga && carga.elemento;
 		if (img) {
-			dibujarImagenContenida(img, cx, cy, ancho, alto);
+			// Sin deformar y nunca más bajo que el mínimo del manual
+			const w = img.naturalWidth || img.width;
+			const h = img.naturalHeight || img.height;
+			const k = Math.max(Math.min(ancho / w, alto / h), ALTO_MIN_LOGO / h);
+			ctx.drawImage(img, cx - (w * k) / 2, cy - (h * k) / 2, w * k, h * k);
 			return;
 		}
 		ctx.save();
-		const color = claro ? "rgba(255,255,255,0.85)" : conAlfa(COLORES.verde, 0.75);
+		const color = claro ? "rgba(255,255,255,0.85)" : conAlfa(COLORES.verdeProfundo, 0.75);
 		ctx.setLineDash([5 * S, 4 * S]);
 		ctx.lineWidth = 2 * S;
 		ctx.strokeStyle = color;
@@ -3698,8 +3717,8 @@
 
 			// Vidrio: degradado de turquesa a verde Celaque, con pisos y parteluces
 			const vidrio = ctx.createLinearGradient(izq, arriba, izq + ancho, baseY);
-			vidrio.addColorStop(0, mezclar(COLORES.claro, "#ffffff", 0.35));
-			vidrio.addColorStop(1, COLORES.verde);
+			vidrio.addColorStop(0, mezclar(COLORES.verdeInstitucional, "#ffffff", 0.35));
+			vidrio.addColorStop(1, COLORES.verdeProfundo);
 			ctx.fillStyle = vidrio;
 			ctx.fillRect(izq, arriba, ancho, alto);
 			ctx.strokeStyle = "rgba(255,255,255,0.28)";
@@ -3715,7 +3734,7 @@
 			ctx.lineTo(izq + ancho * 0.7, arriba);
 			ctx.lineTo(izq, arriba + alto * 0.55);
 			ctx.fill();
-			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fillRect(izq - 5 * S, arriba - 10 * S, ancho + 10 * S, 12 * S);
 
 			// Logo del proyecto en la fachada, y letrero con su nombre arriba
@@ -3726,9 +3745,9 @@
 			ctx.font = `bold ${17 * S}px ${FUENTE}`;
 			const anchoLetrero = ctx.measureText(p.nombre).width + 30 * S;
 			rectRedondo(sx - anchoLetrero / 2, arriba - 46 * S, anchoLetrero, 32 * S, 8 * S);
-			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fill();
-			ctx.fillStyle = COLORES.crema;
+			ctx.fillStyle = COLORES.blanco;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
 			ctx.fillText(p.nombre, sx, arriba - 30 * S);
@@ -3750,11 +3769,11 @@
 
 		ctx.save();
 		if (encendido) {
-			ctx.shadowColor = conAlfa(COLORES.claro, 0.9);
+			ctx.shadowColor = conAlfa(COLORES.verdeInstitucional, 0.9);
 			ctx.shadowBlur = 18 * S;
 		}
 		rectRedondo(x0, y0, ancho, alto, 12 * S);
-		ctx.fillStyle = encendido ? COLORES.crema : "#c9cfce";
+		ctx.fillStyle = encendido ? COLORES.blanco : "#c9cfce";
 		ctx.fill();
 		ctx.restore();
 		rectRedondo(x0, y0, ancho, alto, 12 * S);
@@ -3768,10 +3787,10 @@
 
 		ctx.textAlign = "left";
 		ctx.textBaseline = "middle";
-		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		ctx.font = `bold ${20 * S}px ${FUENTE}`;
 		ctx.fillText(m.nombre, x0 + 28 * S + logo, y0 + alto * 0.38);
-		ctx.fillStyle = COLORES.teal;
+		ctx.fillStyle = COLORES.verdeInstitucional;
 		ctx.font = `${12 * S}px ${FUENTE}`;
 		ctx.fillText(m.subtitulo || "", x0 + 28 * S + logo, y0 + alto * 0.72);
 
@@ -3779,7 +3798,7 @@
 		if (m.completo) {
 			const cx = x0 + ancho - 4 * S;
 			const cy = y0 + 4 * S;
-			ctx.fillStyle = "#2f9e5f";
+			ctx.fillStyle = COLORES.verdeInstitucional;
 			circulo(cx, cy, 13 * S);
 			ctx.strokeStyle = "#fff";
 			ctx.lineWidth = 3 * S;
@@ -3809,8 +3828,8 @@
 
 			if (m === pendiente) {
 				const halo = ctx.createRadialGradient(sx, baseY - 50 * S, 10 * S, sx, baseY - 50 * S, 190 * S);
-				halo.addColorStop(0, conAlfa(COLORES.claro, 0.35 + 0.25 * pulso));
-				halo.addColorStop(1, conAlfa(COLORES.claro, 0));
+				halo.addColorStop(0, conAlfa(COLORES.verdeInstitucional, 0.35 + 0.25 * pulso));
+				halo.addColorStop(1, conAlfa(COLORES.verdeInstitucional, 0));
 				ctx.fillStyle = halo;
 				ctx.fillRect(sx - 200 * S, baseY - 250 * S, 400 * S, 300 * S);
 			}
@@ -3819,7 +3838,7 @@
 			ctx.fillRect(izq, arriba, ancho, alto);
 			ctx.fillStyle = "rgba(0,0,0,0.16)";
 			ctx.fillRect(izq + ancho * 0.84, arriba, ancho * 0.16, alto);
-			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fillRect(izq - 7 * S, arriba - 9 * S, ancho + 14 * S, 13 * S);
 
 			// Ventanas: encendidas (cálidas) o apagadas
@@ -3840,17 +3859,17 @@
 			// Puerta (de vidrio, con marco oscuro). La del módulo pendiente late.
 			const anchoP = 66 * S;
 			const altoP = 84 * S;
-			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fillRect(sx - anchoP / 2 - 5 * S, baseY - altoP - 5 * S, anchoP + 10 * S, altoP + 5 * S);
 			ctx.save();
 			if (m === pendiente) {
-				ctx.shadowColor = COLORES.claro;
+				ctx.shadowColor = COLORES.verdeInstitucional;
 				ctx.shadowBlur = (16 + 14 * pulso) * S;
 			}
-			ctx.fillStyle = encendido ? "#fff1c1" : m === pendiente ? mezclar(COLORES.claro, "#ffffff", 0.35 + 0.4 * pulso) : "#2b3a3c";
+			ctx.fillStyle = encendido ? "#fff1c1" : m === pendiente ? mezclar(COLORES.verdeInstitucional, "#ffffff", 0.35 + 0.4 * pulso) : "#2b3a3c";
 			ctx.fillRect(sx - anchoP / 2, baseY - altoP, anchoP, altoP);
 			ctx.restore();
-			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fillRect(sx - 1.5 * S, baseY - altoP, 3 * S, altoP);
 
 			dibujarLetreroModulo(m, sx, arriba - 16 * S, encendido);
@@ -3862,7 +3881,7 @@
 			ctx.fillStyle = encendido ? "#fff" : "#dfe5e4";
 			ctx.fillText(`Módulo ${i + 1} de ${modulos.length}`, sx, baseY - altoP - 18 * S);
 			if (m === pendiente && m.visitado && estado === "urbano" && Math.abs(heroe.x - m.x) < CFG.distanciaParaHablar * 1.3) {
-				dibujarGlobo(sx, baseY - altoP - 36 * S, esTactil ? "Toca Hablar para entrar" : "E · Entrar", "#c9f7f1");
+				dibujarGlobo(sx, baseY - altoP - 36 * S, esTactil ? "Toca Hablar para entrar" : "E · Entrar", COLORES.fondoVerdeClaro);
 			}
 
 			if (m.brillo > 0) {
@@ -3885,12 +3904,12 @@
 			const piso = SUELO + 40 * S;
 			const alto = 74 * S;
 			const ancho = 34 * S;
-			ctx.fillStyle = COLORES.oscuro;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fillRect(sx - ancho / 2 - 4 * S, piso - alto - 6 * S, 7 * S, alto + 6 * S);
 			ctx.fillRect(sx + ancho / 2 - 3 * S, piso - alto - 6 * S, 7 * S, alto + 6 * S);
 			ctx.fillRect(sx - ancho / 2, piso - alto, ancho, 5 * S);
 			ctx.fillRect(sx - ancho / 2, piso - alto * 0.45, ancho, 4 * S);
-			ctx.strokeStyle = COLORES.oscuro;
+			ctx.strokeStyle = COLORES.verdeProfundo;
 			ctx.lineWidth = 3 * S;
 			ctx.beginPath();
 			for (let k = 1; k < 4; k++) {
@@ -3960,7 +3979,7 @@
 				const h = (40 + ((k * 37 + x) % 70)) * S;
 				ctx.fillRect(sx - 110 * S + k * 37 * S, top + altoV - h, 30 * S, h);
 			}
-			ctx.strokeStyle = COLORES.oscuro;
+			ctx.strokeStyle = COLORES.verdeProfundo;
 			ctx.lineWidth = 6 * S;
 			ctx.strokeRect(sx - 110 * S, top, 220 * S, altoV);
 			ctx.lineWidth = 3 * S;
@@ -3972,15 +3991,19 @@
 			const sx = x - camara;
 			if (sx < -200 || sx > W + 200) continue;
 			const cy = 150 * S;
-			dibujarLogoOEspacio(logoCelaque, sx, cy, 120 * S, 80 * S, false);
-			ctx.fillStyle = COLORES.verde;
-			ctx.font = `bold ${22 * S}px ${FUENTE}`;
+			// Placa blanca lisa detrás del logo (la pared tiene degradado)
+			ctx.fillStyle = COLORES.blanco;
+			rectRedondo(sx - 130 * S, cy - 34 * S, 260 * S, 68 * S, 10 * S);
+			ctx.fill();
+			ctx.strokeStyle = COLORES.grisClaro;
+			ctx.lineWidth = 1.5 * S;
+			ctx.stroke();
+			dibujarLogoOEspacio(logoCelaque, sx, cy, 230 * S, 42 * S, false);
+			ctx.fillStyle = COLORES.verdeInstitucional;
+			ctx.font = `400 ${16 * S}px ${FUENTE}`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText("CELAQUE", sx, cy + 62 * S);
-			ctx.fillStyle = COLORES.teal;
-			ctx.font = `${15 * S}px ${FUENTE}`;
-			ctx.fillText(`Módulo ${m.nombre}`, sx, cy + 86 * S);
+			ctx.fillText(`Módulo ${m.nombre}`, sx, cy + 56 * S);
 		}
 
 		// Zócalo con el color del módulo
@@ -3990,7 +4013,7 @@
 		ctx.fillRect(0, SUELO - 22 * S, W, 3 * S);
 
 		// Paredes de los extremos
-		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		const izq = of.x0 - camara;
 		if (izq > 0) ctx.fillRect(0, 0, izq, H);
 		const der = of.terminalX + 140 - camara;
@@ -4021,11 +4044,11 @@
 		const sx = m.oficina.x0 + 70 - camara;
 		if (sx < -80 || sx > W + 80) return;
 		const piso = SUELO + 40 * S;
-		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		ctx.fillRect(sx - 40 * S, piso - 130 * S, 80 * S, 130 * S);
 		ctx.fillStyle = "#b9d9d5";
 		ctx.fillRect(sx - 33 * S, piso - 123 * S, 66 * S, 123 * S);
-		ctx.fillStyle = "#2f9e5f";
+		ctx.fillStyle = COLORES.verdeInstitucional;
 		rectRedondo(sx - 30 * S, piso - 156 * S, 60 * S, 22 * S, 5 * S);
 		ctx.fill();
 		ctx.fillStyle = "#fff";
@@ -4034,7 +4057,7 @@
 		ctx.textBaseline = "middle";
 		ctx.fillText("SALIDA", sx, piso - 145 * S);
 		if (estado === "oficina" && enSalidaOficina() && m.completo) {
-			dibujarGlobo(sx, piso - 170 * S, esTactil ? "Toca Hablar para salir" : "E · Salir", "#c9f7f1");
+			dibujarGlobo(sx, piso - 170 * S, esTactil ? "Toca Hablar para salir" : "E · Salir", COLORES.fondoVerdeClaro);
 		}
 	}
 
@@ -4053,13 +4076,13 @@
 			ctx.fill();
 			ctx.fillStyle = "#3a4446"; // laptop cerrada y taza
 			ctx.fillRect(sx - w * 0.6, topY - 4 * S, 36 * S, 4 * S);
-			ctx.fillStyle = COLORES.teal;
+			ctx.fillStyle = COLORES.verdeInstitucional;
 			ctx.fillRect(sx + w * 0.45, topY - 10 * S, 9 * S, 10 * S);
 		} else if (o.tipo === "silla") {
 			ctx.fillStyle = "#2e3a3c";
 			ctx.fillRect(sx - 2 * S, topY + 6 * S, 4 * S, alto - 10 * S);
 			ctx.fillRect(sx - w, baseY - 5 * S, w * 2, 5 * S);
-			ctx.fillStyle = COLORES.verde;
+			ctx.fillStyle = COLORES.verdeProfundo;
 			rectRedondo(sx - w, topY, w * 2, 9 * S, 4 * S);
 			ctx.fill();
 			rectRedondo(sx - w, topY - 34 * S, 9 * S, 38 * S, 4 * S); // respaldo
@@ -4091,7 +4114,7 @@
 			ctx.fill();
 			ctx.fillStyle = "#ffffff";
 			ctx.fillRect(sx - w * 0.5, topY - 6 * S, w, 8 * S); // hojas
-			ctx.fillStyle = COLORES.claro;
+			ctx.fillStyle = COLORES.verdeInstitucional;
 			circulo(sx + w * 0.65, topY + 10 * S, 3 * S);
 		} else if (o.tipo === "planta") {
 			ctx.fillStyle = "#3f9b5a";
@@ -4141,9 +4164,9 @@
 
 		// Escritorio
 		const topY = piso - 70 * S;
-		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		ctx.fillRect(sx - 80 * S, topY, 160 * S, 70 * S);
-		ctx.fillStyle = COLORES.verde;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		ctx.fillRect(sx - 90 * S, topY - 8 * S, 180 * S, 10 * S);
 
 		// Monitor
@@ -4155,19 +4178,16 @@
 		ctx.fillRect(sx - 36 * S, topY - 10 * S, 72 * S, 5 * S);
 		ctx.save();
 		if (!m.completo) {
-			ctx.shadowColor = COLORES.claro;
+			ctx.shadowColor = COLORES.verdeInstitucional;
 			ctx.shadowBlur = (18 + 16 * pulso) * S;
 		}
 		rectRedondo(sx - mw / 2 - 8 * S, my - 8 * S, mw + 16 * S, mh + 16 * S, 8 * S);
 		ctx.fillStyle = "#1c2526";
 		ctx.fill();
 		ctx.restore();
-		const pantalla = ctx.createLinearGradient(0, my, 0, my + mh);
-		pantalla.addColorStop(0, COLORES.teal);
-		pantalla.addColorStop(1, COLORES.oscuro);
-		ctx.fillStyle = pantalla;
+		ctx.fillStyle = COLORES.verdeProfundo; // liso: el logo va encima
 		ctx.fillRect(sx - mw / 2, my, mw, mh);
-		dibujarLogoOEspacio(logoCelaqueBlanco, sx, my + mh * 0.4, 76 * S, 44 * S, true);
+		dibujarLogoOEspacio(logoCelaqueBlanco, sx, my + mh * 0.42, 124 * S, 24 * S, true);
 		ctx.fillStyle = "#fff";
 		ctx.font = `bold ${11 * S}px ${FUENTE}`;
 		ctx.textAlign = "center";
@@ -4176,14 +4196,14 @@
 		if (!m.completo && Math.sin(tiempo * 6) > 0) ctx.fillRect(sx + 50 * S, my + mh * 0.78, 6 * S, 9 * S); // cursor
 
 		// Silla de la computadora
-		ctx.fillStyle = COLORES.verde;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		rectRedondo(sx - 60 * S, piso - 42 * S, 36 * S, 8 * S, 4 * S);
 		ctx.fill();
 		ctx.fillStyle = "#2e3a3c";
 		ctx.fillRect(sx - 44 * S, piso - 34 * S, 4 * S, 30 * S);
 
 		if (estado === "oficina" && enTerminal() && !m.completo) {
-			dibujarGlobo(sx - 50 * S, my - 22 * S, esTactil ? "Toca Hablar para usarla" : "E · Usar computadora", "#c9f7f1");
+			dibujarGlobo(sx - 50 * S, my - 22 * S, esTactil ? "Toca Hablar para usarla" : "E · Usar computadora", COLORES.fondoVerdeClaro);
 		}
 	}
 
@@ -4222,8 +4242,8 @@
 		if (fx > -80 && fx < W + 80) {
 			const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
 			const luz = ctx.createLinearGradient(0, SUELO + 40 * S, 0, SUELO - 320 * S);
-			luz.addColorStop(0, conAlfa(COLORES.claro, 0.45 + 0.2 * pulso));
-			luz.addColorStop(1, conAlfa(COLORES.claro, 0));
+			luz.addColorStop(0, conAlfa(COLORES.verdeInstitucional, 0.45 + 0.2 * pulso));
+			luz.addColorStop(1, conAlfa(COLORES.verdeInstitucional, 0));
 			ctx.fillStyle = luz;
 			ctx.fillRect(fx - 34 * S, SUELO - 320 * S, 68 * S, 360 * S);
 		}
@@ -4238,7 +4258,7 @@
 		ctx.save();
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
-		ctx.shadowColor = COLORES.claro;
+		ctx.shadowColor = COLORES.verdeInstitucional;
 		ctx.shadowBlur = 16 * S;
 		for (let k = 0; k < 3; k++) {
 			// Una ola de luz recorre las 3 flechas hacia el objetivo
@@ -4402,8 +4422,8 @@
 		const pie = SUELO + 22 * S;
 
 		const brillo = ctx.createRadialGradient(sx, pie - 80 * S, 10, sx, pie - 80 * S, 220 * S);
-		brillo.addColorStop(0, conAlfa(COLORES.claro, 0.55));
-		brillo.addColorStop(1, conAlfa(COLORES.claro, 0));
+		brillo.addColorStop(0, conAlfa(COLORES.verdeInstitucional, 0.55));
+		brillo.addColorStop(1, conAlfa(COLORES.verdeInstitucional, 0));
 		ctx.fillStyle = brillo;
 		ctx.fillRect(sx - 220 * S, pie - 300 * S, 440 * S, 420 * S);
 
@@ -4411,39 +4431,42 @@
 		ctx.font = `bold ${26 * S}px ${FUENTE}`;
 		const anchoTablero = Math.max(190 * S, ctx.measureText(texto).width + 50 * S);
 
-		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		ctx.fillRect(sx - anchoTablero * 0.35, pie - 115 * S, 10 * S, 115 * S);
 		ctx.fillRect(sx + anchoTablero * 0.35 - 10 * S, pie - 115 * S, 10 * S, 115 * S);
 
 		ctx.save();
-		ctx.shadowColor = COLORES.claro;
+		ctx.shadowColor = COLORES.verdeInstitucional;
 		ctx.shadowBlur = 22 * S;
 		rectRedondo(sx - anchoTablero / 2, pie - 160 * S, anchoTablero, 56 * S, 12 * S);
-		ctx.fillStyle = COLORES.crema;
+		ctx.fillStyle = COLORES.blanco;
 		ctx.fill();
 		ctx.restore();
 		ctx.lineWidth = 4 * S;
-		ctx.strokeStyle = COLORES.teal;
+		ctx.strokeStyle = COLORES.verdeInstitucional;
 		ctx.stroke();
 
-		ctx.fillStyle = COLORES.oscuro;
+		ctx.fillStyle = COLORES.verdeProfundo;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillText(texto, sx, pie - 131 * S);
 
 		// Logo de Celaque arriba del letrero (sin deformar)
-		ctx.fillStyle = COLORES.crema;
-		rectRedondo(sx - 58 * S, pie - 242 * S, 116 * S, 74 * S, 12 * S);
+		ctx.fillStyle = COLORES.blanco;
+		rectRedondo(sx - 120 * S, pie - 232 * S, 240 * S, 56 * S, 12 * S);
 		ctx.fill();
-		dibujarLogoOEspacio(logoCelaque, sx, pie - 205 * S, 100 * S, 60 * S, false);
+		ctx.strokeStyle = COLORES.verdeInstitucional;
+		ctx.lineWidth = 3 * S;
+		ctx.stroke();
+		dibujarLogoOEspacio(logoCelaque, sx, pie - 204 * S, 210 * S, 38 * S, false);
 
 		// Bandera ondeando
 		const mastil = sx + anchoTablero / 2 + 30 * S;
-		ctx.strokeStyle = COLORES.oscuro;
+		ctx.strokeStyle = COLORES.verdeProfundo;
 		ctx.lineWidth = 4 * S;
 		linea(mastil, pie, mastil, pie - 190 * S);
 		const ola = Math.sin(tiempo * 4) * 6 * S;
-		ctx.fillStyle = COLORES.teal;
+		ctx.fillStyle = COLORES.verdeInstitucional;
 		ctx.beginPath();
 		ctx.moveTo(mastil, pie - 188 * S);
 		ctx.quadraticCurveTo(mastil + 30 * S, pie - 188 * S + ola, mastil + 60 * S, pie - 175 * S);
@@ -4806,7 +4829,7 @@
 	// Globito de pista ("!", "E · Hablar", "↑ · Saltar"...). Más grande y con
 	// un halo de luz que late, para que se vea desde lejos.
 	function dibujarGlobo(x, y, texto, fondo) {
-		ctx.font = `bold ${16 * S}px "Trebuchet MS", "Segoe UI", sans-serif`;
+		ctx.font = `bold ${16 * S}px ${FUENTE}`;
 		const ancho = ctx.measureText(texto).width + 22 * S;
 		const alto = 28 * S;
 		ctx.save();
