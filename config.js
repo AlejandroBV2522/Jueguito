@@ -5,7 +5,7 @@
    pantalla, colores y los personajes que se pueden elegir.
    Lo de cada mundo (su gente, sus diálogos y sus preguntas) está en su
    carpeta: mundos/<mundo>/ (ver mundos/LEEME.md).
-   No necesitas tocar main.js para agregar o cambiar NPCs.
+   No necesitas tocar el motor (juego/) para agregar o cambiar NPCs.
    ===================================================================== */
 
 window.CONFIG_JUEGO = {

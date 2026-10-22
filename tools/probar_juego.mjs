@@ -14,7 +14,8 @@
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
-// (densidad, por defecto 1) y MOVIL=1 (pantalla táctil). Las capturas quedan
+// (densidad, por defecto 1), MOVIL=1 (pantalla táctil) y ARCHIVO=1 (abre
+// index.html como archivo, igual que con doble clic, en vez de con servidor). Las capturas quedan
 // en la carpeta indicada (por defecto ./capturas, que no se sube a git).
 // Sale con código 1 si hubo errores de JavaScript (los 404 de logos que
 // todavía no existen se ignoran).
@@ -27,7 +28,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -41,6 +42,7 @@ const PUERTO_WEB = 5600 + Math.floor(Math.random() * 300);
 const PUERTO_CDP = 9400 + Math.floor(Math.random() * 300);
 const CLAVE = "camino-a-celaque:progreso";
 const FIJO = process.env.RELOJ !== "real";
+const ARCHIVO = process.env.ARCHIVO === "1"; // abre index.html directo (como con doble clic)
 mkdirSync(salida, { recursive: true });
 
 // Se inyecta antes que los scripts del juego (solo en la prueba, el juego no
@@ -226,9 +228,16 @@ async function conProgreso(datos) {
 	await cmd("Page.reload");
 	await cargada();
 }
-// Del mapa general a un nivel: flechas hasta el mundo, acercar, carta, entrar
+// Del mapa general a un nivel: flechas hasta el mundo, acercar, carta, entrar.
+// El mapa abre con la selección en el primer mundo pendiente (y las flechas
+// dan la vuelta), así que se cuenta desde ahí.
 async function entrarAlMundo(indice) {
-	for (let k = 0; k < indice; k++) await tecla("ArrowRight");
+	const inicio = await evalua(`(() => {
+		const c = (JSON.parse(localStorage.getItem(${JSON.stringify(CLAVE)}) || "{}").completos) || [];
+		return Math.max(0, window.MODULOS.findIndex((m) => !c.includes(m.nombre)));
+	})()`);
+	const total = await evalua("window.MODULOS.length");
+	for (let k = 0; k < (indice - inicio + total) % total; k++) await tecla("ArrowRight");
 	await tecla("Enter");
 	await paso(1300);
 	await tecla("Enter");
@@ -360,7 +369,7 @@ try {
 	if (FIJO) await cmd("Page.addScriptToEvaluateOnNewDocument", { source: RELOJ_FIJO });
 	if (MOVIL) await cmd("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 2 });
 	await cmd("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: DPR, mobile: MOVIL });
-	await cmd("Page.navigate", { url: `http://127.0.0.1:${PUERTO_WEB}/index.html` });
+	await cmd("Page.navigate", { url: ARCHIVO ? pathToFileURL(join(RAIZ, "index.html")).href : `http://127.0.0.1:${PUERTO_WEB}/index.html` });
 	await cargada();
 
 	if (escenario === "mapa") {

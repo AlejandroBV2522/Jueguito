@@ -2,7 +2,7 @@
 
 Cada mundo del mapa (un módulo de capacitación) tiene su carpeta. Para
 cambiar lo que dice o pregunta un mundo, basta con editar los archivos de su
-carpeta. El motor del juego (`main.js`) no se toca.
+carpeta. El motor del juego (`juego/`) no se toca.
 
 | Carpeta | Mundo | Archivos |
 |---|---|---|

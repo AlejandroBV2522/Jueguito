@@ -6,6 +6,8 @@
 //   index.html (una sola vez). Un archivo que falta en la lista no se carga
 //   y su mundo o su función simplemente no aparece.
 // - Sintaxis de cada archivo (node --check).
+// - Orden de carga (tools/orden_de_carga.mjs): ningún archivo usa al
+//   cargar algo que se declara en un archivo posterior.
 // - Carga config.js y los datos de mundos/ como lo haría el navegador y
 //   revisa cada mundo: nombre único, preguntas con su respuesta correcta
 //   dentro de las opciones, NPCs y antivalores con diálogo o pregunta.
@@ -40,6 +42,14 @@ for (const f of archivos) if (!scripts.includes(f)) problemas.push(`${f} existe 
 for (const s of scripts.filter((s) => existsSync(join(RAIZ, s)))) {
 	const r = spawnSync(process.execPath, ["--check", join(RAIZ, s)], { encoding: "utf8" });
 	if (r.status !== 0) problemas.push(`sintaxis en ${s}:\n${r.stderr.trim()}`);
+}
+
+// 2b. Orden de carga: nada usa al cargar algo de un archivo que va después
+const orden = spawnSync(process.execPath, ["--expose-internals", join(RAIZ, "tools", "orden_de_carga.mjs")], { encoding: "utf8" });
+try {
+	for (const p of JSON.parse(orden.stdout)) problemas.push(`orden de carga: ${p}`);
+} catch {
+	problemas.push(`no pude revisar el orden de carga:\n${(orden.stderr || orden.stdout).trim()}`);
 }
 
 // 3. Datos: config.js y mundos/ en el orden de index.html

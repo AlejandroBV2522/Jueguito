@@ -28,7 +28,7 @@ window.PREGUNTAS_CUEVA = [
     antivalor: "La Mediocridad", // ✏️ Borrador: lo opuesto a la calidad
     posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
     escala: 1.4, // centinela de piedra: grande e imponente, el primer reto
-    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
+    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
     apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
     pregunta: "¿Cuál es la misión de Celaque?",
@@ -69,7 +69,7 @@ window.PREGUNTAS_CUEVA = [
     antivalor: "La Improvisación", // ✏️ Borrador: lo opuesto a seguir los procesos
     posicion: 0.645,
     escala: 1.3,
-    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
+    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
     pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
     opciones: [
@@ -87,7 +87,7 @@ window.PREGUNTAS_CUEVA = [
     antivalor: "La Indiferencia", // ✏️ Borrador: jefe final, lo opuesto al compromiso
     posicion: 0.865,
     escala: 2.2, // jefe final: el gigante de la Cueva
-    factorFrente: 0.5, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
+    factorFrente: 0.5, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     apariencia: { piel: "#c9a876", ropa: "#7a2f3f", pantalon: "#2e2e2e", pelo: "#1a1a1a", sombrero: null },
     preguntas: [
       {

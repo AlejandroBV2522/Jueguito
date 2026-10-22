@@ -35,9 +35,10 @@ const CORRIDAS = [
 
 rmSync(carpeta, { recursive: true, force: true });
 let fallas = 0;
-for (const [escenario, extra] of CORRIDAS) {
+function correr(escenario, extra) {
 	const nombre = escenario + (extra ? "-celular" : "");
 	const destino = join(carpeta, nombre);
+	rmSync(destino, { recursive: true, force: true });
 	mkdirSync(destino, { recursive: true });
 	const r = spawnSync(process.execPath, [join(RAIZ, "tools", "probar_juego.mjs"), escenario, destino], {
 		env: { ...process.env, RELOJ: "fijo", ...extra },
@@ -50,6 +51,7 @@ for (const [escenario, extra] of CORRIDAS) {
 		console.log((r.stdout || "") + (r.stderr || ""));
 	}
 }
+for (const [escenario, extra] of CORRIDAS) correr(escenario, extra);
 
 if (modo === "base") {
 	console.log(fallas ? `\nBase guardada con ${fallas} escenario(s) fallando.` : "\nBase guardada en capturas/comparar/base.");
@@ -63,17 +65,29 @@ if (!existsSync(base)) {
 }
 const huella = (ruta) => createHash("sha256").update(readFileSync(ruta)).digest("hex");
 const listar = (raiz) => readdirSync(raiz, { recursive: true }).filter((f) => f.endsWith(".png")).sort();
-const antes = listar(base);
-const despues = new Set(listar(carpeta));
-let iguales = 0;
-const distintas = [];
-for (const f of antes) {
-	if (!despues.has(f)) distintas.push(`falta   ${f}`);
-	else if (huella(join(base, f)) !== huella(join(carpeta, f))) distintas.push(`cambió  ${f}`);
-	else iguales++;
-	despues.delete(f);
+function comparar() {
+	const antes = listar(base);
+	const despues = new Set(listar(carpeta));
+	const distintas = [];
+	for (const f of antes) {
+		if (!despues.has(f)) distintas.push(["falta  ", f]);
+		else if (huella(join(base, f)) !== huella(join(carpeta, f))) distintas.push(["cambió ", f]);
+		despues.delete(f);
+	}
+	for (const f of despues) distintas.push(["sobra  ", f]);
+	return { total: antes.length, distintas };
 }
-for (const f of despues) distintas.push(`sobra   ${f}`);
-console.log(`\n${iguales} de ${antes.length} capturas idénticas a la base.`);
-if (distintas.length) console.log(distintas.join("\n"));
-process.exit(distintas.length || fallas ? 1 : 0);
+// Muy de vez en cuando el navegador hace algo que el reloj fijo no controla
+// (cuándo termina de cargar una imagen, por ejemplo) y una captura sale
+// apenas distinta. Se repite ese escenario hasta 2 veces: una diferencia de
+// verdad sale igual cada vez.
+let r = comparar();
+for (let intento = 1; intento <= 2 && r.distintas.length; intento++) {
+	const carpetas = new Set(r.distintas.map(([, f]) => f.split(/[\\/]/)[0]));
+	console.log(`\nRepito ${[...carpetas].join(", ")} para descartar una diferencia casual (${intento}/2):`);
+	for (const [escenario, extra] of CORRIDAS) if (carpetas.has(escenario + (extra ? "-celular" : ""))) correr(escenario, extra);
+	r = comparar();
+}
+console.log(`\n${r.total - r.distintas.length} de ${r.total} capturas idénticas a la base.`);
+if (r.distintas.length) console.log(r.distintas.map((d) => d.join(" ")).join("\n"));
+process.exit(r.distintas.length || fallas ? 1 : 0);

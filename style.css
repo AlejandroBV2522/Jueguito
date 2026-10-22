@@ -446,7 +446,7 @@ body {
 }
 
 /* Espacio para un logo oficial: recuadro punteado que dice LOGO hasta que
-   el archivo exista en assets/logos/ (main.js lo cambia por la imagen). El
+   el archivo exista en assets/logos/ (ponerLogo, en juego/interfaz/interfaz.js, lo cambia por la imagen). El
    logo se muestra tal cual: sin sombras, filtros ni transparencias. */
 .espacio-logo {
 	display: flex;
@@ -675,7 +675,7 @@ kbd {
 }
 
 /* ---------- Mapa ---------- */
-/* Rectángulo del centro del mapa: fondo blanco liso (lleva el logo). main.js
+/* Rectángulo del centro del mapa: fondo blanco liso (lleva el logo). El juego
    lo pone sobre la meseta central (--mapa-x, --mapa-y) y lo escala con el
    mapa (--mapa-k). */
 #mapa-panel {
