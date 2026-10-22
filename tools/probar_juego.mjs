@@ -12,6 +12,7 @@
 //   victoria  completa la última oficina y muestra la tarjeta final
 //   estaciones  arma el robot de IA y el antivirus de Seguridad (capturas a medias y al final)
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
+//   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
 // (densidad, por defecto 1), MOVIL=1 (pantalla táctil) y ARCHIVO=1 (abre
@@ -440,6 +441,39 @@ try {
 			await paso(2600);
 			await tecla("ArrowRight", "up");
 			await foto(`mundo${i + 1}`);
+		}
+	} else if (escenario === "recorridos") {
+		// Cruza cada oficina hasta su computadora, con una captura cada 2 s de
+		// juego: se ve todo lo de su tema (lo que flota, la pizarra y el
+		// objeto propio del fondo)
+		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
+		const total = await evalua("window.MODULOS.length");
+		for (let i = 1; i < total; i++) {
+			await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
+			await entrarAlMundo(i);
+			const t0 = ahora();
+			let ultimoSalto = -Infinity;
+			let ultimaFoto = t0;
+			let n = 0;
+			while (ahora() - t0 < 40000 && !(await visible("#terminal"))) {
+				if (await visible("#dialogo")) {
+					await tecla("Enter");
+					await paso(120);
+					continue;
+				}
+				if (ahora() - ultimaFoto >= 2000) {
+					ultimaFoto = ahora();
+					await foto(`mundo${i + 1}-${String(++n).padStart(2, "0")}`);
+				}
+				await tecla("ArrowRight", "down");
+				if (ahora() - ultimoSalto > 450) {
+					await tecla("ArrowUp");
+					ultimoSalto = ahora();
+				}
+				await paso(60);
+			}
+			await tecla("ArrowRight", "up");
+			console.log(`mundo ${i + 1}: llegó a la computadora:`, await visible("#terminal"));
 		}
 	} else if (escenario === "estaciones") {
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");

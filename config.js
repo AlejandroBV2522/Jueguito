@@ -66,10 +66,12 @@ window.CONFIG_JUEGO = {
    orden, después de este archivo):
    - NPCS: la gente del camino de Talento (mundos/talento/npcs.js).
    - PREGUNTAS_CUEVA: los antivalores de la Cueva (mundos/talento/cueva.js).
-   - MODULOS: un mundo del mapa por archivo (mundos/<mundo>/mundo.js). */
+   - MODULOS: un mundo del mapa por archivo (mundos/<mundo>/mundo.js).
+   - TEMAS_OFICINA: cómo se ve cada oficina por dentro (mundos/<mundo>/tema.js). */
 window.NPCS = [];
 window.PREGUNTAS_CUEVA = [];
 window.MODULOS = [];
+window.TEMAS_OFICINA = {};
 
 /* ---------------------------------------------------------------------
    Módulos de capacitación = mundos del mapa
@@ -117,8 +119,10 @@ window.MODULOS = [];
                   vista: lo que se ve por el ventanal: "construccion",
                          "industria", "nubes" (tan alto que solo hay nubes),
                          "montana" o "ciudad" (puntas de edificios).
-                  tema:  lo que flota en la oficina y la pizarra: "planos",
-                         "procesos", "documentos", "seguridad" o "ia".
+                  tema:  lo que flota en la oficina, la pizarra y su objeto
+                         propio: "planos", "procesos", "documentos",
+                         "seguridad" o "ia". Cada tema está dibujado en el
+                         tema.js de la carpeta de su mundo (window.TEMAS_OFICINA).
                   edificio / piso: (opcionales) letrero junto a la salida.
                          Si el edificio es "Torre Atlas" o "Edificio Lirios",
                          en el mapa se ve su foto real (assets/edificios/).

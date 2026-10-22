@@ -26,6 +26,7 @@ const CORRIDAS = [
 	["cueva"],
 	["oficina"],
 	["oficinas"],
+	["recorridos"],
 	["estaciones"],
 	["victoria"],
 	["mapa", CELULAR],

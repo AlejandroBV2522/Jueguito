@@ -77,6 +77,12 @@ mundos.forEach((m, i) => {
 	const donde = `mundo ${i + 1} (${m.nombre || "sin nombre"})`;
 	if (!m.nombre) problemas.push(`${donde}: falta "nombre"`);
 	if (!m.completoAlSalirDeLaCueva && !m.oficina) problemas.push(`${donde}: no es Talento y no tiene "oficina"`);
+	if (m.oficina) {
+		const tema = m.oficina.tema || "planos";
+		const t = (w.TEMAS_OFICINA || {})[tema];
+		if (!t) problemas.push(`${donde}: su oficina usa el tema "${tema}", pero ningún tema.js lo registra en window.TEMAS_OFICINA`);
+		else for (const parte of ["flotante", "pizarra", "especial"]) if (typeof t[parte] !== "function") problemas.push(`${donde}: al tema "${tema}" le falta ${parte}()`);
+	}
 	(m.preguntas || []).forEach((p, k) => revisarPregunta(p, `${donde}, pregunta ${k + 1}`));
 });
 npcs.forEach((n, i) => (!n.nombre || !Array.isArray(n.dialogo) || !n.dialogo.length) && problemas.push(`NPC ${i + 1} (${n.nombre || "sin nombre"}): falta nombre o diálogo`));

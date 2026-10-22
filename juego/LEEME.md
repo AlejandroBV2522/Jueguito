@@ -1,8 +1,9 @@
 # El motor del juego
 
 Antes, todo el código estaba en un solo `main.js`. Ahora está repartido en
-estos archivos, en el mismo orden en que estaba. Lo que dice cada mundo (su
-gente, sus diálogos y sus preguntas) no está aquí: está en `mundos/`.
+estos archivos, en el mismo orden en que estaba. Lo propio de cada mundo no
+está aquí: su gente, sus diálogos, sus preguntas y el dibujo de su oficina
+(`tema.js`) están en `mundos/`.
 
 ## Cómo funciona sin build ni módulos
 
@@ -58,7 +59,7 @@ Otras reglas:
 | `camino/` | `dibujo-zona-industrial.js`, `dibujo-zona-planos.js` | dibujo del camino |
 | `dibujo/` | `avisos.js` | avisos flotantes, andamios, barreras y suelo |
 | `camino/` | `dibujo-cueva.js` | la Cueva y la calle de Celaque (logos, edificios) |
-| `oficina/` | `dibujo-oficina.js` | ventanal, temas de cada oficina, muebles, computadora |
+| `oficina/` | `dibujo-oficina.js` | ventanal, muebles, computadora; llama al tema de cada oficina (`mundos/<mundo>/tema.js`, registrado en `window.TEMAS_OFICINA`) |
 | `oficina/` | `estaciones.js` | robot de IA y antivirus que se arman |
 | `camino/` | `dibujo-letreros.js` | dibujo de los letreros de obra |
 | `dibujo/` | `aves.js`, `guias.js`, `personajes.js` | aves, guías y enemigos, héroe y NPC |
