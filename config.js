@@ -301,6 +301,8 @@ window.PREGUNTAS_CUEVA = [
                   tema:  lo que flota en la oficina y la pizarra: "planos",
                          "procesos", "documentos", "seguridad" o "ia".
                   edificio / piso: (opcionales) letrero junto a la salida.
+                         Si el edificio es "Torre Atlas" o "Edificio Lirios",
+                         en el mapa se ve su foto real (assets/edificios/).
                   estacion: dónde se contestan las preguntas: "computadora"
                          (por defecto), "robot" (cada acierto arma una pieza
                          del asistente de IA) o "antivirus" (cada acierto arma
@@ -408,7 +410,7 @@ window.MODULOS = [
       "Los procesos describen paso a paso cómo hacemos las cosas en Celaque, para trabajar igual de bien todos los días. Su documentación vive en la carpeta de cada departamento en SharePoint.",
     icono: "engranes",
     color: "#A99886", // beige
-    oficina: { vista: "industria", tema: "procesos" },
+    oficina: { vista: "industria", tema: "procesos", edificio: "Edificio Lirios" },
     intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
     comentarios: [
       // ✏️ Borrador

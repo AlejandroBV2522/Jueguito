@@ -90,7 +90,7 @@ Proyectos, Luis Morán en SharePoint, Sergio en Seguridad y Keidy Durón en IA.
 Se ven en el mapa, en la carta y son quienes te reciben.
 
 Cada oficina es distinta: lo que se ve por el ventanal (obra con grúas,
-zona industrial con el edificio Lirios, solo nubes desde la Torre Atlas,
+zona industrial desde el Edificio Lirios, solo nubes desde la Torre Atlas,
 montaña o puntas de edificios al atardecer), lo que flota en el aire
 (planos, engranes, documentos, escudos, una red de IA), la pizarra y un
 objeto propio. Al fondo, las preguntas se contestan en la computadora, salvo

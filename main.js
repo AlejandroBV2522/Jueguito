@@ -736,8 +736,8 @@
 	// guardado como PNG transparente y recortado, para que se vea igual de
 	// bien en cualquier computadora y forma de abrir el juego. La función de
 	// recorte queda disponible por si se agregan más edificios en .jpg.
-	// Lirios.png = Lirios.jpg sin el cielo (horneado igual que Atlas); se ve
-	// por el ventanal de la oficina con vista industrial.
+	// Lirios.png = Lirios.jpg sin el cielo (horneado igual que Atlas): es el
+	// edificio de un módulo en el mapa (config.js → oficina.edificio).
 	const imagenLirios = cargarImagen(RUTA_EDIFICIOS + "Lirios.png");
 	const EDIFICIOS_SALIDA_DATOS = [{ nombre: "Atlas.png", x: LARGO_META + 220, altoBase: 450, alfa: 1 }];
 	const edificiosSalida = EDIFICIOS_SALIDA_DATOS.map((d) => ({
@@ -4840,18 +4840,6 @@
 		ctx.fillRect(0, horizonte, W, abajo - horizonte);
 		const franja = ANCHO_VISTA * S;
 		const base = modulo(-cl * 0.18, franja);
-		// El edificio Lirios se asoma detrás de las fábricas (un poco más lento: está más lejos)
-		const lirios = imagenLirios.elemento;
-		if (lirios) {
-			const alto = (abajo - horizonte) * 1.35;
-			const ancho = alto * (lirios.naturalWidth / lirios.naturalHeight);
-			const franjaL = franja * 1.2;
-			ctx.globalAlpha = 0.82; // la bruma industrial lo cubre un poco
-			for (let x = modulo(W * 0.55 - cl * 0.12, franjaL) - franjaL; x < W; x += franjaL) {
-				if (x + ancho >= 0) ctx.drawImage(lirios, x, abajo - alto, ancho, alto);
-			}
-			ctx.globalAlpha = 1;
-		}
 		for (let rep = -1; base + rep * franja < W; rep++) {
 			for (const f of INDUSTRIA_VISTA) {
 				const x = base + rep * franja + f.x * S;
@@ -7604,12 +7592,16 @@
 
 	// Edificio de un módulo sobre su meseta (con candado: apagado y gris)
 	function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
-		// La Torre Atlas es la foto real (assets/edificios/Atlas.png)
-		const atlas = /atlas/i.test(m.oficina.edificio) && edificiosSalida[0] && edificiosSalida[0].cargando.elemento;
-		if (atlas) {
-			const k = Math.min(210 / atlas.naturalHeight, 170 / atlas.naturalWidth);
-			const w = atlas.naturalWidth * k;
-			const h = atlas.naturalHeight * k;
+		// Torre Atlas y Edificio Lirios son sus fotos reales (assets/edificios/)
+		const foto = /atlas/i.test(m.oficina.edificio)
+			? edificiosSalida[0] && edificiosSalida[0].cargando.elemento
+			: /lirios/i.test(m.oficina.edificio)
+				? imagenLirios.elemento
+				: null;
+		if (foto) {
+			const k = Math.min(210 / foto.naturalHeight, 200 / foto.naturalWidth);
+			const w = foto.naturalWidth * k;
+			const h = foto.naturalHeight * k;
 			ctx.fillStyle = "rgba(4,37,35,0.25)";
 			ctx.beginPath();
 			ctx.ellipse(bx, by + 2, w * 0.55, 12, 0, 0, Math.PI * 2);
@@ -7620,7 +7612,7 @@
 				ctx.shadowColor = conAlfa(COLORES.blanco, 0.9);
 				ctx.shadowBlur = 20 + 18 * (0.5 + 0.5 * Math.sin(tiempo * 4));
 			}
-			ctx.drawImage(atlas, bx - w / 2, by - h, w, h);
+			ctx.drawImage(foto, bx - w / 2, by - h, w, h);
 			ctx.restore();
 			return;
 		}
