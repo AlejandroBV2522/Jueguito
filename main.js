@@ -41,7 +41,9 @@
 	const ALTO_TUBO_MUNDO = 126;
 	const ANCHO_TUBO_MUNDO = 70;
 	const GRAVEDAD = 3300;
-	const IMPULSO_SALTO = 1000;
+	// Un poco más de impulso que antes (sube ~175 en vez de ~150): es la
+	// introducción, y mucha gente nunca ha jugado un plataformero.
+	const IMPULSO_SALTO = 1080;
 	// Niveles: cada NPC con el que hablas por PRIMERA vez te sube un nivel
 	// (máximo NIVEL_MAX) y cada nivel te da un corazón más para la Cueva.
 	const NIVEL_MAX = 5;
@@ -73,7 +75,7 @@
 	// contra la cara (no los atraviesa); saltando cae ENCIMA y los recorre por
 	// arriba, o -corriendo- los pasa de un brinco.
 	//   - alto: altura de la cara superior EN LAS MISMAS UNIDADES que heroe.y
-	//     (el borde del tubo es 126; un salto normal llega a ~150, así que con
+	//     (el borde del tubo es 126; un salto normal llega a ~175, así que con
 	//     alto <= 80 hasta un salto caminando cae encima).
 	//   - medioAncho: medio ancho en unidades de mundo (se escala por S al medir
 	//     la colisión y al dibujar, así calzan exacto).
@@ -199,7 +201,7 @@
 
 	// ---------- Andamios: cada NPC espera arriba de uno ----------
 	// Plataformas de un solo sentido (como en Mario): se atraviesan saltando
-	// desde abajo y se aterriza encima. Un salto sube ~150 de altura, así que
+	// desde abajo y se aterriza encima. Un salto sube ~175 de altura, así que
 	// cada escalón sube 100 y se solapa un poco con el siguiente en x para
 	// poder subir saltando casi en vertical. La escalera alterna de lado: a
 	// veces sube por la izquierda y otras por la derecha (hay que pasar por
@@ -234,9 +236,9 @@
 	function moverPlataformas() {
 		for (const pl of PLATAFORMAS) {
 			if (!pl.eje) continue;
-			// 0.75: un poco más lentas que el diseño original, para que subir
-		// sea fácil también para quien no juega seguido.
-		const onda = Math.sin(tiempo * pl.vel * 0.75 + pl.fase) * pl.amp;
+			// 0.75 y 0.7: más lentas y con menos recorrido que el diseño original,
+		// para que subir sea fácil también para quien no juega seguido.
+		const onda = Math.sin(tiempo * pl.vel * 0.75 + pl.fase) * pl.amp * 0.7;
 			const x = pl.eje === "x" ? pl.x0 + onda : pl.x0;
 			pl.dx = x - pl.x;
 			pl.x = x;
@@ -338,6 +340,52 @@
 	});
 	// Oficina en la que está el héroe (null = afuera)
 	let oficinaActual = null;
+
+	// ---------- Letreros de obra (guías para quien nunca ha jugado) ----------
+	// Caballetes amarillos con balizas que parpadean, en los puntos donde hay
+	// que hacer algo nuevo. zona: "afuera" | "cueva" | "urbano" | "oficina"
+	// (con su módulo). Cada uno trae el texto para teclado y para celular.
+	const LETREROS = [];
+	// prioridad: si dos quedan encimados, se queda el de prioridad más alta
+	const letrero = (zona, x, flecha, teclado, tactil, modulo, prioridad = 1) =>
+		LETREROS.push({ zona, x, flecha, teclado, tactil: tactil || teclado, modulo: modulo || null, prioridad });
+
+	letrero("afuera", INICIO_X + 240, "→", "Camina con ← →", "Camina con ◀ ▶");
+	letrero("afuera", FIN_PLANOS + 160, "!", "Conoce al equipo: busca el !");
+	// Al pie del primer escalón de cada NPC, del lado por donde se llega
+	npcs.forEach((n) => {
+		const escalones = PLATAFORMAS.filter((pl) => !pl.principal && Math.abs(pl.x0 - n.x) < 420);
+		if (!escalones.length) return;
+		const primero = escalones.reduce((a, b) => (b.alto0 < a.alto0 ? b : a));
+		const lado = Math.sign(primero.x0 - n.x) || -1;
+		letrero("afuera", primero.x0 + lado * (primero.medioAncho + 95), "↑", "Sube saltando: Espacio", "Sube saltando: toca Saltar", null, 2);
+	});
+	OBSTACULOS_AFUERA.forEach((o) => letrero("afuera", o.x - 175, "↑", "Salta la barrera: Espacio", "Salta la barrera: toca Saltar"));
+	letrero("afuera", LARGO - 135, "↓", "Súbete al tubo y agáchate ↓", "Súbete al tubo y toca Agachar");
+
+	HUECOS_CUEVA.forEach((h) => letrero("cueva", h.x - 240, "!", "¡Hueco! Corre (Q) y salta", "¡Hueco! Corre y salta"));
+	OBSTACULOS_CUEVA.forEach((o) => letrero("cueva", o.x - 175, "↑", "Salta encima: Espacio", "Salta encima: toca Saltar"));
+	letrero("cueva", LARGO_TOTAL - 250, "↓", "Salida: súbete al tubo y agáchate", "Salida: súbete al tubo y toca Agachar");
+
+	letrero("urbano", LARGO_TOTAL + 210, "→", "Entra a cada edificio y aprende");
+
+	modulos.forEach((m) => {
+		const of = m.oficina;
+		letrero("oficina", of.x0 + 235, "↑", "Salta los muebles: Espacio", "Salta los muebles: toca Saltar", m);
+		letrero("oficina", of.terminalX - 205, "→", "La computadora está al fondo", null, m);
+	});
+
+	// Sin letreros encimados: si dos quedan muy cerca en la misma zona, se
+	// deja el de mayor prioridad (a igual prioridad, el que se lee antes).
+	const SEPARACION_LETREROS = 330;
+	const porImportancia = [...LETREROS].sort((a, b) => b.prioridad - a.prioridad || a.x - b.x);
+	const elegidos = [];
+	for (const l of porImportancia) {
+		const choca = elegidos.some((o) => o.zona === l.zona && o.modulo === l.modulo && Math.abs(o.x - l.x) < SEPARACION_LETREROS);
+		if (!choca) elegidos.push(l);
+	}
+	LETREROS.length = 0;
+	LETREROS.push(...elegidos.sort((a, b) => a.x - b.x));
 
 	// Edificios de la ciudad: se ven DESPUÉS del letrero de meta (LARGO_META),
 	// como el skyline al que llegaste. "Atlas" y "Lirios" son los 2 edificios
@@ -1488,9 +1536,13 @@
 	}
 
 	// Alturas de los andamios que hay en x (solo afuera)
+	// Margen extra para aterrizar en la orilla de un andamio: quien recién
+	// empieza suele saltar un poco corto o un poco largo, y así igual cae
+	// parado en vez de pasar de largo.
+	const MARGEN_BORDE = 26;
 	function alturasPlataformaEn(x) {
 		if (dentroCueva || vistaUrbana) return [];
-		return PLATAFORMAS.filter((pl) => Math.abs(x - pl.x) < pl.medioAncho).map((pl) => pl.alto);
+		return PLATAFORMAS.filter((pl) => Math.abs(x - pl.x) < pl.medioAncho + MARGEN_BORDE).map((pl) => pl.alto);
 	}
 
 	// El piso que te sostiene: la superficie más alta en x que quede por
@@ -1921,7 +1973,7 @@
 		}
 		heroe.sobre =
 			heroe.velY === 0 && heroe.y > 0 && !dentroCueva && !vistaUrbana
-				? PLATAFORMAS.find((pl) => pl.eje && pl.alto === heroe.y && Math.abs(heroe.x - pl.x) < pl.medioAncho) || null
+				? PLATAFORMAS.find((pl) => pl.eje && pl.alto === heroe.y && Math.abs(heroe.x - pl.x) < pl.medioAncho + MARGEN_BORDE) || null
 				: null;
 
 		// Animaciones de pelea: puñetazo del héroe, y de cada enemigo (lanzar
@@ -2158,11 +2210,14 @@
 		ctx.fillStyle = g;
 		ctx.fillRect(0, 0, W, SUELO + 2);
 
-		// El sol sale a medida que avanzas
-		const a = suave(0.3, 0.85, t);
-		if (a > 0) {
-			const sx = W * 0.8;
-			const sy = H * 0.14 + (1 - a) * H * 0.2;
+		// El sol aparece al salir de la zona de planos y cruza el cielo en arco
+		// (de izquierda a derecha) a medida que el jugador avanza, hasta el
+		// final de la calle de Celaque.
+		const a = vistaUrbana ? 1 : suave(0.3, 0.85, t);
+		if (a > 0 && heroe.x > FIN_PLANOS) {
+			const avance = clamp((heroe.x - FIN_PLANOS) / (LARGO_META - FIN_PLANOS), 0, 1);
+			const sx = W * (0.1 + 0.8 * avance);
+			const sy = SUELO * 0.62 - Math.sin(avance * Math.PI * 0.85 + 0.25) * SUELO * 0.48;
 			const r = 44 * S;
 			const halo = ctx.createRadialGradient(sx, sy, r * 0.5, sx, sy, r * 4);
 			halo.addColorStop(0, `rgba(255,244,180,${0.6 * a})`);
@@ -3023,6 +3078,19 @@
 			ctx.fillRect(sx - w, top + 12 * S, w * 2, 5 * S);
 			ctx.fillStyle = color("bordillo", t);
 			for (let x = sx - w; x < sx + w - 6 * S; x += 16 * S) ctx.fillRect(x, top + 12 * S, 8 * S, 5 * S);
+
+			// Orilla luminosa + balizas en las puntas: marca bien dónde se puede
+			// aterrizar (el margen de MARGEN_BORDE queda dentro del brillo).
+			const pulso = 0.55 + 0.45 * Math.sin(tiempo * 4 + pl.x);
+			ctx.save();
+			ctx.shadowColor = "rgba(255,214,64,0.95)";
+			ctx.shadowBlur = 14 * S * pulso;
+			ctx.fillStyle = `rgba(255,226,110,${(0.55 + 0.4 * pulso).toFixed(3)})`;
+			ctx.fillRect(sx - w - 6 * S, top - 3 * S, w * 2 + 12 * S, 4 * S);
+			ctx.fillStyle = `rgba(255,170,30,${(0.6 + 0.4 * pulso).toFixed(3)})`;
+			circulo(sx - w - 4 * S, top - 4 * S, 4.5 * S);
+			circulo(sx + w + 4 * S, top - 4 * S, 4.5 * S);
+			ctx.restore();
 		}
 	}
 
@@ -4207,6 +4275,217 @@
 		}
 	}
 
+	// ---------- Letreros de obra ----------
+	// Caballete amarillo con franjas de seguridad, un ícono, el texto y dos
+	// balizas que parpadean alternadas. Brillan (resplandor que late) para
+	// que se vean de lejos. El tablero va alto, por encima de los muebles y
+	// obstáculos, para que no lo tapen.
+	function dibujarLetrerosObra(zona, modulo) {
+		const piso = SUELO + 40 * S;
+		for (const l of LETREROS) {
+			if (l.zona !== zona || (modulo && l.modulo !== modulo)) continue;
+			const sx = l.x - camara;
+			if (sx < -200 || sx > W + 200) continue;
+			const texto = esTactil ? l.tactil : l.teclado;
+			ctx.font = `700 ${14 * S}px ${FUENTE}`;
+			const ancho = ctx.measureText(texto).width + 56 * S;
+			const alto = 42 * S;
+			const x0 = sx - ancho / 2;
+			const top = piso - 134 * S;
+			const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3.5 + l.x * 0.01);
+			// Si el héroe pasa por detrás, el letrero se vuelve casi
+			// transparente para no taparlo.
+			const detras = Math.abs(heroe.x - camara - sx) < ancho / 2 + 18 * S;
+			ctx.save();
+			ctx.globalAlpha = detras ? 0.3 : 1;
+
+			// Patas del caballete
+			ctx.strokeStyle = "#2b2b2b";
+			ctx.lineWidth = 4 * S;
+			linea(sx - ancho * 0.3, top + alto, sx - ancho * 0.36, piso);
+			linea(sx + ancho * 0.3, top + alto, sx + ancho * 0.36, piso);
+
+			// Tablero con resplandor
+			ctx.save();
+			ctx.shadowColor = `rgba(255,196,40,${(0.55 + 0.45 * pulso).toFixed(3)})`;
+			ctx.shadowBlur = (16 + 18 * pulso) * S;
+			rectRedondo(x0, top, ancho, alto, 6 * S);
+			ctx.fillStyle = "#ffc72c";
+			ctx.fill();
+			ctx.restore();
+
+			// Franja de seguridad negra/amarilla abajo del tablero
+			ctx.save();
+			rectRedondo(x0, top, ancho, alto, 6 * S);
+			ctx.clip();
+			ctx.fillStyle = "#1e1e1e";
+			const franja = 7 * S;
+			for (let x = x0 - franja * 2; x < x0 + ancho + franja; x += franja * 2) {
+				ctx.beginPath();
+				ctx.moveTo(x, top + alto);
+				ctx.lineTo(x + franja, top + alto - franja);
+				ctx.lineTo(x + franja * 2, top + alto - franja);
+				ctx.lineTo(x + franja, top + alto);
+				ctx.fill();
+			}
+			ctx.restore();
+			rectRedondo(x0, top, ancho, alto, 6 * S);
+			ctx.strokeStyle = "#1e1e1e";
+			ctx.lineWidth = 3 * S;
+			ctx.stroke();
+
+			// Ícono (flecha / !) en un círculo negro, y el texto
+			const cy = top + (alto - franja) / 2 + 1 * S;
+			ctx.fillStyle = "#1e1e1e";
+			circulo(x0 + 20 * S, cy, 11 * S);
+			ctx.textBaseline = "middle";
+			ctx.textAlign = "center";
+			ctx.fillStyle = "#ffc72c";
+			ctx.font = `700 ${15 * S}px ${FUENTE}`;
+			ctx.fillText(l.flecha, x0 + 20 * S, cy + 1 * S);
+			ctx.textAlign = "left";
+			ctx.fillStyle = "#1e1e1e";
+			ctx.font = `700 ${14 * S}px ${FUENTE}`;
+			ctx.fillText(texto, x0 + 38 * S, cy + 1 * S);
+
+			// Balizas: una encendida y la otra apagada, se turnan
+			const encendida = Math.sin(tiempo * 6 + l.x) > 0;
+			for (const lado of [-1, 1]) {
+				const bx = sx + lado * (ancho / 2 - 10 * S);
+				const prendida = lado < 0 ? encendida : !encendida;
+				ctx.fillStyle = "#2b2b2b";
+				ctx.fillRect(bx - 3 * S, top - 7 * S, 6 * S, 8 * S);
+				ctx.save();
+				if (prendida) {
+					ctx.shadowColor = "#ff9a1a";
+					ctx.shadowBlur = 18 * S;
+				}
+				ctx.fillStyle = prendida ? "#ffb21a" : "#7a5a20";
+				circulo(bx, top - 11 * S, 5.5 * S);
+				ctx.restore();
+			}
+			ctx.restore();
+		}
+	}
+
+	// ---------- Aves: guacamayas y loros ----------
+	// Bandadas chicas que cruzan el cielo al salir de la zona de planos y en
+	// la ciudad. Se mueven en coordenadas de pantalla (más un poco de
+	// parallax con la cámara), aparecen solas cada tantos segundos.
+	const TIPOS_AVE = [
+		// Guacamaya roja (Ara macao, ave nacional de Honduras)
+		{ cuerpo: "#d7262e", ala: "#1d5fbf", banda: "#f2c230", cola: "#c41f28", pico: "#f1e7d0", cola_largo: 38 },
+		// Guacamaya azul y amarilla
+		{ cuerpo: "#1f6fd1", ala: "#1a55a8", banda: "#f2c230", cola: "#1f6fd1", pecho: "#f2c230", pico: "#2a2a2a", cola_largo: 36 },
+		// Loro verde
+		{ cuerpo: "#2fa84f", ala: "#1f7a3a", banda: "#1d5fbf", cola: "#2fa84f", cabeza: "#e8d23a", pico: "#f1e7d0", cola_largo: 16 },
+	];
+	let aves = [];
+	let proximaBandada = 2;
+	let camaraAves = 0;
+
+	function actualizarAves(dt, activas) {
+		// Parallax: el cielo se corre un poco al avanzar la cámara
+		const dCam = camara - camaraAves;
+		camaraAves = camara;
+		if (Math.abs(dCam) > 200) aves = []; // salto de cámara (tubo, oficina): limpiar
+		for (const a of aves) {
+			a.x += a.dir * a.vel * S * dt - dCam * 0.35; // vuelo + parallax
+			a.fase += dt * a.aleteo;
+		}
+		aves = aves.filter((a) => a.x > -150 * S && a.x < W + 150 * S);
+		proximaBandada -= dt;
+		if (activas && proximaBandada <= 0) {
+			proximaBandada = 5 + Math.random() * 6;
+			const dir = Math.random() < 0.5 ? 1 : -1;
+			const tipo = TIPOS_AVE[Math.floor(Math.random() * TIPOS_AVE.length)];
+			const y = SUELO * (0.12 + Math.random() * 0.3);
+			const cuantas = 1 + Math.floor(Math.random() * 4);
+			for (let i = 0; i < cuantas; i++) {
+				aves.push({
+					tipo,
+					dir,
+					x: dir > 0 ? -60 * S - i * 46 * S : W + 60 * S + i * 46 * S,
+					y: y + (i % 2) * 22 * S - i * 6 * S,
+					vel: 110 + Math.random() * 50,
+					tam: 0.85 + Math.random() * 0.35,
+					fase: Math.random() * Math.PI * 2,
+					aleteo: 9 + Math.random() * 3,
+				});
+			}
+		}
+	}
+
+	function dibujarAve(a) {
+		const t = a.tipo;
+		const ala = Math.sin(a.fase); // -1 abajo .. 1 arriba
+		ctx.save();
+		ctx.translate(a.x, a.y + Math.sin(a.fase * 0.5) * 4 * S);
+		ctx.scale(a.dir * a.tam * S, a.tam * S);
+
+		// Ala de atrás (más oscura)
+		ctx.fillStyle = conAlfa(t.ala, 0.85);
+		ctx.beginPath();
+		ctx.ellipse(-2, -2 - ala * 9, 15, 5, -0.25 - ala * 0.7, 0, Math.PI * 2);
+		ctx.fill();
+
+		// Cola larga
+		ctx.fillStyle = t.cola;
+		ctx.beginPath();
+		ctx.moveTo(-10, -1);
+		ctx.lineTo(-10 - t.cola_largo, 3);
+		ctx.lineTo(-10 - t.cola_largo * 0.85, 6);
+		ctx.lineTo(-8, 3);
+		ctx.closePath();
+		ctx.fill();
+
+		// Cuerpo, pecho y cabeza
+		ctx.fillStyle = t.cuerpo;
+		ctx.beginPath();
+		ctx.ellipse(0, 0, 15, 6.5, 0, 0, Math.PI * 2);
+		ctx.fill();
+		if (t.pecho) {
+			ctx.fillStyle = t.pecho;
+			ctx.beginPath();
+			ctx.ellipse(3, 2.5, 9, 3.5, 0, 0, Math.PI * 2);
+			ctx.fill();
+		}
+		ctx.fillStyle = t.cabeza || t.cuerpo;
+		circulo(14, -3, 6);
+		ctx.fillStyle = "#ffffff"; // cara clara de la guacamaya
+		circulo(15.5, -3, 3);
+		ctx.fillStyle = "#111";
+		circulo(16, -3.5, 1.3);
+		ctx.fillStyle = t.pico;
+		ctx.beginPath();
+		ctx.moveTo(19, -5);
+		ctx.quadraticCurveTo(25, -4, 22, 1);
+		ctx.lineTo(19, -1);
+		ctx.closePath();
+		ctx.fill();
+
+		// Ala de adelante, con banda de color en la punta
+		ctx.save();
+		ctx.translate(0, -2);
+		ctx.rotate(-0.35 - ala * 0.8);
+		ctx.fillStyle = t.ala;
+		ctx.beginPath();
+		ctx.ellipse(-4, -9, 6, 14, 0.3, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = t.banda;
+		ctx.beginPath();
+		ctx.ellipse(-6, -17, 3.5, 6, 0.3, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
+
+		ctx.restore();
+	}
+
+	function dibujarAves(dt, activas) {
+		actualizarAves(dt, activas);
+		for (const a of aves) dibujarAve(a);
+	}
+
 	// ---------- Guías de dirección ----------
 	// Hacia dónde ir ahora: el próximo NPC por conocer (adelante), el
 	// Guardián/tubo de la cueva, el próximo enemigo, la puerta del próximo
@@ -5137,6 +5416,7 @@
 			dibujarSueloOficina();
 			dibujarPuertaSalida(oficinaActual);
 			dibujarComputadora(oficinaActual);
+			dibujarLetrerosObra("oficina", oficinaActual);
 			dibujarGuias();
 			dibujarObstaculos(oficinaActual.oficina.obstaculos);
 			dibujarCompanero(oficinaActual);
@@ -5159,6 +5439,7 @@
 			dibujarBruma(t, 0.55);
 			dibujarFabricasMedias();
 			dibujarBruma(t, 0.3);
+			dibujarAves(dt, heroe.x > FIN_PLANOS); // guacamayas y loros, ya fuera de los planos
 		}
 
 		if (modo === "cueva") dibujarSueloCueva();
@@ -5179,12 +5460,15 @@
 			dibujarHuecos();
 			dibujarObstaculos(OBSTACULOS_CUEVA); // rocas y cajas sólidas (se saltan/recorren)
 			dibujarTuboSalida();
+			dibujarLetrerosObra("cueva");
 		} else if (modo === "urbano") {
 			dibujarEdificiosSimples(); // relleno gris detrás
 			dibujarProyectos(); // Zorzales, Astria, Céfiro
 			dibujarEdificiosSalida(); // Atlas al frente
 			dibujarModulos(); // un edificio por módulo de capacitación
 			dibujarRejas();
+			dibujarAves(dt, true); // pasan volando sobre la ciudad
+			dibujarLetrerosObra("urbano");
 		}
 
 		dibujarGuias(); // la columna de luz queda detrás del letrero final
@@ -5205,6 +5489,9 @@
 			ctx.fillStyle = `rgba(255,250,215,${0.08 * t})`;
 			ctx.fillRect(0, 0, W, H);
 
+			// Los letreros de obra van encima del smog: brillan aunque el mundo
+			// todavía esté gris (son la guía)
+			dibujarLetrerosObra("afuera");
 			dibujarPuertaIdea();
 			if (destello > 0) {
 				ctx.fillStyle = `rgba(255,252,235,${0.85 * destello})`;
