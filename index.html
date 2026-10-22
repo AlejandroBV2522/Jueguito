@@ -44,15 +44,15 @@
                     <p id="terminal-pregunta"></p>
                     <div id="terminal-opciones"></div>
                     <p id="terminal-pista"></p>
-                    <button id="terminal-salir" class="boton boton-grande" hidden>Volver a la calle <span class="boton-icono" aria-hidden="true">▶</span></button>
+                    <button id="terminal-salir" class="boton boton-grande" hidden>Volver al mapa <span class="boton-icono" aria-hidden="true">▶</span></button>
                 </div>
             </div>
         </div>
         <div class="pie-monitor"></div>
     </div>
 
-    <!-- Pantalla de inicio -->
-    <div id="pantalla-inicio" class="pantalla">
+    <!-- Mapa: rectángulo del centro, donde se elige el personaje -->
+    <div id="mapa-panel">
         <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
         <h1 id="titulo"></h1>
         <p id="subtitulo"></p>
@@ -60,13 +60,43 @@
             <button class="opcion" data-personaje="chico" role="radio"><canvas></canvas><span></span></button>
             <button class="opcion" data-personaje="chica" role="radio"><canvas></canvas><span></span></button>
         </div>
-        <button id="btn-comenzar" class="boton boton-grande">Comenzar <span class="boton-icono" aria-hidden="true">▶</span></button>
-        <div class="ayuda" aria-label="Controles">
-            <span class="tecla-ayuda"><kbd>←</kbd><kbd>→</kbd> Caminar</span>
-            <span class="tecla-ayuda"><kbd>Espacio</kbd> Saltar</span>
-            <span class="tecla-ayuda"><kbd>Q</kbd> Correr</span>
-            <span class="tecla-ayuda"><kbd>E</kbd> Hablar / entrar</span>
-            <span class="tecla-ayuda"><kbd>↓</kbd> Agacharse (en un tubo)</span>
+        <button id="btn-reiniciar-progreso" class="boton-texto" hidden>Reiniciar progreso</button>
+    </div>
+
+    <!-- Mapa acercado a un mundo -->
+    <div id="mapa-barra" hidden>
+        <button id="btn-mapa-volver" class="boton boton-secundario boton-chico">◀ Mapa</button>
+        <p id="mapa-barra-texto"></p>
+    </div>
+
+    <!-- Teclas del mapa (solo con teclado) -->
+    <div id="mapa-ayuda" class="ayuda" aria-label="Controles">
+        <span class="tecla-ayuda"><kbd>←</kbd><kbd>→</kbd> Elegir mundo</span>
+        <span class="tecla-ayuda"><kbd>Enter</kbd> Acercar / ver carta</span>
+        <span class="tecla-ayuda"><kbd>Esc</kbd> Volver</span>
+        <span class="tecla-ayuda separador">En el nivel:</span>
+        <span class="tecla-ayuda"><kbd>Espacio</kbd> Saltar</span>
+        <span class="tecla-ayuda"><kbd>Q</kbd> Correr</span>
+        <span class="tecla-ayuda"><kbd>E</kbd> Hablar</span>
+    </div>
+
+    <!-- Carta de cada mundo: qué sistema es y entrada al nivel -->
+    <div id="carta" hidden role="dialog" aria-modal="true" aria-labelledby="carta-titulo">
+        <div class="carta">
+            <div class="carta-cabeza">
+                <div id="carta-logo" class="espacio-logo logo-carta" role="img" aria-label="Logo del módulo">LOGO</div>
+                <div>
+                    <p id="carta-mundo"></p>
+                    <h2 id="carta-titulo"></h2>
+                    <p id="carta-modulo"></p>
+                </div>
+            </div>
+            <p id="carta-descripcion"></p>
+            <ul id="carta-lista"></ul>
+            <div class="botones">
+                <button id="carta-entrar" class="boton boton-grande"><span id="carta-entrar-texto">Entrar</span> <span class="boton-icono" aria-hidden="true">▶</span></button>
+                <button id="carta-volver" class="boton boton-secundario">Volver</button>
+            </div>
         </div>
     </div>
 
@@ -78,7 +108,7 @@
         <p class="lema">Tú lo sueñas, juntos lo construimos.</p>
         <div class="botones">
             <button id="btn-reiniciar" class="boton boton-grande">Jugar de nuevo <span class="boton-icono" aria-hidden="true">↻</span></button>
-            <button id="btn-cambiar" class="boton boton-secundario">Cambiar personaje</button>
+            <button id="btn-cambiar" class="boton boton-secundario">Ver el mapa</button>
         </div>
     </div>
 

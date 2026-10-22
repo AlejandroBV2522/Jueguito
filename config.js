@@ -17,7 +17,7 @@ window.CONFIG_JUEGO = {
 
   textos: {
     titulo: "Camino a Celaque",
-    subtitulo: "Camina, conoce a quienes encuentres y completa los módulos de tu capacitación.",
+    subtitulo: "Elige tu personaje y luego un mundo del mapa.",
     victoriaTitulo: "¿Estás listo?",
     victoriaTexto: "¡Bienvenido a Celaque! Completaste todos los módulos de tu capacitación.",
     contadorNpcs: "Personas conocidas",
@@ -249,28 +249,39 @@ window.PREGUNTAS_CUEVA = [
 ];
 
 /* ---------------------------------------------------------------------
-   Módulos de capacitación (la calle de Celaque, al salir de la Cueva)
+   Módulos de capacitación = mundos del mapa
    ---------------------------------------------------------------------
-   Son 6 módulos. El primero (Talento) es todo lo anterior: el camino y la
-   Cueva, y ya está completo al salir de ella. Cada uno de los demás es un
-   EDIFICIO: al llegar a su puerta se entra a su OFICINA. Adentro te recibe
-   un compañero (dice la "intro"), hay muebles que saltar, y al fondo una
-   computadora (Terminal Celaque) donde se contestan las preguntas. Al
-   terminar vuelves a la calle con el módulo completo, subes de nivel y se
-   abre la reja para seguir. Fallar no quita vidas: la opción equivocada se
-   tacha y se vuelve a intentar. La computadora hace solo las primeras
+   Son 6 módulos y cada uno es un MUNDO (una meseta) del mapa general. Solo
+   el primero está abierto; los demás tienen candado hasta completar el
+   anterior. Al elegir un mundo el mapa se acerca a él; al tocar su
+   edificio aparece su carta (qué sistema es) y desde ahí se entra.
+
+   El primero (Talento) es el camino y la Cueva: se completa al salir de
+   ella. Cada uno de los demás es una OFICINA en lo alto de un edificio:
+   te reciben compañeros (la "intro" y los "comentarios"), hay muebles que
+   saltar, y al fondo una computadora (Terminal Celaque) donde se contestan
+   las preguntas. Al terminar vuelves al mapa, subes de nivel y se abre el
+   siguiente mundo. Fallar no quita vidas: la opción equivocada se tacha y
+   se vuelve a intentar. La computadora hace solo las primeras
    "preguntasPorModulo" (arriba, en CONFIG_JUEGO) de cada módulo.
 
-   - nombre:      nombre del módulo (se ve en el letrero del edificio).
+   - nombre:      nombre del módulo (se ve en el mapa y en la oficina).
    - subtitulo:   texto chico debajo del nombre.
-   - color:       color del edificio y del letrero ("#RRGGBB").
+   - sistema:     el sistema o plataforma del módulo (título de su carta).
+   - descripcion: qué es ese sistema (texto de la carta en el mapa).
+   - icono:       dibujo en la fachada del edificio del mapa: "montana",
+                  "tablero", "engranes", "nube", "escudo" o "chispa".
+   - color:       color del edificio ("#RRGGBB").
    - logo:        (opcional) ruta a un PNG/SVG con el logo del módulo, ej.
                   "assets/logos/Proyectos.png". Se dibuja SIN deformar
-                  (respeta su proporción). Sin logo se usa la inicial.
+                  (respeta su proporción). Sin logo se ve el recuadro "LOGO".
    - completoAlSalirDeLaCueva: solo para Talento.
    - intro:       lo que dice el compañero que te recibe en la oficina.
    - companero:   (opcional) { nombre: "Ana", cuerpo: "chica" } para el
-                  compañero de la oficina. Sin esto: "Equipo de <módulo>".
+                  compañero que te recibe. Sin esto: "Equipo de <módulo>".
+   - comentarios: más compañeros dentro de la oficina, cada uno con
+                  { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
+                  Caben 2 (el resto no se muestra).
    - preguntas:   { pregunta, opciones, correcta (índice desde 0),
                     explicacion (opcional, se muestra al acertar) }.
 
@@ -283,6 +294,10 @@ window.MODULOS = [
   {
     nombre: "Talento",
     subtitulo: "Celaque: quiénes somos",
+    sistema: "Cultura Celaque",
+    descripcion:
+      "Conoce quiénes somos: el propósito, la misión, los valores y la cultura de Celaque. Recorre el camino por la zona industrial, conoce a la gente de la obra y cruza la Cueva respondiendo a sus guardianes.",
+    icono: "montana",
     color: "#488478", // verde institucional
     completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
     intro: [],
@@ -291,10 +306,28 @@ window.MODULOS = [
   {
     nombre: "Proyectos",
     subtitulo: "Nuestro trabajo en Wrike",
+    sistema: "Wrike",
+    // ✏️ Borrador: revisar con el área de Proyectos
+    descripcion:
+      "Wrike es la plataforma donde planeamos y damos seguimiento al trabajo en equipo: proyectos, tareas, responsables, fechas y avances, todo en un mismo lugar y a la vista de todos.",
+    icono: "tablero",
     color: "#042523", // verde profundo
     intro: [
       "Bienvenido al edificio de Proyectos.",
       "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
+    ],
+    comentarios: [
+      // ✏️ Borrador
+      {
+        nombre: "Coordinación de Proyectos",
+        cuerpo: "chica",
+        dialogo: ["Cada tarea en Wrike tiene un responsable y una fecha.", "Así todo el equipo sabe quién hace qué y para cuándo."],
+      },
+      {
+        nombre: "Analista de Proyectos",
+        cuerpo: "chico",
+        dialogo: ["Cuando avances en una tarea, actualiza su estado.", "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!"],
+      },
     ],
     preguntas: [
       {
@@ -322,8 +355,26 @@ window.MODULOS = [
   {
     nombre: "Procesos",
     subtitulo: "Cómo hacemos las cosas",
+    sistema: "Procesos de Celaque",
+    // ✏️ Borrador: revisar con el área de Procesos
+    descripcion:
+      "Los procesos describen paso a paso cómo hacemos las cosas en Celaque, para trabajar igual de bien todos los días. Su documentación vive en la carpeta de cada departamento en SharePoint.",
+    icono: "engranes",
     color: "#A99886", // beige
     intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
+    comentarios: [
+      // ✏️ Borrador
+      {
+        nombre: "Calidad y Procesos",
+        cuerpo: "chico",
+        dialogo: ["¿No entiendes un paso? Pregúntale a tu líder o al área responsable.", "Es mejor preguntar que improvisar."],
+      },
+      {
+        nombre: "Documentación",
+        cuerpo: "chica",
+        dialogo: ["Los documentos de cada proceso están en la carpeta de tu departamento en SharePoint.", "Nada de guardarlos en una memoria USB."],
+      },
+    ],
     preguntas: [
       {
         // ✏️ Borrador: revisar con el área de Procesos
@@ -350,10 +401,26 @@ window.MODULOS = [
   {
     nombre: "SharePoint",
     subtitulo: "SharePoint, Outlook y Teams",
+    sistema: "SharePoint · Outlook · Teams",
+    descripcion:
+      "SharePoint es el repositorio principal de información de la empresa: guarda, organiza y comparte documentos desde cualquier dispositivo, con historial de versiones. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
+    icono: "nube",
     color: "#488478", // verde institucional
     intro: [
       "Bienvenido al edificio de Plataformas.",
       "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
+    ],
+    comentarios: [
+      {
+        nombre: "Soporte de Plataformas",
+        cuerpo: "chica",
+        dialogo: ["En SharePoint cada área tiene una carpeta por departamento.", "Ahí está la documentación de sus procesos y reportes."],
+      },
+      {
+        nombre: "Equipo de Teams",
+        cuerpo: "chico",
+        dialogo: ["¿Te equivocaste en un documento? El historial de versiones te deja recuperar uno anterior.", "Y para chatear o reunirte, usa Teams."],
+      },
     ],
     preguntas: [
       {
@@ -394,8 +461,26 @@ window.MODULOS = [
   {
     nombre: "Seguridad",
     subtitulo: "Cuidamos la información",
+    sistema: "Seguridad de la información",
+    // ✏️ Borrador: revisar con el área de Seguridad
+    descripcion:
+      "La información de Celaque es valiosa y cuidarla es trabajo de todos: aprende a reconocer correos sospechosos, a no compartir nunca tus contraseñas y a reportar cualquier incidente al área de Sistemas.",
+    icono: "escudo",
     color: "#042523", // verde profundo
     intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
+    comentarios: [
+      // ✏️ Borrador
+      {
+        nombre: "Sistemas",
+        cuerpo: "chico",
+        dialogo: ["Nadie de Celaque te va a pedir tu contraseña por correo.", "Si te llega algo así, no respondas y repórtalo a Sistemas."],
+      },
+      {
+        nombre: "Seguridad en obra",
+        cuerpo: "chica",
+        dialogo: ["Y en la obra, la seguridad empieza por tu equipo de protección personal.", "¡Casco puesto siempre!"],
+      },
+    ],
     preguntas: [
       {
         // ✏️ Borrador: revisar con el área de Seguridad
@@ -418,8 +503,26 @@ window.MODULOS = [
   {
     nombre: "IA",
     subtitulo: "Inteligencia artificial",
+    sistema: "Inteligencia artificial",
+    // ✏️ Borrador: revisar con el área responsable
+    descripcion:
+      "La inteligencia artificial nos ayuda a trabajar mejor si la usamos con criterio: revisa siempre lo que genera antes de usarlo y comparte información de la empresa solo en las herramientas aprobadas.",
+    icono: "chispa",
     color: "#A99886", // beige
     intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
+    comentarios: [
+      // ✏️ Borrador
+      {
+        nombre: "Innovación",
+        cuerpo: "chica",
+        dialogo: ["Una respuesta de IA puede sonar segura y estar equivocada.", "Revísala y verifícala antes de usarla."],
+      },
+      {
+        nombre: "Datos",
+        cuerpo: "chico",
+        dialogo: ["La información confidencial va solo en las herramientas aprobadas por la empresa.", "Si tienes dudas, pregunta primero."],
+      },
+    ],
     preguntas: [
       {
         // ✏️ Borrador: revisar con el área responsable

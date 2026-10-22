@@ -36,7 +36,10 @@ ocupado, usa otro número, por ejemplo 5501.)
 
 | Acción                  | Teclado                   | Celular            |
 |-------------------------|---------------------------|--------------------|
-| Elegir personaje (inicio) | ← → o clic en la tarjeta | Tocar la tarjeta |
+| Elegir personaje (centro del mapa) | Clic en la tarjeta | Tocar la tarjeta |
+| Elegir mundo en el mapa | ← → o clic en la meseta | Tocar la meseta |
+| Ver la carta / entrar   | Enter (o clic en el edificio) | Tocar el edificio |
+| Volver en el mapa       | Esc                       | Botón "◀ Mapa"     |
 | Caminar                 | ← → o A / D (o la rueda del mouse) | Botones ◀ ▶ |
 | Correr                  | Mantener Q mientras caminas | Mantener "Correr" |
 | Saltar                  | Espacio, ↑ o W            | Botón "Saltar"     |
@@ -57,16 +60,29 @@ solo. Caer en un hueco de la cueva te regresa justo antes del hueco, sin
 perder vidas. Unas flechas luminosas a los pies del personaje y una columna
 de luz marcan siempre a dónde ir.
 
-### Módulos de capacitación (la calle de Celaque)
+### El mapa de mundos
 
-Al salir de la cueva llegas a la calle de Celaque. Son 6 módulos: el
-primero (Talento) es el camino y la cueva, y los otros 5 son edificios
-(Proyectos, Procesos, SharePoint, Seguridad e IA). Al llegar a la puerta de
-cada uno entras a su **oficina**: te recibe un compañero, hay muebles que
-saltar, y al fondo una computadora (Terminal Celaque) donde contestas las
-preguntas del módulo. Al terminar vuelves a la calle, subes de nivel y se
-abre la reja para seguir. Al final de la calle está el letrero
-"¿Estás listo?".
+El juego empieza en un **mapa** (al estilo del de Super Mario Land 2): una
+meseta por módulo alrededor de la meseta central, donde está el rectángulo
+para elegir personaje. Son 6 mundos, uno por módulo: Talento, Proyectos,
+Procesos, SharePoint, Seguridad e IA. Solo el primero está abierto; los demás
+tienen **candado** hasta completar el anterior.
+
+Al elegir un mundo el mapa se **acerca** a su meseta. Al tocar su edificio
+aparece su **carta**: qué sistema es (Wrike, SharePoint...) y qué hay que
+hacer. Desde la carta se entra al nivel:
+
+- **Talento** es el camino por la zona industrial y la Cueva (igual que
+  antes). Al salir de la Cueva por el tubo vuelves al mapa.
+- **Los demás** son una **oficina en lo alto de un edificio**: ventanal con
+  la ciudad abajo, nubes, guacamayas y loros, y una oficina enorme al fondo.
+  Te reciben varios compañeros con comentarios, hay muebles que saltar y al
+  fondo la Terminal Celaque con las preguntas del módulo.
+
+Al completar un módulo subes de nivel, vuelves al mapa y se abre el
+siguiente mundo. Con los 6 completos aparece "¿Estás listo?". El progreso
+se guarda en el navegador; "Reiniciar progreso" (en el rectángulo del
+centro) lo borra.
 
 ## Personalizar
 
@@ -84,8 +100,9 @@ Todo lo editable está en **`config.js`**:
   datos. No hay límite de NPCs.
 - `colores`: paleta oficial de Celaque (también en `style.css` como
   `--cel-...`).
-- `MODULOS`: los módulos de la calle de Celaque (nombre, color, logo
-  opcional, lo que dice el compañero de la oficina y las preguntas).
+- `MODULOS`: los mundos del mapa (nombre, sistema y descripción de su
+  carta, ícono, color, logo opcional, la intro y los comentarios de los
+  compañeros de la oficina, y las preguntas).
   `preguntasPorModulo` dice cuántas hace la computadora.
 - `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
 

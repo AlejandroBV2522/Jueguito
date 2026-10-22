@@ -116,11 +116,18 @@
 	};
 	const modulo = (a, n) => ((a % n) + n) % n;
 
+	// Acepta "#RRGGBB" y también "rgb(r,g,b)" (lo que devuelve mezclar),
+	// así se pueden mezclar colores ya mezclados.
 	const cacheRgb = {};
 	function hexARgb(hex) {
 		if (!cacheRgb[hex]) {
-			const n = parseInt(hex.slice(1), 16);
-			cacheRgb[hex] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+			if (hex[0] === "#") {
+				const n = parseInt(hex.slice(1), 16);
+				cacheRgb[hex] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+			} else {
+				// No se guarda: los colores ya mezclados cambian cada cuadro
+				return (hex.match(/\d+/g) || [0, 0, 0]).slice(0, 3).map(Number);
+			}
 		}
 		return cacheRgb[hex];
 	}
@@ -179,10 +186,11 @@
 	const canvas = document.getElementById("juego");
 	const ctxJuego = canvas.getContext("2d");
 	let ctx = ctxJuego; // se cambia temporalmente al dibujar las vistas previas del selector
-	let W = 0, H = 0, S = 1, SUELO = 0;
+	let W = 0, H = 0, S = 1, SUELO = 0, DPR = 1;
 
 	function redimensionar() {
 		const dpr = Math.min(window.devicePixelRatio || 1, 2);
+		DPR = dpr;
 		W = window.innerWidth;
 		H = window.innerHeight;
 		canvas.width = Math.round(W * dpr);
@@ -284,7 +292,7 @@
 	// izquierda a derecha: entrada → compañero → muebles → computadora.
 	const OFICINA_BASE = LARGO_META + 4000;
 	const SEPARACION_OFICINAS = 4000;
-	const LARGO_OFICINA = 2000;
+	const LARGO_OFICINA = 2600;
 	// Muebles = obstáculos sólidos (como las rocas de la cueva): se saltan o
 	// se camina por encima. Todos de 80 o menos de alto, así un salto normal
 	// caminando alcanza para subirse (ver nota de OBSTACULOS_CUEVA).
@@ -298,14 +306,53 @@
 		dispensador: { medioAncho: 18, alto: 74 },
 	};
 	const ORDEN_MUEBLES = ["planta", "escritorio", "silla", "archivero", "cajas", "escritorio", "impresora", "dispensador"];
-	// Distancias desde la entrada; el compañero espera en 760 (entre muebles)
-	// Dejan libre la entrada y el tramo antes de la computadora (ahí van los
-	// letreros de obra de la primera oficina).
-	const POSICIONES_MUEBLES = [440, 600, 1000, 1180, 1360, 1540];
+	// Distancias desde la entrada. Los compañeros esperan en LUGARES_COMPANEROS
+	// (entre muebles, con espacio para pararse a hablar). Dejan libre la
+	// entrada y el tramo antes de la computadora (ahí van los letreros de obra
+	// de la primera oficina).
+	const POSICIONES_MUEBLES = [440, 600, 1060, 1240, 1680, 1860, 2300];
+	// El primero te recibe (intro); los otros dicen los "comentarios" del módulo
+	const LUGARES_COMPANEROS = [800, 1450, 2070];
+	// Decoración que no estorba (se pasa por delante): libreros, sillones...
+	const DECORACION_OFICINA = [
+		{ d: 300, tipo: "librero" },
+		{ d: 930, tipo: "sillon" },
+		{ d: 1340, tipo: "pizarra" },
+		{ d: 1570, tipo: "cafetera" },
+		{ d: 1960, tipo: "librero" },
+		{ d: 2190, tipo: "plantaAlta" },
+		{ d: 2440, tipo: "lampara" },
+	];
+	const COLORES_PELO = ["#1f1a17", "#3b2414", "#5a2a14", "#2b1a12"];
+	function companeroOficina(d, i, k, x0) {
+		const datos = k === 0 ? d.companero || {} : d.comentarios[k - 1];
+		const cuerpo = datos.cuerpo || ((i + k) % 2 ? "chica" : "chico");
+		return {
+			nombre: datos.nombre || `Equipo de ${d.nombre}`,
+			x: x0 + LUGARES_COMPANEROS[k],
+			alto: 0,
+			enOficina: true,
+			hablado: false,
+			dialogo:
+				k === 0
+					? d.intro && d.intro.length ? d.intro : [`Bienvenido al módulo ${d.nombre}.`]
+					: datos.dialogo && datos.dialogo.length ? datos.dialogo : ["¡Hola!"],
+			apariencia: {
+				cuerpo,
+				casco: "#ffffff",
+				chaleco: k === 0 ? d.color || "#00767a" : k === 1 ? COLORES.beige : COLORES.verdeInstitucional,
+				pelo: COLORES_PELO[(i + k) % COLORES_PELO.length],
+				pantalon: "#2d3a4a",
+			},
+		};
+	}
 	const modulos = MODULOS_DATOS.map((d, i) => {
 		const x0 = OFICINA_BASE + i * SEPARACION_OFICINAS;
+		const rutaLogo = d.logo || RUTA_LOGOS + "modulo-" + nombreArchivo(d.nombre) + ".png";
+		const cuantos = 1 + Math.min((d.comentarios || []).length, LUGARES_COMPANEROS.length - 1);
 		return {
 			...d,
+			indice: i,
 			x: PRIMER_MODULO + i * ESPACIO_MODULO,
 			completo: false,
 			preguntaActual: 0,
@@ -313,7 +360,8 @@
 			terminalVisitada: false,
 			brillo: 0, // destello al completarlo (1 → 0)
 			// Sin "logo" en config.js se busca assets/logos/modulo-<nombre>.png
-			logoImg: cargarImagen(d.logo || RUTA_LOGOS + "modulo-" + nombreArchivo(d.nombre) + ".png"),
+			rutaLogo,
+			logoImg: cargarImagen(rutaLogo),
 			oficina: {
 				x0,
 				terminalX: x0 + LARGO_OFICINA,
@@ -321,25 +369,14 @@
 					const tipo = ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
 					return { x: x0 + dist, tipo, ...MUEBLES[tipo] };
 				}),
-				// Compañero que recibe al jugador: dice la intro del módulo
-				companero: {
-					nombre: (d.companero && d.companero.nombre) || `Equipo de ${d.nombre}`,
-					x: x0 + 760,
-					alto: 0,
-					enOficina: true,
-					hablado: false,
-					dialogo: d.intro && d.intro.length ? d.intro : [`Bienvenido al módulo ${d.nombre}.`],
-					apariencia: {
-						cuerpo: (d.companero && d.companero.cuerpo) || (i % 2 ? "chica" : "chico"),
-						casco: "#ffffff",
-						chaleco: d.color || "#00767a",
-						pelo: i % 2 ? "#3b2414" : "#1f1a17",
-						pantalon: "#2d3a4a",
-					},
-				},
+				decoracion: DECORACION_OFICINA.map((o) => ({ x: x0 + o.d, tipo: o.tipo })),
+				// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
+				companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0)),
 			},
 		};
 	});
+	// El camino + la Cueva (se completa al salir de ella)
+	const moduloTalento = modulos.find((m) => m.completoAlSalirDeLaCueva) || null;
 	// Oficina en la que está el héroe (null = afuera)
 	let oficinaActual = null;
 
@@ -406,7 +443,7 @@
 		const of = l.modulo.oficina;
 		return [
 			tramo(of.x0 + 70, 50 * S), // puerta de salida
-			tramo(of.companero.x, 40 * S),
+			...of.companeros.map((n) => tramo(n.x, 40 * S)),
 			tramo(of.terminalX, 100 * S), // computadora
 			...of.obstaculos.map((o) => tramo(o.x, o.medioAncho * S + 12)),
 		];
@@ -1056,7 +1093,7 @@
 	let petalos = [];
 
 	// ---------- Estado ----------
-	let estado = "inicio"; // inicio | jugando | dialogo | cueva | pregunta | transicion | victoria
+	let estado = "mapa"; // mapa | jugando | dialogo | cueva | pregunta | transicion | oficina | terminal | victoria
 	// Controla el fondo (afuera vs. cueva oscura): solo se activa al cruzar el
 	// tubo de entrada, no con solo llegar caminando a x = LARGO (el clamp deja
 	// al héroe justo ahí antes de agacharse, y aún debe verse el mundo de afuera).
@@ -1103,7 +1140,21 @@
 		texto: $("dialogo-texto"),
 		pista: $("dialogo-pista"),
 		opciones: $("dialogo-opciones"),
-		inicio: $("pantalla-inicio"),
+		panel: $("mapa-panel"),
+		reiniciarProgreso: $("btn-reiniciar-progreso"),
+		mapaBarra: $("mapa-barra"),
+		mapaBarraTexto: $("mapa-barra-texto"),
+		mapaAyuda: $("mapa-ayuda"),
+		carta: $("carta"),
+		cartaLogo: $("carta-logo"),
+		cartaMundo: $("carta-mundo"),
+		cartaTitulo: $("carta-titulo"),
+		cartaModulo: $("carta-modulo"),
+		cartaDescripcion: $("carta-descripcion"),
+		cartaLista: $("carta-lista"),
+		cartaEntrar: $("carta-entrar"),
+		cartaEntrarTexto: $("carta-entrar-texto"),
+		cartaVolver: $("carta-volver"),
 		victoria: $("pantalla-victoria"),
 		tactiles: $("controles-tactiles"),
 		terminal: $("terminal"),
@@ -1117,16 +1168,7 @@
 
 	// Logos en la pantalla (inicio, victoria, computadora): el oficial si ya
 	// está en assets/logos/, o el recuadro "LOGO" mientras tanto.
-	document.querySelectorAll(".espacio-logo[data-logo]").forEach((caja) => {
-		const img = new Image();
-		img.alt = caja.getAttribute("aria-label") || "";
-		img.onload = () => {
-			caja.textContent = "";
-			caja.classList.add("con-logo");
-			caja.appendChild(img);
-		};
-		img.src = caja.dataset.logo;
-	});
+	document.querySelectorAll(".espacio-logo[data-logo]").forEach((caja) => ponerLogo(caja, caja.dataset.logo));
 
 	$("titulo").textContent = CFG.textos.titulo;
 	$("subtitulo").textContent = CFG.textos.subtitulo;
@@ -1140,7 +1182,7 @@
 		const progreso = clamp((heroe.x - INICIO_X) / (LARGO - INICIO_X), 0, 1);
 		ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
 		const conocidos = npcs.filter((n) => n.hablado).length;
-		ui.hudTexto.textContent = `Nivel ${nivel} / ${NIVEL_MAX}  ·  ${corazones()}  ·  ${CFG.textos.contadorNpcs}: ${conocidos} / ${npcs.length}`;
+		ui.hudTexto.textContent = `Nivel ${nivel}  ·  ${corazones()}  ·  ${CFG.textos.contadorNpcs}: ${conocidos} / ${npcs.length}`;
 	}
 
 	function actualizarHudCueva() {
@@ -1159,7 +1201,10 @@
 
 	opciones.forEach((btn) => {
 		btn.querySelector("span").textContent = CFG.personajes[btn.dataset.personaje].nombre;
-		btn.addEventListener("click", () => elegirPersonaje(btn.dataset.personaje));
+		btn.addEventListener("click", () => {
+			elegirPersonaje(btn.dataset.personaje);
+			guardarProgreso();
+		});
 	});
 	elegirPersonaje(personaje);
 
@@ -1173,7 +1218,8 @@
 		for (const btn of opciones) {
 			const lienzo = btn.querySelector("canvas");
 			const ancho = 150, alto = 180;
-			if (lienzo.width !== ancho * dpr) {
+			// Ojo: un canvas nuevo mide 300x150; con dpr 2 el ancho ya "coincide"
+			if (lienzo.width !== ancho * dpr || lienzo.height !== alto * dpr) {
 				lienzo.width = ancho * dpr;
 				lienzo.height = alto * dpr;
 			}
@@ -1200,15 +1246,32 @@
 		S = sAnterior;
 	}
 
-	function comenzar() {
-		estado = "jugando";
-		ui.inicio.hidden = true;
+	// Cada nivel se entra desde el mapa (ver "Mapa: progreso y navegación"):
+	// el primero (Talento) es el camino y la Cueva; los demás, la oficina de
+	// su módulo.
+	function mostrarControlesNivel() {
 		ui.hud.hidden = false;
 		ui.tactiles.hidden = !esTactil;
-		actualizarHud();
 	}
 
-	function reiniciarMundo() {
+	function reiniciarHeroe() {
+		heroe.sobre = null;
+		heroe.y = 0;
+		heroe.velY = 0;
+		heroe.agachado = false;
+		heroe.atacando = false;
+		heroe.atacandoT = 0;
+		heroe.golpeado = false;
+		heroe.moviendo = heroe.corriendo = false;
+		dentroCueva = false;
+		vistaUrbana = false;
+		transicion = null;
+		oficinaActual = null;
+	}
+
+	// Deja el camino y la Cueva como al principio (también para repetir Talento)
+	function iniciarTalento() {
+		reiniciarHeroe();
 		heroe.x = INICIO_X;
 		heroe.dir = 1;
 		camara = 0;
@@ -1220,54 +1283,35 @@
 			e.cayendo = 0;
 			e.preguntaActual = 0;
 		});
-		modulos.forEach((m) => {
-			m.completo = false;
-			m.visitado = false;
-			m.preguntaActual = 0;
-			m.brillo = 0;
-		});
-		nivel = 0;
-		vidas = VIDAS_BASE;
+		vidas = vidasMax();
 		avisos = [];
 		cruzoPlanos = false;
 		destello = 0;
-		heroe.sobre = null;
-		dentroCueva = false;
-		vistaUrbana = false;
-		transicion = null;
-		heroe.y = 0;
-		heroe.velY = 0;
-		heroe.agachado = false;
-		heroe.atacando = false;
-		heroe.atacandoT = 0;
 		petalos = [];
-		oficinaActual = null;
-		ui.terminal.hidden = true;
-		modulos.forEach((m) => {
-			m.terminalVisitada = false;
-			m.oficina.companero.hablado = false;
-		});
-		ui.victoria.hidden = true;
+		estado = "jugando";
+		mostrarControlesNivel();
+		actualizarHud();
 	}
 
-	function reiniciar() {
-		reiniciarMundo();
-		comenzar();
+	function iniciarOficina(m) {
+		reiniciarHeroe();
+		avisos = [];
+		petalos = [];
+		oficinaActual = m;
+		m.visitado = true;
+		m.terminalVisitada = m.completo; // ya completo: la computadora no se abre sola
+		heroe.x = m.oficina.x0 + 170; // fuera del alcance de la puerta: Espacio salta, no sale
+		heroe.dir = 1;
+		camara = Math.max(0, heroe.x - W * 0.35);
+		estado = "oficina";
+		mostrarControlesNivel();
+		actualizarHudOficina();
 	}
 
-	function volverAlInicio() {
-		reiniciarMundo();
-		estado = "inicio";
-		ui.hud.hidden = true;
-		ui.tactiles.hidden = true;
-		ui.inicio.hidden = false;
-	}
-
+	// Todos los módulos completos: pétalos sobre el mapa y "¿Estás listo?"
 	function ganar() {
 		estado = "victoria";
-		vistaUrbana = true; // el paisaje vuelve, ahora urbano (con los edificios)
-		heroe.moviendo = heroe.corriendo = false;
-		ui.tactiles.hidden = true;
+		ocultarMapaUI();
 		for (let i = 0; i < 90; i++) {
 			petalos.push({
 				x: Math.random(),
@@ -1340,7 +1384,8 @@
 
 	function cerrarDialogo() {
 		// Los compañeros de oficina no suben de nivel: eso lo da el módulo
-		if (!dlg.npc.hablado && !dlg.npc.enOficina) subirNivel();
+		// Repetir Talento ya completo tampoco: el nivel se ganó la primera vez
+		if (!dlg.npc.hablado && !dlg.npc.enOficina && !(moduloTalento && moduloTalento.completo)) subirNivel();
 		dlg.npc.hablado = true;
 		dlg.npc = null;
 		ui.dialogo.hidden = true;
@@ -1364,6 +1409,8 @@
 	}
 
 	// ---------- Módulos de capacitación (calle de Celaque) ----------
+	// En esta rama la calle no se usa: los módulos se eligen en el mapa. Lo
+	// "urbano" (y entrarOficina desde la puerta) queda por si se vuelve a ella.
 	const modulosCompletos = () => modulos.filter((m) => m.completo).length;
 	// El primer módulo sin completar: su reja no deja pasar de su puerta.
 	const moduloPendiente = () => modulos.find((m) => !m.completo);
@@ -1385,10 +1432,10 @@
 	}
 
 	// ---------- Oficina (interior de cada módulo) ----------
-	// Al cruzar la puerta de un módulo se entra a su oficina: un compañero
-	// te recibe (la intro del módulo) y al fondo hay una computadora con la
-	// Terminal Celaque, donde se contestan las preguntas. Al terminar vuelves
-	// a la calle con el módulo completo.
+	// Desde el mapa se entra a la oficina del módulo (iniciarOficina): los
+	// compañeros te reciben (intro y comentarios) y al fondo hay una
+	// computadora con la Terminal Celaque, donde se contestan las preguntas.
+	// Al terminar vuelves al mapa con el módulo completo.
 	function entrarOficina(m) {
 		m.visitado = true;
 		heroe.moviendo = heroe.corriendo = false;
@@ -1409,25 +1456,9 @@
 		};
 	}
 
+	// Por la puerta de salida se vuelve al mapa (con el módulo completo o no)
 	function salirDeOficina() {
-		const m = oficinaActual;
-		heroe.moviendo = heroe.corriendo = false;
-		estado = "transicion";
-		transicion = {
-			t: 0,
-			dur: 0.9,
-			luego: () => {
-				oficinaActual = null;
-				// Completo: sales del otro lado de la reja (ya abierta)
-				heroe.x = m.completo ? m.x + 80 : m.x - 50;
-				heroe.y = 0;
-				heroe.velY = 0;
-				heroe.dir = 1;
-				camara = Math.max(0, heroe.x - W * 0.35);
-				estado = "urbano";
-				actualizarHudUrbano();
-			},
-		};
+		volverAlMapa(oficinaActual.indice, -1);
 	}
 
 	function actualizarHudOficina() {
@@ -1443,7 +1474,7 @@
 	const enTerminal = () => estado === "oficina" && cercaDe(oficinaActual.oficina.terminalX - 50, 60);
 	const enSalidaOficina = () => estado === "oficina" && cercaDe(oficinaActual.oficina.x0 + 70, 70);
 	const companeroCerca = () =>
-		estado === "oficina" && cercaDe(oficinaActual.oficina.companero.x, CFG.distanciaParaHablar * 1.3) ? oficinaActual.oficina.companero : null;
+		(estado === "oficina" && oficinaActual.oficina.companeros.find((n) => cercaDe(n.x, CFG.distanciaParaHablar * 1.3))) || null;
 
 	// Preguntas que se hacen en la computadora (menos que antes: config.js →
 	// preguntasPorModulo, por defecto 2).
@@ -1503,14 +1534,9 @@
 		}, p.explicacion ? 2200 : 900);
 	}
 
-	// Completar un módulo sube de nivel, enciende su edificio y abre su reja.
+	// Completar un módulo sube de nivel y abre el siguiente mundo del mapa.
 	function terminarModulo(m) {
-		if (!m.completo) {
-			m.completo = true;
-			m.brillo = 1;
-			nivel++;
-			avisos.push({ texto: `¡Nivel ${nivel}! ${m.nombre} ✓`, t: 0 });
-		}
+		m.desbloqueo = completarModulo(m);
 		ui.terminalProgreso.textContent = "Completado";
 		ui.terminalPregunta.textContent = `¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`;
 		ui.terminalOpciones.innerHTML = "";
@@ -1520,9 +1546,314 @@
 	}
 
 	function cerrarTerminal() {
+		const m = oficinaActual;
 		ui.terminal.hidden = true;
 		document.body.classList.remove("con-dialogo");
-		salirDeOficina();
+		volverAlMapa(m.indice, m.desbloqueo);
+		m.desbloqueo = -1;
+	}
+
+	// ---------- Mapa: progreso y navegación ----------
+	// Vista general como la de Super Mario Land 2: un mundo (meseta) por
+	// módulo alrededor de la meseta central, donde se elige el personaje.
+	// Solo se entra al primero y a los ya desbloqueados (completar uno abre
+	// el siguiente). Elegir un mundo acerca la vista; tocar su edificio abre
+	// su carta (qué sistema es) y desde la carta se entra al nivel.
+	const mapa = {
+		sel: 0, // mundo señalado (flechas o clic)
+		foco: -1, // mundo acercado (-1 = vista general)
+		z: 0, // 0 = vista general, 1 = acercado (va hacia zObjetivo)
+		zObjetivo: 0,
+		carta: false,
+		hover: -1,
+		sacudir: [], // por mundo: lo que le queda a la sacudida del candado
+		abriendo: -1, // mundo recién desbloqueado (su candado se abre)
+		abrirT: 0,
+		mensaje: "",
+		mensajeT: 0,
+		victoriaPendiente: false,
+		// Ficha del héroe: camina por el mapa hasta el mundo abierto elegido
+		heroeMundo: 0,
+		heroeX: null,
+		heroeY: null,
+		fase: 0,
+		moviendo: false,
+		dir: 1,
+	};
+	const desbloqueado = (i) => i === 0 || (!!modulos[i - 1] && modulos[i - 1].completo);
+	const todosCompletos = () => modulos.length > 0 && modulos.every((m) => m.completo);
+	const primerPendiente = () => Math.max(0, modulos.findIndex((m) => !m.completo));
+
+	// Progreso guardado en este navegador. Si no se puede (modo privado o
+	// almacenamiento bloqueado), el juego sigue igual y solo dura la partida.
+	const CLAVE_PROGRESO = "camino-a-celaque:progreso";
+	function guardarProgreso() {
+		try {
+			const completos = modulos.filter((m) => m.completo).map((m) => m.nombre);
+			localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel, personaje }));
+		} catch (e) {
+			/* sin almacenamiento */
+		}
+	}
+
+	function cargarProgreso() {
+		let d = null;
+		try {
+			d = JSON.parse(localStorage.getItem(CLAVE_PROGRESO) || "null");
+		} catch (e) {
+			d = null;
+		}
+		if (d && Array.isArray(d.completos)) {
+			modulos.forEach((m) => (m.completo = d.completos.includes(m.nombre)));
+			nivel = Math.max(0, Number(d.nivel) || 0);
+			vidas = vidasMax();
+			if (CFG.personajes[d.personaje]) elegirPersonaje(d.personaje);
+		}
+		mapa.sel = mapa.heroeMundo = primerPendiente();
+	}
+
+	function reiniciarProgreso() {
+		modulos.forEach((m) => {
+			m.completo = false;
+			m.visitado = false;
+			m.terminalVisitada = false;
+			m.preguntaActual = 0;
+			m.oficina.companeros.forEach((n) => (n.hablado = false));
+		});
+		nivel = 0;
+		vidas = VIDAS_BASE;
+		mapa.sel = mapa.heroeMundo = 0;
+		mapa.abriendo = -1;
+		mapa.victoriaPendiente = false;
+		guardarProgreso();
+		actualizarPanelMapa();
+	}
+
+	// Marca el módulo como completo (sube de nivel) y devuelve el índice del
+	// mundo que se acaba de desbloquear, o -1.
+	function completarModulo(m) {
+		if (m.completo) return -1;
+		m.completo = true;
+		m.brillo = 1;
+		nivel++;
+		avisoMapa(`¡Nivel ${nivel}! ${m.nombre} ✓`); // se ve al volver al mapa
+		if (todosCompletos()) mapa.victoriaPendiente = true;
+		guardarProgreso();
+		return m.indice + 1 < modulos.length ? m.indice + 1 : -1;
+	}
+
+	function abrirMapa() {
+		estado = "mapa";
+		petalos = [];
+		ui.hud.hidden = true;
+		ui.tactiles.hidden = true;
+		ui.victoria.hidden = true;
+		ui.carta.hidden = !mapa.carta;
+		actualizarPanelMapa();
+	}
+
+	// Al terminar (o salir de) un nivel: el mapa aparece acercado a ese mundo
+	// y se aleja; si se desbloqueó uno nuevo, su candado se abre.
+	function mostrarMapaTras(i, nuevo) {
+		reiniciarHeroe();
+		mapa.foco = i;
+		mapa.z = 1;
+		mapa.zObjetivo = 0;
+		mapa.carta = false;
+		mapa.sel = mapa.heroeMundo = i;
+		mapa.heroeX = null;
+		if (nuevo >= 0) {
+			mapa.abriendo = nuevo;
+			mapa.abrirT = 0;
+		}
+		abrirMapa();
+	}
+
+	function volverAlMapa(i, nuevo) {
+		heroe.moviendo = heroe.corriendo = false;
+		ui.hud.hidden = true;
+		ui.tactiles.hidden = true;
+		estado = "transicion";
+		transicion = { t: 0, dur: 0.9, luego: () => mostrarMapaTras(i, nuevo) };
+	}
+
+	function ocultarMapaUI() {
+		ui.panel.classList.add("oculto");
+		ui.mapaBarra.hidden = true;
+		ui.mapaAyuda.hidden = true;
+		ui.carta.hidden = true;
+	}
+
+	// El rectángulo central solo se ve en la vista general; la barra de
+	// arriba, solo con un mundo acercado.
+	function actualizarPanelMapa() {
+		if (estado !== "mapa") return ocultarMapaUI();
+		const general = mapa.foco < 0 && mapa.zObjetivo === 0;
+		ui.panel.classList.toggle("oculto", !general);
+		ui.mapaAyuda.hidden = !general;
+		ui.reiniciarProgreso.hidden = !modulos.some((m) => m.completo);
+		const acercado = mapa.foco >= 0 && mapa.zObjetivo === 1 && !mapa.carta;
+		ui.mapaBarra.hidden = !acercado;
+		if (acercado) {
+			const m = modulos[mapa.foco];
+			const como = esTactil ? "Toca" : "Haz clic en";
+			ui.mapaBarraTexto.textContent = `Mundo ${mapa.foco + 1} · ${m.nombre} — ${como} el edificio para ver su carta`;
+		}
+	}
+
+	function avisoMapa(texto) {
+		mapa.mensaje = texto;
+		mapa.mensajeT = 2.8;
+	}
+
+	function avisoCandado(i) {
+		mapa.sacudir[i] = 0.5;
+		avisoMapa(`Completa «${modulos[i - 1].nombre}» para abrir este mundo`);
+	}
+
+	// Elegir un mundo: con candado se sacude; abierto, el mapa se acerca.
+	function elegirMundo(i) {
+		if (i < 0 || i >= modulos.length) return;
+		mapa.sel = i;
+		if (!desbloqueado(i)) return avisoCandado(i);
+		mapa.heroeMundo = i;
+		mapa.foco = i;
+		mapa.zObjetivo = 1;
+		actualizarPanelMapa();
+	}
+
+	function alejarMapa() {
+		mapa.zObjetivo = 0;
+		cerrarCarta();
+	}
+
+	// Flechas: en la vista general mueven la selección; acercado, pasan
+	// directo al mundo de al lado (si está abierto).
+	function moverSeleccionMapa(paso) {
+		if (mapa.carta) return;
+		const i = modulo(mapa.sel + paso, modulos.length);
+		if (mapa.foco >= 0 && mapa.zObjetivo === 1) {
+			if (desbloqueado(i)) elegirMundo(i);
+			else avisoCandado(i);
+			return;
+		}
+		mapa.sel = i;
+		if (desbloqueado(i)) mapa.heroeMundo = i;
+	}
+
+	// Logo en una caja .espacio-logo: el oficial si el archivo existe, o el
+	// recuadro "LOGO" mientras tanto.
+	function ponerLogo(caja, ruta) {
+		caja.dataset.logo = ruta;
+		caja.classList.remove("con-logo");
+		caja.textContent = "LOGO";
+		const img = new Image();
+		img.alt = caja.getAttribute("aria-label") || "";
+		img.onload = () => {
+			if (caja.dataset.logo !== ruta) return; // mientras cargaba se pidió otro
+			caja.textContent = "";
+			caja.classList.add("con-logo");
+			caja.appendChild(img);
+		};
+		img.src = ruta;
+	}
+
+	function abrirCarta(i) {
+		const m = modulos[i];
+		mapa.carta = true;
+		ui.cartaMundo.textContent = `Mundo ${i + 1} de ${modulos.length}${m.completo ? "  ·  ✓ Completado" : ""}`;
+		ui.cartaTitulo.textContent = m.sistema || m.nombre;
+		ui.cartaModulo.textContent = `Módulo ${m.nombre}${m.subtitulo ? " · " + m.subtitulo : ""}`;
+		ui.cartaDescripcion.textContent = m.descripcion || "";
+		const pasos = m.completoAlSalirDeLaCueva
+			? [`Recorre el camino y conoce a ${npcs.length} personas de la obra.`, `Cruza la Cueva respondiendo a sus ${enemigos.length} guardianes.`]
+			: [
+					`Habla con ${m.oficina.companeros.length} compañeros de la oficina.`,
+					`Contesta ${preguntasDe(m).length} preguntas en la Terminal Celaque.`,
+				];
+		ui.cartaLista.innerHTML = "";
+		for (const texto of pasos) {
+			const li = document.createElement("li");
+			li.textContent = texto;
+			ui.cartaLista.appendChild(li);
+		}
+		ui.cartaEntrarTexto.textContent = m.completoAlSalirDeLaCueva ? "Empezar el camino" : "Entrar al edificio";
+		ui.cartaLogo.setAttribute("aria-label", `Logo de ${m.nombre}`);
+		ponerLogo(ui.cartaLogo, m.rutaLogo);
+		ui.carta.hidden = false;
+		actualizarPanelMapa();
+		ui.cartaEntrar.focus();
+	}
+
+	function cerrarCarta() {
+		mapa.carta = false;
+		ui.carta.hidden = true;
+		actualizarPanelMapa();
+	}
+
+	function entrarMundo(i) {
+		const m = modulos[i];
+		if (!m || !desbloqueado(i)) return;
+		mapa.carta = false;
+		ocultarMapaUI();
+		estado = "transicion";
+		transicion = { t: 0, dur: 0.9, luego: () => (m.completoAlSalirDeLaCueva ? iniciarTalento() : iniciarOficina(m)) };
+	}
+
+	// E / Enter / Espacio en el mapa: acercar → carta → entrar
+	function accionMapa() {
+		if (mapa.carta) entrarMundo(mapa.foco);
+		else if (mapa.foco >= 0 && mapa.zObjetivo === 1) abrirCarta(mapa.foco);
+		else elegirMundo(mapa.sel);
+	}
+
+	// Esc: cerrar la carta, o alejarse del mundo acercado
+	function atrasMapa() {
+		if (mapa.carta) cerrarCarta();
+		else if (mapa.zObjetivo === 1) alejarMapa();
+	}
+
+	function actualizarMapa(dt) {
+		const antes = mapa.z;
+		mapa.z = mapa.zObjetivo > mapa.z ? Math.min(1, mapa.z + dt * 1.5) : Math.max(0, mapa.z - dt * 1.5);
+		if (mapa.z === 0 && mapa.zObjetivo === 0 && mapa.foco >= 0) {
+			mapa.foco = -1;
+			actualizarPanelMapa();
+		} else if (antes < 1 && mapa.z === 1) actualizarPanelMapa();
+		for (let i = 0; i < mapa.sacudir.length; i++) if (mapa.sacudir[i] > 0) mapa.sacudir[i] = Math.max(0, mapa.sacudir[i] - dt);
+		mapa.mensajeT = Math.max(0, mapa.mensajeT - dt);
+
+		// Candado que se abre (con la vista general ya alejada)
+		if (mapa.abriendo >= 0 && mapa.foco < 0) {
+			const antesT = mapa.abrirT;
+			mapa.abrirT += dt;
+			if (antesT < 0.8 && mapa.abrirT >= 0.8) avisoMapa(`¡Se abrió el mundo ${mapa.abriendo + 1}: ${modulos[mapa.abriendo].nombre}!`);
+			if (mapa.abrirT >= 1.8) {
+				mapa.sel = mapa.heroeMundo = mapa.abriendo;
+				mapa.abriendo = -1;
+			}
+		} else if (mapa.victoriaPendiente && mapa.foco < 0 && estado === "mapa") {
+			mapa.victoriaPendiente = false;
+			ganar();
+		}
+
+		// La ficha del héroe camina hasta su mundo (en unidades del mapa)
+		const q = lugarHeroeMapa(mapa.heroeMundo);
+		if (mapa.heroeX === null) {
+			mapa.heroeX = q.x;
+			mapa.heroeY = q.y;
+		}
+		const dx = q.x - mapa.heroeX;
+		const dy = q.y - mapa.heroeY;
+		const dist = Math.hypot(dx, dy);
+		mapa.moviendo = dist > 2;
+		if (mapa.moviendo) {
+			const paso = Math.min(dist, 520 * dt);
+			mapa.heroeX += (dx / dist) * paso;
+			mapa.heroeY += (dy / dist) * paso;
+			if (Math.abs(dx) > 1) mapa.dir = Math.sign(dx);
+			mapa.fase += dt * 10;
+		}
 	}
 
 	// ---------- La Cueva ----------
@@ -1700,21 +2031,14 @@
 		else if (puedeUsarTuboSalida()) entrarPorTubo(salirACiudad);
 	}
 
-	// Al cruzar el tubo de salida no se gana de inmediato: hay que caminar un
-	// poco más por la ciudad hasta el letrero (LARGO_META).
+	// (En esta versión ya no se sale a la calle de Celaque: el tubo de salida
+	// lleva de vuelta al mapa, que es donde se eligen los demás módulos.)
 	function salirACiudad() {
-		estado = "urbano";
-		vistaUrbana = true;
 		// El camino + la Cueva son el módulo de Talento: ya está completo.
-		for (const m of modulos) {
-			if (m.completoAlSalirDeLaCueva && !m.completo) {
-				m.completo = true;
-				m.brillo = 1;
-				nivel++;
-				avisos.push({ texto: `¡Nivel ${nivel}! ${m.nombre} ✓`, t: 0 });
-			}
-		}
-		actualizarHudUrbano();
+		const nuevo = moduloTalento ? completarModulo(moduloTalento) : -1;
+		ui.hud.hidden = true;
+		ui.tactiles.hidden = true;
+		mostrarMapaTras(moduloTalento ? moduloTalento.indice : 0, nuevo);
 	}
 
 	// Pantalla negra de 3s al cruzar un tubo (ver el bloque "transicion" en
@@ -1873,7 +2197,7 @@
 	}
 
 	function accion() {
-		if (estado === "inicio") comenzar();
+		if (estado === "mapa") accionMapa();
 		else if (estado === "dialogo") avanzarDialogo();
 		else if (estado === "jugando") {
 			const npc = npcCercano();
@@ -1894,7 +2218,7 @@
 	// La barra espaciadora salta, salvo cuando hay algo que hacer con ella
 	// (empezar, avanzar un diálogo, hablar con alguien o entrar a un edificio).
 	function hayAccion() {
-		if (estado === "inicio" || estado === "dialogo") return true;
+		if (estado === "mapa" || estado === "dialogo") return true;
 		if (estado === "jugando") return !!npcCercano();
 		if (estado === "urbano") return !!moduloEnPuerta();
 		if (estado === "oficina") return (enTerminal() && !oficinaActual.completo) || !!companeroCerca() || enSalidaOficina();
@@ -1911,6 +2235,10 @@
 	const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 	window.addEventListener("keydown", (e) => {
+		if (e.key === "Escape") {
+			if (estado === "mapa") atrasMapa();
+			return;
+		}
 		// En la computadora de la oficina se responde también con 1, 2, 3...
 		if (estado === "terminal" && /^[1-9]$/.test(e.key)) {
 			const btn = ui.terminalOpciones.children[Number(e.key) - 1];
@@ -1919,10 +2247,9 @@
 		}
 		if (TECLAS_IZQ.includes(e.key) || TECLAS_DER.includes(e.key)) {
 			e.preventDefault();
-			if (estado === "inicio") {
-				// En el inicio, las flechas cambian de personaje
-				const i = CLAVES_PERSONAJE.indexOf(personaje) + (TECLAS_DER.includes(e.key) ? 1 : -1);
-				elegirPersonaje(CLAVES_PERSONAJE[modulo(i, CLAVES_PERSONAJE.length)]);
+			if (estado === "mapa") {
+				// En el mapa, las flechas pasan de un mundo a otro
+				moverSeleccionMapa(TECLAS_DER.includes(e.key) ? 1 : -1);
 				return;
 			}
 			if (TECLAS_IZQ.includes(e.key)) entrada.izq = true;
@@ -1930,7 +2257,19 @@
 		} else if (TECLAS_CORRER.includes(e.key)) {
 			entrada.correr = true;
 		} else if (TECLAS_ACCION.includes(e.key)) {
-			if (e.target.tagName === "BUTTON") return; // el botón ya maneja su clic
+			if (e.target.tagName === "BUTTON") {
+				// Tarjeta de personaje enfocada en el mapa: Enter/Espacio siguen
+				// siendo del mapa (acercar / carta). En otro botón, E también lo
+				// presiona (Enter y Espacio ya lo hacen solos).
+				if (estado === "mapa" && e.target.classList.contains("opcion")) e.target.blur();
+				else {
+					if (e.key === "e" || e.key === "E") {
+						e.preventDefault();
+						e.target.click();
+					}
+					return;
+				}
+			}
 			e.preventDefault();
 			if (e.repeat) return;
 			if (e.key === " " && !hayAccion()) saltarAccion();
@@ -1968,9 +2307,36 @@
 		{ passive: true }
 	);
 
-	$("btn-comenzar").addEventListener("click", comenzar);
-	$("btn-reiniciar").addEventListener("click", reiniciar);
-	$("btn-cambiar").addEventListener("click", volverAlInicio);
+	// Victoria: "Jugar de nuevo" borra el progreso; "Ver el mapa" lo conserva
+	$("btn-reiniciar").addEventListener("click", () => {
+		reiniciarProgreso();
+		abrirMapa();
+	});
+	$("btn-cambiar").addEventListener("click", abrirMapa);
+	ui.reiniciarProgreso.addEventListener("click", reiniciarProgreso);
+	$("btn-mapa-volver").addEventListener("click", alejarMapa);
+	ui.cartaEntrar.addEventListener("click", () => entrarMundo(mapa.foco));
+	ui.cartaVolver.addEventListener("click", cerrarCarta);
+	ui.carta.addEventListener("click", (e) => {
+		if (e.target === ui.carta) cerrarCarta(); // clic fuera de la carta
+	});
+
+	// Mapa: clic o toque sobre una meseta. En la vista general la acerca;
+	// acercado, el mismo mundo abre su carta, otro abierto pasa a ese, y el
+	// agua aleja la vista.
+	canvas.addEventListener("click", (e) => {
+		if (estado !== "mapa" || mapa.carta) return;
+		const i = mundoEnPantalla(e.clientX, e.clientY);
+		if (mapa.foco >= 0 && mapa.zObjetivo === 1) {
+			if (i === mapa.foco) abrirCarta(i);
+			else if (i >= 0) elegirMundo(i);
+			else alejarMapa();
+		} else if (i >= 0) elegirMundo(i);
+	});
+	canvas.addEventListener("pointermove", (e) => {
+		mapa.hover = estado === "mapa" && !mapa.carta ? mundoEnPantalla(e.clientX, e.clientY) : -1;
+		canvas.style.cursor = mapa.hover >= 0 ? "pointer" : "";
+	});
 	ui.terminalSalir.addEventListener("click", cerrarTerminal);
 	ui.dialogo.addEventListener("click", avanzarDialogo);
 
@@ -2173,12 +2539,14 @@
 				heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 				actualizarHudOficina();
 			}
-			// El compañero te habla solo la primera vez; la computadora se
-			// abre sola la primera vez que llegas a ella.
-			if (!of.companero.hablado && heroe.x >= of.companero.x - 100 && heroeEnSuelo()) abrirDialogo(of.companero);
+			// Cada compañero te habla solo la primera vez que llegas a él (en
+			// orden); la computadora se abre sola la primera vez que llegas.
+			const siguiente = of.companeros.find((n) => !n.hablado);
+			if (siguiente && heroe.x >= siguiente.x - 100 && heroeEnSuelo()) abrirDialogo(siguiente);
 			else if (!oficinaActual.terminalVisitada && enTerminal()) abrirTerminal(oficinaActual);
 		}
 		for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);
+		if (estado === "mapa") actualizarMapa(dt);
 
 		// Postura de marcha suavizada: arrancar, frenar o pasar de caminar a
 		// correr inclina y acelera el rebote poco a poco, en vez de saltar de
@@ -4056,16 +4424,296 @@
 	}
 
 	// ---------- Dibujo: oficina (interior de cada módulo) ----------
-	// Todo lo de la pared (ventanas, lámparas, logos, pizarras) está fijo en
-	// coordenadas de mundo, así se mueve con la cámara igual que los muebles.
-	function dibujarFondoOficina(m) {
+	// La oficina está en lo alto de un edificio: todo el fondo es un ventanal
+	// con la vista (cielo, nubes, montañas, la ciudad allá abajo y aves que
+	// pasan) y, delante del vidrio, el resto de una oficina enorme a lo lejos,
+	// borrosa, con más gente trabajando. Cada capa se mueve más lento que la
+	// cámara cuanto más lejos está (parallax), medido desde la entrada de la
+	// oficina (cl = cámara local) para que los números no se disparen.
+	const azarVista = crearAzar(77);
+	const ANCHO_VISTA = 1600; // franja de ciudad que se repite (en px a S = 1)
+	const TORRES_VISTA = Array.from({ length: 24 }, (_, k) => ({
+		x: k * 66 + azarVista() * 30,
+		ancho: 34 + azarVista() * 42,
+		alto: 0.3 + azarVista() * 0.6, // cuánto sube desde abajo hacia el horizonte
+		tono: k % 4,
+		luces: azarVista(),
+	}));
+	const NUBES_VISTA = Array.from({ length: 10 }, (_, k) => ({
+		x: azarVista() * 1900,
+		y: azarVista(),
+		tam: 0.6 + azarVista() * 0.9,
+		vel: 6 + azarVista() * 12,
+		cerca: k % 3 === 0, // las cercanas pasan por delante de la ciudad, más rápido
+	}));
+	// Verdes y grises de la marca, aclarados por la distancia
+	const TONOS_TORRE = ["#6f9a91", "#8ea6a1", "#a9b6b3", "#5c8279"];
+	// Caminantes de la oficina lejana (en px a S = 1, sobre una franja de 1400)
+	const CAMINANTES = [
+		{ u: 120, vel: 26, v: 0 },
+		{ u: 520, vel: -20, v: 1 },
+		{ u: 880, vel: 18, v: 2 },
+		{ u: 1240, vel: -28, v: 0 },
+	];
+	const COLUMNAS_OFICINA = [520, 1150, 1780, 2360];
+
+	// Degradados que solo cambian con el tamaño de la pantalla
+	let cacheFondoOficina = null;
+	function degradadosOficina(arriba, abajo, horizonte) {
+		const clave = `${W}x${H}`;
+		if (cacheFondoOficina && cacheFondoOficina.clave === clave) return cacheFondoOficina;
+		const cielo = ctx.createLinearGradient(0, arriba, 0, horizonte);
+		cielo.addColorStop(0, "#8fcbe6");
+		cielo.addColorStop(1, COLORES.fondoVerdeClaro);
+		const bruma = ctx.createLinearGradient(0, horizonte, 0, abajo);
+		bruma.addColorStop(0, "rgba(227,238,235,0.85)");
+		bruma.addColorStop(1, "rgba(227,238,235,0.05)");
+		const sol = ctx.createRadialGradient(0, 0, 4 * S, 0, 0, 120 * S);
+		sol.addColorStop(0, "rgba(255,250,225,1)");
+		sol.addColorStop(0.25, "rgba(255,244,200,0.7)");
+		sol.addColorStop(1, "rgba(255,244,200,0)");
+		const pisoLejano = ctx.createLinearGradient(0, abajo, 0, SUELO);
+		pisoLejano.addColorStop(0, "#b9c4c1");
+		pisoLejano.addColorStop(1, "#97a6a3");
+		cacheFondoOficina = { clave, cielo, bruma, sol, pisoLejano };
+		return cacheFondoOficina;
+	}
+
+	function nubeVista(x, y, r, alfa) {
+		ctx.fillStyle = `rgba(255,255,255,${alfa})`;
+		circulo(x, y, r);
+		circulo(x + r * 0.9, y + r * 0.2, r * 0.8);
+		circulo(x - r * 0.9, y + r * 0.25, r * 0.7);
+		circulo(x + r * 0.2, y - r * 0.45, r * 0.75);
+		ctx.fillRect(x - r * 1.5, y + r * 0.1, r * 3.1, r * 0.75);
+	}
+
+	// Lo que se ve por el ventanal (recortado al vidrio)
+	function dibujarVistaVentanal(arriba, abajo, horizonte, g, cl, dt) {
+		const alto = abajo - arriba;
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(0, arriba, W, alto);
+		ctx.clip();
+
+		ctx.fillStyle = g.cielo;
+		ctx.fillRect(0, arriba, W, alto);
+		ctx.save();
+		ctx.translate(W * 0.76 - cl * 0.02, arriba + alto * 0.2);
+		ctx.fillStyle = g.sol;
+		ctx.fillRect(-120 * S, -120 * S, 240 * S, 240 * S);
+		ctx.restore();
+
+		// Montañas (Celaque) a lo lejos: dos cordilleras, la de atrás más clara
+		for (const [f, alfa, amp] of [
+			[0.04, 0.35, 70],
+			[0.08, 0.55, 46],
+		]) {
+			ctx.fillStyle = conAlfa(COLORES.verdeInstitucional, alfa);
+			ctx.beginPath();
+			ctx.moveTo(0, horizonte);
+			for (let x = 0; x <= W + 24; x += 24) {
+				const u = (x + cl * f) / S;
+				const y = horizonte - (Math.sin(u * 0.004 + amp) * 0.5 + 0.5) * amp * S - Math.sin(u * 0.011) * 14 * S - 10 * S;
+				ctx.lineTo(x, y);
+			}
+			ctx.lineTo(W + 24, horizonte);
+			ctx.fill();
+		}
+
+		const posNube = (n, f) => modulo(n.x * S + tiempo * n.vel * S - cl * f, 1900 * S) - 200 * S;
+		for (const n of NUBES_VISTA) {
+			if (n.cerca) continue;
+			nubeVista(posNube(n, 0.1), arriba + alto * (0.06 + n.y * 0.42), 26 * S * n.tam, 0.8);
+		}
+
+		// La ciudad allá abajo: se ven los techos de las torres
+		ctx.fillStyle = "#c3d3cf";
+		ctx.fillRect(0, horizonte, W, abajo - horizonte);
+		const franja = ANCHO_VISTA * S;
+		const base = modulo(-cl * 0.18, franja);
+		for (let rep = -1; base + rep * franja < W; rep++) {
+			for (const t of TORRES_VISTA) {
+				const x = base + rep * franja + t.x * S;
+				const w = t.ancho * S;
+				if (x + w < 0 || x > W) continue;
+				const top = abajo - (abajo - horizonte) * t.alto;
+				ctx.fillStyle = TONOS_TORRE[t.tono];
+				ctx.fillRect(x, top, w, abajo - top);
+				ctx.fillStyle = "rgba(255,255,255,0.18)"; // azotea
+				ctx.fillRect(x - 2 * S, top, w + 4 * S, 3 * S);
+				ctx.fillStyle = t.luces > 0.5 ? "rgba(255,244,200,0.75)" : "rgba(255,255,255,0.45)";
+				for (let y = top + 9 * S; y < abajo - 4 * S; y += 11 * S) {
+					for (let wx = x + 5 * S; wx < x + w - 6 * S; wx += 10 * S) ctx.fillRect(wx, y, 4 * S, 4 * S);
+				}
+			}
+		}
+		ctx.fillStyle = g.bruma;
+		ctx.fillRect(0, horizonte, W, abajo - horizonte);
+
+		// Nubes que pasan por debajo de nosotros, delante de la ciudad
+		for (const n of NUBES_VISTA) {
+			if (!n.cerca) continue;
+			nubeVista(posNube(n, 0.32), horizonte + (abajo - horizonte) * (0.15 + n.y * 0.5), 34 * S * n.tam, 0.9);
+		}
+
+		dibujarAves(dt, true); // guacamayas y loros cruzan por la ventana
+		ctx.restore();
+	}
+
+	// Parteluces del ventanal y reflejos en el vidrio
+	function dibujarMarcosVentanal(arriba, abajo, cl) {
+		const paso = 230 * S;
+		const off = modulo(cl * 0.55, paso);
+		ctx.fillStyle = "rgba(255,255,255,0.08)";
+		for (let x = -off - paso; x < W + paso; x += paso) {
+			ctx.beginPath();
+			ctx.moveTo(x + paso * 0.15, abajo);
+			ctx.lineTo(x + paso * 0.45, arriba);
+			ctx.lineTo(x + paso * 0.62, arriba);
+			ctx.lineTo(x + paso * 0.32, abajo);
+			ctx.fill();
+		}
+		ctx.fillStyle = COLORES.verdeProfundo;
+		for (let x = -off; x < W + paso; x += paso) ctx.fillRect(x - 4 * S, arriba, 8 * S, abajo - arriba);
+		ctx.fillRect(0, arriba + (abajo - arriba) * 0.16, W, 4 * S);
+		ctx.fillStyle = "#cfd7d4"; // alféizar
+		ctx.fillRect(0, abajo - 3 * S, W, 8 * S);
+	}
+
+	// Persona a lo lejos (para la oficina borrosa): sentada o de pie
+	function personaLejana(c, x, pie, ropa, piel, sentada) {
+		const alto = sentada ? 40 * S : 64 * S;
+		if (!sentada) {
+			c.fillStyle = "#3a4446";
+			c.fillRect(x - 5 * S, pie - 26 * S, 4 * S, 26 * S);
+			c.fillRect(x + 1 * S, pie - 26 * S, 4 * S, 26 * S);
+		}
+		const torsoAbajo = sentada ? pie : pie - 24 * S;
+		c.fillStyle = ropa;
+		c.beginPath();
+		c.moveTo(x - 9 * S, torsoAbajo);
+		c.lineTo(x - 8 * S, pie - alto + 14 * S);
+		c.quadraticCurveTo(x, pie - alto + 8 * S, x + 8 * S, pie - alto + 14 * S);
+		c.lineTo(x + 9 * S, torsoAbajo);
+		c.fill();
+		c.fillStyle = piel;
+		c.beginPath();
+		c.arc(x, pie - alto + 4 * S, 7 * S, 0, Math.PI * 2);
+		c.fill();
+		c.fillStyle = "#2b1a12";
+		c.beginPath();
+		c.arc(x, pie - alto + 1.5 * S, 7 * S, Math.PI, Math.PI * 2);
+		c.fill();
+	}
+
+	// La oficina lejana se dibuja una sola vez por tamaño de pantalla y se
+	// desenfoca (filtro blur); así cada cuadro solo copia la imagen.
+	let cacheOficinaLejana = null;
+	function oficinaLejana() {
+		if (cacheOficinaLejana && cacheOficinaLejana.S === S) return cacheOficinaLejana;
+		const ROPAS = [COLORES.verdeProfundo, COLORES.verdeInstitucional, COLORES.beige, "#e9ece8", "#3c63b8", "#b5524a"];
+		const PIELES = ["#d9a07a", "#c99468", "#e0b08a", "#b98458"];
+		const az = crearAzar(31);
+		const borroso = (ancho, alto, dibujo) => {
+			const crudo = document.createElement("canvas");
+			crudo.width = ancho;
+			crudo.height = alto;
+			dibujo(crudo.getContext("2d"));
+			const final = document.createElement("canvas");
+			final.width = ancho;
+			final.height = alto;
+			const f = final.getContext("2d");
+			f.filter = `blur(${(2.2 * S).toFixed(1)}px)`; // donde no hay filtro se ve nítido, igual sirve
+			f.drawImage(crudo, 0, 0);
+			return final;
+		};
+		const ancho = Math.round(1200 * S);
+		const alto = Math.round(120 * S);
+		const lienzo = borroso(ancho, alto, (c) => {
+			const piso = alto - 6 * S;
+			for (let k = 0; k < 8; k++) {
+				const x = k * 150 * S + 20 * S;
+				const n = 1 + Math.floor(az() * 2);
+				for (let p = 0; p < n; p++) {
+					personaLejana(c, x + (p ? 96 : 12) * S, piso - 26 * S, ROPAS[Math.floor(az() * ROPAS.length)], PIELES[Math.floor(az() * PIELES.length)], true);
+				}
+				if (az() < 0.4) personaLejana(c, x + 128 * S, piso, ROPAS[Math.floor(az() * ROPAS.length)], PIELES[Math.floor(az() * PIELES.length)], false);
+				// Isla de escritorios con dos monitores encendidos
+				c.fillStyle = "#cfd6d3";
+				c.fillRect(x, piso - 30 * S, 110 * S, 6 * S);
+				c.fillStyle = "#8f9b98";
+				c.fillRect(x + 6 * S, piso - 24 * S, 5 * S, 24 * S);
+				c.fillRect(x + 99 * S, piso - 24 * S, 5 * S, 24 * S);
+				for (const mx of [x + 28 * S, x + 60 * S]) {
+					c.fillStyle = "#1c2526";
+					c.fillRect(mx, piso - 54 * S, 24 * S, 19 * S);
+					c.fillStyle = "rgba(140,210,195,0.95)";
+					c.fillRect(mx + 2 * S, piso - 52 * S, 20 * S, 15 * S);
+					c.fillStyle = "#1c2526";
+					c.fillRect(mx + 10 * S, piso - 35 * S, 4 * S, 5 * S);
+				}
+				if (k % 3 === 1) {
+					c.fillStyle = "#3f9b5a";
+					c.beginPath();
+					c.ellipse(x - 8 * S, piso - 40 * S, 12 * S, 22 * S, 0, 0, Math.PI * 2);
+					c.fill();
+					c.fillStyle = "#e9e3d6";
+					c.fillRect(x - 16 * S, piso - 20 * S, 16 * S, 20 * S);
+				}
+			}
+		});
+		const caminantes = [0, 1, 2].map((v) =>
+			borroso(Math.round(40 * S), Math.round(80 * S), (c) => personaLejana(c, 20 * S, 76 * S, ROPAS[(v * 2 + 1) % ROPAS.length], PIELES[v], false))
+		);
+		cacheOficinaLejana = { S, lienzo, caminantes };
+		return cacheOficinaLejana;
+	}
+
+	function dibujarOficinaLejana(abajo, g, cl, dt) {
+		ctx.fillStyle = g.pisoLejano;
+		ctx.fillRect(0, abajo, W, SUELO - abajo);
+		const lejana = oficinaLejana();
+		const ancho = lejana.lienzo.width;
+		const alto = lejana.lienzo.height;
+		// Fila más lejana (más chica, más tenue) y fila cercana
+		for (const [f, k, alfa, pie] of [
+			[0.42, 0.62, 0.6, SUELO - 26 * S],
+			[0.6, 1, 0.9, SUELO - 2 * S],
+		]) {
+			ctx.globalAlpha = alfa;
+			const w = ancho * k;
+			for (let x = -modulo(cl * f, w); x < W; x += w) ctx.drawImage(lejana.lienzo, x, pie - alto * k, w, alto * k);
+			ctx.globalAlpha = 1;
+		}
+		// Gente caminando entre los escritorios
+		const franja = 1400 * S;
+		ctx.globalAlpha = 0.85;
+		for (const c of CAMINANTES) {
+			c.u = modulo(c.u + c.vel * dt, 1400);
+			const x = modulo(c.u * S - cl * 0.6, franja) - 100 * S;
+			if (x < -50 * S || x > W + 50 * S) continue;
+			const img = lejana.caminantes[c.v];
+			const rebote = Math.abs(Math.sin(tiempo * 7 + c.u)) * 2 * S;
+			ctx.save();
+			ctx.translate(x, SUELO - 4 * S - rebote);
+			ctx.scale(Math.sign(c.vel), 1);
+			ctx.drawImage(img, -img.width / 2, -img.height);
+			ctx.restore();
+		}
+		ctx.globalAlpha = 1;
+	}
+
+	function dibujarFondoOficina(m, dt) {
 		const of = m.oficina;
-		// Pared
-		const pared = ctx.createLinearGradient(0, 0, 0, SUELO);
-		pared.addColorStop(0, "#f4f5f1");
-		pared.addColorStop(1, "#e2e6e1");
-		ctx.fillStyle = pared;
-		ctx.fillRect(0, 0, W, SUELO + 40 * S);
+		const cl = camara - of.x0;
+		const arribaV = 34 * S; // el vidrio empieza bajo el techo...
+		const abajoV = SUELO - 46 * S; // ...y termina en el alféizar lejano
+		const horizonte = arribaV + (abajoV - arribaV) * 0.56;
+		const g = degradadosOficina(arribaV, abajoV, horizonte);
+		dibujarVistaVentanal(arribaV, abajoV, horizonte, g, cl, dt);
+		dibujarMarcosVentanal(arribaV, abajoV, cl);
+		dibujarOficinaLejana(abajoV, g, cl, dt);
 
 		// Techo con lámparas que brillan
 		ctx.fillStyle = "#d4d9d6";
@@ -4074,7 +4722,7 @@
 			const sx = x - camara;
 			if (sx < -150 || sx > W + 150) continue;
 			const luz = ctx.createLinearGradient(0, 34 * S, 0, 260 * S);
-			luz.addColorStop(0, "rgba(255,255,235,0.55)");
+			luz.addColorStop(0, "rgba(255,255,235,0.45)");
 			luz.addColorStop(1, "rgba(255,255,235,0)");
 			ctx.fillStyle = luz;
 			ctx.beginPath();
@@ -4088,54 +4736,7 @@
 			ctx.fill();
 		}
 
-		// Ventanales a la ciudad
-		const altoV = Math.min(210 * S, SUELO - 130 * S);
-		for (let x = of.x0 + 260; x < of.terminalX - 100; x += 560) {
-			const sx = x - camara;
-			if (sx < -200 || sx > W + 200) continue;
-			const top = 70 * S;
-			const cielo = ctx.createLinearGradient(0, top, 0, top + altoV);
-			cielo.addColorStop(0, "#8fd3f4");
-			cielo.addColorStop(1, "#d9f1fb");
-			ctx.fillStyle = cielo;
-			ctx.fillRect(sx - 110 * S, top, 220 * S, altoV);
-			ctx.fillStyle = "rgba(0,118,122,0.35)"; // ciudad a lo lejos
-			for (let k = 0; k < 6; k++) {
-				const h = (40 + ((k * 37 + x) % 70)) * S;
-				ctx.fillRect(sx - 110 * S + k * 37 * S, top + altoV - h, 30 * S, h);
-			}
-			ctx.strokeStyle = COLORES.verdeProfundo;
-			ctx.lineWidth = 6 * S;
-			ctx.strokeRect(sx - 110 * S, top, 220 * S, altoV);
-			ctx.lineWidth = 3 * S;
-			linea(sx, top, sx, top + altoV);
-		}
-
-		// Logo de Celaque y nombre del módulo pintados en la pared
-		for (let x = of.x0 + 540; x < of.terminalX - 200; x += 560) {
-			const sx = x - camara;
-			if (sx < -200 || sx > W + 200) continue;
-			const cy = 150 * S;
-			// Placa blanca lisa detrás del logo (la pared tiene degradado)
-			ctx.fillStyle = COLORES.blanco;
-			rectRedondo(sx - 130 * S, cy - 34 * S, 260 * S, 68 * S, 10 * S);
-			ctx.fill();
-			ctx.strokeStyle = COLORES.grisClaro;
-			ctx.lineWidth = 1.5 * S;
-			ctx.stroke();
-			dibujarLogoOEspacio(logoCelaque, sx, cy, 230 * S, 42 * S, false);
-			ctx.fillStyle = COLORES.verdeInstitucional;
-			ctx.font = `400 ${16 * S}px ${FUENTE}`;
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(`Módulo ${m.nombre}`, sx, cy + 56 * S);
-		}
-
-		// Zócalo con el color del módulo
-		ctx.fillStyle = m.color;
-		ctx.fillRect(0, SUELO - 22 * S, W, 22 * S);
-		ctx.fillStyle = "rgba(255,255,255,0.25)";
-		ctx.fillRect(0, SUELO - 22 * S, W, 3 * S);
+		dibujarColumnasOficina(m);
 
 		// Paredes de los extremos
 		ctx.fillStyle = COLORES.verdeProfundo;
@@ -4145,13 +4746,221 @@
 		if (der < W) ctx.fillRect(der, 0, W - der, H);
 	}
 
-	function dibujarSueloOficina() {
+	// Columnas de la oficina: con el logo de Celaque, un afiche del módulo
+	// o un reloj. Van al frente (se mueven con la cámara, como los muebles).
+	function dibujarColumnasOficina(m) {
+		const of = m.oficina;
+		const piso = SUELO + 40 * S;
+		COLUMNAS_OFICINA.forEach((d, k) => {
+			const sx = of.x0 + d - camara;
+			if (sx < -200 || sx > W + 200) return;
+			const ancho = 54 * S;
+			ctx.fillStyle = "#e6eae7";
+			ctx.fillRect(sx - ancho / 2, 30 * S, ancho, piso - 30 * S);
+			ctx.fillStyle = "rgba(0,0,0,0.08)";
+			ctx.fillRect(sx + ancho * 0.22, 30 * S, ancho * 0.28, piso - 30 * S);
+			ctx.fillStyle = m.color;
+			ctx.fillRect(sx - ancho / 2, piso - 16 * S, ancho, 16 * S);
+
+			const tipo = k % 3;
+			if (tipo === 0) {
+				// Placa blanca lisa detrás del logo (el manual pide fondo liso)
+				const cy = 140 * S;
+				ctx.fillStyle = COLORES.blanco;
+				rectRedondo(sx - 130 * S, cy - 34 * S, 260 * S, 68 * S, 10 * S);
+				ctx.fill();
+				ctx.strokeStyle = COLORES.grisClaro;
+				ctx.lineWidth = 1.5 * S;
+				ctx.stroke();
+				dibujarLogoOEspacio(logoCelaque, sx, cy, 230 * S, 42 * S, false);
+				ctx.fillStyle = COLORES.verdeProfundo;
+				rectRedondo(sx - 80 * S, cy + 42 * S, 160 * S, 26 * S, 8 * S);
+				ctx.fill();
+				ctx.fillStyle = COLORES.blanco;
+				ctx.font = `700 ${14 * S}px ${FUENTE}`;
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(`Módulo ${m.nombre}`, sx, cy + 55 * S);
+			} else if (tipo === 1) {
+				// Afiche del sistema del módulo
+				const w = 132 * S;
+				const h = 164 * S;
+				const y0 = 96 * S;
+				ctx.fillStyle = m.color;
+				rectRedondo(sx - w / 2, y0, w, h, 10 * S);
+				ctx.fill();
+				ctx.fillStyle = COLORES.blanco;
+				circulo(sx, y0 + 56 * S, 34 * S);
+				dibujarIconoMundo(m.icono, sx, y0 + 56 * S, 22 * S, m.color);
+				const texto = m.sistema || m.nombre;
+				let tam = 16;
+				ctx.font = `700 ${tam * S}px ${FUENTE}`;
+				while (tam > 9 && ctx.measureText(texto).width > w - 16 * S) ctx.font = `700 ${--tam * S}px ${FUENTE}`;
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(texto, sx, y0 + 112 * S);
+				ctx.font = `400 ${11 * S}px ${FUENTE}`;
+				if (m.subtitulo !== texto) ctx.fillText(m.subtitulo || "", sx, y0 + 136 * S, w - 12 * S);
+			} else {
+				// Reloj de pared con la hora real
+				const cy = 130 * S;
+				const r = 30 * S;
+				ctx.fillStyle = COLORES.blanco;
+				circulo(sx, cy, r);
+				ctx.strokeStyle = COLORES.verdeProfundo;
+				ctx.lineWidth = 4 * S;
+				ctx.beginPath();
+				ctx.arc(sx, cy, r, 0, Math.PI * 2);
+				ctx.stroke();
+				const ahora = new Date();
+				const horas = ((ahora.getHours() % 12) + ahora.getMinutes() / 60) * (Math.PI / 6);
+				const minutos = ahora.getMinutes() * (Math.PI / 30);
+				const segundos = ahora.getSeconds() * (Math.PI / 30);
+				ctx.lineCap = "round";
+				for (const [ang, largo, grosor, col] of [
+					[horas, 0.5, 4, COLORES.verdeProfundo],
+					[minutos, 0.75, 3, COLORES.verdeProfundo],
+					[segundos, 0.8, 1.5, COLORES.verdeInstitucional],
+				]) {
+					ctx.strokeStyle = col;
+					ctx.lineWidth = grosor * S;
+					linea(sx, cy, sx + Math.sin(ang) * r * largo, cy - Math.cos(ang) * r * largo);
+				}
+				ctx.lineCap = "butt";
+			}
+		});
+	}
+
+	// Decoración del piso (no estorba: se pasa por delante)
+	function dibujarDecoracionOficina(m) {
+		const piso = SUELO + 40 * S;
+		for (const o of m.oficina.decoracion) {
+			const sx = o.x - camara;
+			if (sx < -160 || sx > W + 160) continue;
+			if (o.tipo === "librero") {
+				const w = 74 * S;
+				const h = 156 * S;
+				ctx.fillStyle = "#8a6a4a";
+				ctx.fillRect(sx - w / 2, piso - h, w, h);
+				ctx.fillStyle = "#6f5238";
+				for (let k = 0; k < 4; k++) {
+					const y = piso - h + 8 * S + k * 37 * S;
+					ctx.fillRect(sx - w / 2 + 5 * S, y + 28 * S, w - 10 * S, 4 * S);
+					const colores = [COLORES.verdeProfundo, COLORES.beige, COLORES.verdeInstitucional, "#e9ece8", "#c79a5b"];
+					for (let b = 0; b < 6; b++) {
+						ctx.fillStyle = colores[(b + k * 2) % colores.length];
+						const alto = (18 + ((b * 7 + k * 3) % 9)) * S;
+						ctx.fillRect(sx - w / 2 + 8 * S + b * 10 * S, y + 28 * S - alto, 8 * S, alto);
+					}
+					ctx.fillStyle = "#6f5238";
+				}
+			} else if (o.tipo === "sillon") {
+				ctx.fillStyle = COLORES.verdeInstitucional;
+				rectRedondo(sx - 60 * S, piso - 58 * S, 120 * S, 30 * S, 10 * S); // respaldo
+				ctx.fill();
+				ctx.fillStyle = mezclar(COLORES.verdeInstitucional, "#ffffff", 0.15);
+				rectRedondo(sx - 56 * S, piso - 34 * S, 112 * S, 20 * S, 7 * S); // cojines
+				ctx.fill();
+				ctx.fillStyle = COLORES.verdeProfundo;
+				rectRedondo(sx - 66 * S, piso - 44 * S, 16 * S, 34 * S, 6 * S);
+				ctx.fill();
+				rectRedondo(sx + 50 * S, piso - 44 * S, 16 * S, 34 * S, 6 * S);
+				ctx.fill();
+				ctx.fillRect(sx - 54 * S, piso - 12 * S, 6 * S, 12 * S);
+				ctx.fillRect(sx + 48 * S, piso - 12 * S, 6 * S, 12 * S);
+			} else if (o.tipo === "pizarra") {
+				// Pizarra con un tablero de tareas (por hacer / en curso / listo)
+				const w = 130 * S;
+				const h = 86 * S;
+				const y0 = piso - 150 * S;
+				ctx.strokeStyle = "#5e686a";
+				ctx.lineWidth = 4 * S;
+				linea(sx - w * 0.35, y0 + h, sx - w * 0.42, piso);
+				linea(sx + w * 0.35, y0 + h, sx + w * 0.42, piso);
+				ctx.fillStyle = COLORES.blanco;
+				ctx.fillRect(sx - w / 2, y0, w, h);
+				ctx.strokeStyle = "#9aa5a6";
+				ctx.lineWidth = 3 * S;
+				ctx.strokeRect(sx - w / 2, y0, w, h);
+				ctx.lineWidth = 1.5 * S;
+				const notas = ["#ffe066", "#a8e6cf", "#ffd3b6", COLORES.fondoVerdeClaro];
+				for (let c = 0; c < 3; c++) {
+					const cx = sx - w / 2 + (c + 0.5) * (w / 3);
+					if (c) linea(sx - w / 2 + c * (w / 3), y0 + 8 * S, sx - w / 2 + c * (w / 3), y0 + h - 6 * S);
+					ctx.fillStyle = COLORES.verdeProfundo;
+					ctx.fillRect(cx - 14 * S, y0 + 7 * S, 28 * S, 3 * S);
+					for (let n = 0; n < 3 - c + (c === 2 ? 1 : 0); n++) {
+						ctx.fillStyle = notas[(c + n) % notas.length];
+						ctx.fillRect(cx - 13 * S, y0 + 16 * S + n * 20 * S, 26 * S, 16 * S);
+					}
+				}
+			} else if (o.tipo === "cafetera") {
+				ctx.fillStyle = "#c89b6d";
+				ctx.fillRect(sx - 40 * S, piso - 64 * S, 80 * S, 64 * S);
+				ctx.fillStyle = "#a07c58";
+				ctx.fillRect(sx - 36 * S, piso - 56 * S, 34 * S, 50 * S);
+				ctx.fillRect(sx + 2 * S, piso - 56 * S, 34 * S, 50 * S);
+				ctx.fillStyle = "#2e3a3c"; // máquina de café
+				rectRedondo(sx - 30 * S, piso - 106 * S, 34 * S, 42 * S, 4 * S);
+				ctx.fill();
+				ctx.fillStyle = "#ff7a3d";
+				circulo(sx - 20 * S, piso - 96 * S, 2.5 * S);
+				ctx.fillStyle = COLORES.blanco; // tazas
+				ctx.fillRect(sx + 12 * S, piso - 76 * S, 10 * S, 12 * S);
+				ctx.fillStyle = COLORES.verdeInstitucional;
+				ctx.fillRect(sx + 26 * S, piso - 76 * S, 10 * S, 12 * S);
+				ctx.strokeStyle = "rgba(255,255,255,0.6)"; // vapor
+				ctx.lineWidth = 2 * S;
+				for (let k = 0; k < 2; k++) {
+					const vx = sx + 17 * S + k * 14 * S;
+					const ola = Math.sin(tiempo * 3 + k) * 3 * S;
+					ctx.beginPath();
+					ctx.moveTo(vx, piso - 80 * S);
+					ctx.quadraticCurveTo(vx + ola, piso - 90 * S, vx - ola, piso - 100 * S);
+					ctx.stroke();
+				}
+			} else if (o.tipo === "plantaAlta") {
+				ctx.fillStyle = "#2f8a4c";
+				for (let k = -3; k <= 3; k++) {
+					ctx.beginPath();
+					ctx.ellipse(sx + k * 8 * S, piso - 90 * S + Math.abs(k) * 9 * S, 9 * S, 34 * S, k * 0.28, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				ctx.fillStyle = COLORES.beige;
+				ctx.beginPath();
+				ctx.moveTo(sx - 24 * S, piso - 46 * S);
+				ctx.lineTo(sx + 24 * S, piso - 46 * S);
+				ctx.lineTo(sx + 18 * S, piso);
+				ctx.lineTo(sx - 18 * S, piso);
+				ctx.fill();
+			} else if (o.tipo === "lampara") {
+				ctx.strokeStyle = "#3a4446";
+				ctx.lineWidth = 4 * S;
+				linea(sx, piso, sx, piso - 140 * S);
+				ctx.fillStyle = "#3a4446";
+				ctx.fillRect(sx - 16 * S, piso - 4 * S, 32 * S, 4 * S);
+				ctx.save();
+				ctx.shadowColor = "rgba(255,240,190,0.9)";
+				ctx.shadowBlur = 30 * S;
+				ctx.fillStyle = "#fff1c1";
+				ctx.beginPath();
+				ctx.moveTo(sx - 14 * S, piso - 150 * S);
+				ctx.lineTo(sx + 14 * S, piso - 150 * S);
+				ctx.lineTo(sx + 24 * S, piso - 124 * S);
+				ctx.lineTo(sx - 24 * S, piso - 124 * S);
+				ctx.fill();
+				ctx.restore();
+			}
+		}
+	}
+
+	function dibujarSueloOficina(m) {
 		const piso = ctx.createLinearGradient(0, SUELO, 0, H);
 		piso.addColorStop(0, "#7a8b88");
 		piso.addColorStop(1, "#56625f");
 		ctx.fillStyle = piso;
 		ctx.fillRect(0, SUELO, W, H - SUELO);
-		ctx.fillStyle = "rgba(255,255,255,0.12)";
+		ctx.fillStyle = m.color; // borde de la alfombra con el color del módulo
 		ctx.fillRect(0, SUELO, W, 4 * S);
 		// Losetas de alfombra
 		ctx.strokeStyle = "rgba(0,0,0,0.12)";
@@ -4181,8 +4990,8 @@
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillText("SALIDA", sx, piso - 145 * S);
-		if (estado === "oficina" && enSalidaOficina() && m.completo) {
-			dibujarGlobo(sx, piso - 170 * S, esTactil ? "Toca Hablar para salir" : "E · Salir", COLORES.fondoVerdeClaro);
+		if (estado === "oficina" && enSalidaOficina()) {
+			dibujarGlobo(sx, piso - 170 * S, esTactil ? "Toca Hablar: volver al mapa" : "E · Volver al mapa", COLORES.fondoVerdeClaro);
 		}
 	}
 
@@ -4266,16 +5075,18 @@
 		}
 	}
 
-	// Compañero del módulo (misma foto teñida que los NPCs del camino)
-	function dibujarCompanero(m) {
-		const n = m.oficina.companero;
-		const sx = n.x - camara;
-		if (sx < -80 || sx > W + 80) return;
-		const pie = SUELO + 36 * S;
-		dibujarNpcFoto(sx, pie, n, heroe.x >= n.x ? 1 : -1);
-		const arriba = pie - 125 * S + Math.sin(tiempo * 3 + n.x) * 3 * S;
-		if (!n.hablado) dibujarGlobo(sx, arriba, "!", "#ffe066");
-		else if (estado === "oficina" && companeroCerca()) dibujarGlobo(sx, arriba, esTactil ? "Hablar" : "E · Hablar", "#fffbea");
+	// Compañeros del módulo (misma foto teñida que los NPCs del camino)
+	function dibujarCompaneros(m) {
+		const cerca = estado === "oficina" ? companeroCerca() : null;
+		for (const n of m.oficina.companeros) {
+			const sx = n.x - camara;
+			if (sx < -80 || sx > W + 80) continue;
+			const pie = SUELO + 36 * S;
+			dibujarNpcFoto(sx, pie, n, heroe.x >= n.x ? 1 : -1);
+			const arriba = pie - 125 * S + Math.sin(tiempo * 3 + n.x) * 3 * S;
+			if (!n.hablado) dibujarGlobo(sx, arriba, "!", "#ffe066");
+			else if (n === cerca) dibujarGlobo(sx, arriba, esTactil ? "Hablar" : "E · Hablar", "#fffbea");
+		}
 	}
 
 	// Computadora al fondo de la oficina: monitor grande con la Terminal
@@ -4565,7 +5376,8 @@
 		}
 		if (estado === "oficina") {
 			const of = oficinaActual.oficina;
-			if (!of.companero.hablado) return of.companero.x;
+			const siguiente = of.companeros.find((n) => !n.hablado);
+			if (siguiente) return siguiente.x;
 			return oficinaActual.completo ? of.x0 + 70 : of.terminalX - 50;
 		}
 		return null;
@@ -5401,6 +6213,656 @@
 		};
 	}
 
+	// ---------- Dibujo: mapa ----------
+	// Todo el mapa se dibuja en sus propias unidades (MAPA_ANCHO x MAPA_ALTO)
+	// y se escala a la pantalla con ctx.setTransform; el acercamiento a un
+	// mundo solo cambia esa escala y el centro (ver vistaMapa). Mientras se
+	// dibuja el mapa S vale 1 (las funciones de dibujo que usan S quedan en
+	// unidades del mapa).
+	const MAPA_ANCHO = 1600;
+	const MAPA_ALTO = 1000;
+	const ACANTILADO = 38; // alto de la pared de roca de cada meseta
+	// Un mundo por módulo, en orden alrededor de la meseta central (como un
+	// anillo, igual que el mapa de referencia). Si hubiera más de 6 módulos,
+	// los extra se acomodan en un círculo.
+	const LUGARES_MAPA = [
+		{ x: 300, y: 770, rx: 200, ry: 112 },
+		{ x: 280, y: 255, rx: 175, ry: 100 },
+		{ x: 800, y: 165, rx: 185, ry: 88 },
+		{ x: 1320, y: 250, rx: 180, ry: 100 },
+		{ x: 1330, y: 745, rx: 185, ry: 108 },
+		{ x: 810, y: 865, rx: 185, ry: 88 },
+	];
+	const CENTRO_MAPA = { x: 800, y: 505, rx: 300, ry: 200 };
+
+	// Orilla irregular de una meseta (puntos fijos con semilla). El punto 0
+	// está a la derecha, el 10 abajo, el 20 a la izquierda y el 30 arriba.
+	const PUNTOS_MESETA = 40;
+	function contornoMeseta(q, semilla) {
+		const az = crearAzar(semilla);
+		const a = az() * 6;
+		const b = az() * 6;
+		const puntos = [];
+		for (let k = 0; k < PUNTOS_MESETA; k++) {
+			const ang = (k / PUNTOS_MESETA) * Math.PI * 2;
+			const r = 1 + 0.06 * Math.sin(3 * ang + a) + 0.04 * Math.sin(5 * ang + b) + (az() - 0.5) * 0.025;
+			puntos.push([q.x + Math.cos(ang) * q.rx * r, q.y + Math.sin(ang) * q.ry * r]);
+		}
+		return puntos;
+	}
+
+	// Árboles por el borde de atrás y a los lados (no tapan el edificio)
+	function arbolesMeseta(q, semilla, cuantos) {
+		const az = crearAzar(semilla);
+		const lista = [];
+		for (let k = 0; k < cuantos; k++) {
+			const ang = Math.PI * (1.05 + (k / (cuantos - 1)) * 0.9) + (az() - 0.5) * 0.12;
+			const r = 0.8 + az() * 0.1;
+			lista.push({ x: q.x + Math.cos(ang) * q.rx * r, y: q.y + Math.sin(ang) * q.ry * r, tam: 15 + az() * 8 });
+		}
+		for (const lado of [-1, 1]) lista.push({ x: q.x + lado * q.rx * 0.8, y: q.y + q.ry * 0.3, tam: 17 + az() * 6 });
+		return lista.sort((p1, p2) => p1.y - p2.y);
+	}
+
+	const mesetas = modulos.map((m, i) => {
+		const q = LUGARES_MAPA[i] || { x: 800 + Math.cos(i * 1.1) * 640, y: 500 + Math.sin(i * 1.1) * 370, rx: 140, ry: 80 };
+		return { ...q, contorno: contornoMeseta(q, 101 + i * 17), arboles: arbolesMeseta(q, 7 + i * 13, 9) };
+	});
+	const mesetaCentro = { ...CENTRO_MAPA, contorno: contornoMeseta(CENTRO_MAPA, 999), arboles: arbolesMeseta(CENTRO_MAPA, 555, 15) };
+
+	// Dónde se para la ficha del héroe, y dónde llega el camino
+	const lugarHeroeMapa = (i) => (mesetas[i] ? { x: mesetas[i].x - mesetas[i].rx * 0.42, y: mesetas[i].y + mesetas[i].ry * 0.42 } : { x: 800, y: 500 });
+	const puntaCamino = (q) => ({ x: q.x - q.rx * 0.12, y: q.y + q.ry * 0.5 });
+
+	const azarMapa = crearAzar(4242);
+	const OLAS_MAPA = Array.from({ length: 110 }, () => ({ x: azarMapa() * MAPA_ANCHO, y: azarMapa() * MAPA_ALTO, fase: azarMapa() * 6 }));
+	const NUBES_MAPA = Array.from({ length: 7 }, (_, k) => ({ x: azarMapa() * 2000, y: 60 + k * 135, tam: 0.7 + azarMapa() * 0.6, vel: 8 + azarMapa() * 10 }));
+
+	// Vista actual: escala k y desplazamiento (ox, oy) de unidades del mapa a
+	// pantalla. En la vista general entra todo el mapa; acercado, la meseta
+	// del mundo llena la pantalla. En celular vertical el rectángulo del
+	// centro va abajo (style.css), así que el mapa usa solo la parte de arriba.
+	function vistaMapa() {
+		const vertical = H > W && W <= 700;
+		const altoUtil = vertical ? Math.max(H * 0.45, H - 330) : H;
+		const k0 = Math.min(W / (MAPA_ANCHO + 40), altoUtil / (MAPA_ALTO + 40));
+		let cx = MAPA_ANCHO / 2;
+		let cy = MAPA_ALTO / 2;
+		let k = k0;
+		let py = altoUtil / 2;
+		if (mapa.foco >= 0) {
+			const e = suave(0, 1, mapa.z);
+			const q = mesetas[mapa.foco];
+			const kz = Math.min(W / (q.rx * 2 * 1.3), (H - 90) / ((q.ry * 2 + ACANTILADO + 230) * 1.08));
+			cx = lerp(cx, q.x, e);
+			cy = lerp(cy, q.y - 55, e);
+			k = lerp(k0, Math.max(k0, kz), e);
+			py = lerp(py, H / 2 + 30, e);
+		}
+		return { k, k0, ox: W / 2 - cx * k, oy: py - cy * k, vertical };
+	}
+
+	// Qué mundo hay bajo un punto de la pantalla (-1 = ninguno)
+	function mundoEnPantalla(px, py) {
+		const v = vistaMapa();
+		const x = (px - v.ox) / v.k;
+		const y = (py - v.oy) / v.k;
+		for (let i = 0; i < mesetas.length; i++) {
+			const q = mesetas[i];
+			const dx = (x - q.x) / q.rx;
+			const dy = (y - (q.y - 30)) / (q.ry + 60); // incluye el edificio y la medalla
+			if (dx * dx + dy * dy <= 1) return i;
+		}
+		return -1;
+	}
+
+	// El rectángulo del centro (HTML) va sobre la meseta central y se escala
+	// con el mapa. Solo se toca el estilo si cambió.
+	let posPanel = "";
+	function ubicarPanelMapa(v) {
+		const x = v.ox + CENTRO_MAPA.x * v.k0;
+		const y = v.oy + CENTRO_MAPA.y * v.k0;
+		const k = clamp(Math.min((CENTRO_MAPA.rx * 2 * v.k0 * 0.8) / 380, (CENTRO_MAPA.ry * 2 * v.k0 * 0.86) / 330), 0.55, 1.1);
+		const clave = `${x.toFixed(0)},${y.toFixed(0)},${k.toFixed(3)}`;
+		if (clave === posPanel) return;
+		posPanel = clave;
+		ui.panel.style.setProperty("--mapa-x", x.toFixed(0) + "px");
+		ui.panel.style.setProperty("--mapa-y", y.toFixed(0) + "px");
+		ui.panel.style.setProperty("--mapa-k", k.toFixed(3));
+	}
+
+	let cacheAgua = null;
+	function degradadoAgua() {
+		if (cacheAgua && cacheAgua.H === H) return cacheAgua.g;
+		const g = ctx.createLinearGradient(0, 0, 0, H);
+		g.addColorStop(0, mezclar(COLORES.verdeInstitucional, "#ffffff", 0.12));
+		g.addColorStop(1, mezclar(COLORES.verdeInstitucional, COLORES.verdeProfundo, 0.5));
+		cacheAgua = { H, g };
+		return g;
+	}
+
+	function trazarContorno(puntos, dx, dy, escala, cx, cy) {
+		ctx.beginPath();
+		puntos.forEach(([x, y], k) => {
+			const px = cx + (x - cx) * escala + dx;
+			const py = cy + (y - cy) * escala + dy;
+			if (k === 0) ctx.moveTo(px, py);
+			else ctx.lineTo(px, py);
+		});
+		ctx.closePath();
+	}
+
+	// Meseta: espuma en el agua, pared de roca (beige, con vetas) y pasto
+	// arriba. apagado (0..1): gris mientras el mundo tiene candado.
+	function dibujarMesetaBase(q, apagado) {
+		const c = q.contorno;
+		const espuma = 1.06 + 0.012 * Math.sin(tiempo * 2 + q.x);
+		ctx.fillStyle = "rgba(255,255,255,0.85)";
+		trazarContorno(c, 0, ACANTILADO + 6, espuma, q.x, q.y);
+		ctx.fill();
+
+		// Pared: la mitad de abajo de la orilla, bajada ACANTILADO
+		const mitad = PUNTOS_MESETA / 2;
+		ctx.beginPath();
+		for (let k = 0; k <= mitad; k++) ctx.lineTo(c[k][0], c[k][1]);
+		for (let k = mitad; k >= 0; k--) ctx.lineTo(c[k][0], c[k][1] + ACANTILADO);
+		ctx.closePath();
+		const roca = mezclar(COLORES.beige, "#b9b9b9", apagado * 0.6);
+		ctx.fillStyle = roca;
+		ctx.fill();
+		ctx.save();
+		ctx.clip();
+		ctx.strokeStyle = mezclar(roca, COLORES.verdeProfundo, 0.28);
+		ctx.lineWidth = 5;
+		for (let x = q.x - q.rx * 1.1; x < q.x + q.rx * 1.1; x += 17) linea(x, q.y, x + 3, q.y + q.ry + ACANTILADO + 10);
+		ctx.fillStyle = "rgba(4,37,35,0.18)"; // sombra bajo el pasto
+		ctx.fillRect(q.x - q.rx * 1.2, q.y, q.rx * 2.4, q.ry * 2);
+		ctx.restore();
+
+		// Pasto: base, centro más claro y borde
+		const pasto = mezclar(mezclar(COLORES.verdeInstitucional, "#ffffff", 0.16), "#c4c8c7", apagado * 0.75);
+		ctx.fillStyle = pasto;
+		trazarContorno(c, 0, 0, 1, q.x, q.y);
+		ctx.fill();
+		ctx.strokeStyle = mezclar(pasto, COLORES.verdeProfundo, 0.45);
+		ctx.lineWidth = 3;
+		ctx.stroke();
+		ctx.fillStyle = mezclar(pasto, "#ffffff", 0.16);
+		trazarContorno(c, 0, -4, 0.8, q.x, q.y);
+		ctx.fill();
+	}
+
+	function dibujarArbolMapa(a, apagado) {
+		ctx.fillStyle = "rgba(4,37,35,0.22)";
+		ctx.beginPath();
+		ctx.ellipse(a.x, a.y + 4, a.tam * 0.9, a.tam * 0.35, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = mezclar("#6f5238", "#9a9a9a", apagado);
+		ctx.fillRect(a.x - 3, a.y - a.tam * 0.6, 6, a.tam * 0.7);
+		ctx.fillStyle = mezclar(mezclar(COLORES.verdeInstitucional, COLORES.verdeProfundo, 0.45), "#a2a6a5", apagado * 0.7);
+		circulo(a.x, a.y - a.tam * 1.05, a.tam);
+		ctx.fillStyle = mezclar(mezclar(COLORES.verdeInstitucional, "#ffffff", 0.2), "#c9cccb", apagado * 0.7);
+		circulo(a.x - a.tam * 0.3, a.y - a.tam * 1.3, a.tam * 0.45);
+	}
+
+	// Íconos simples para la fachada de cada edificio (config.js → icono)
+	function dibujarIconoMundo(tipo, cx, cy, r, col) {
+		ctx.save();
+		ctx.fillStyle = col;
+		ctx.strokeStyle = col;
+		ctx.lineWidth = r * 0.18;
+		ctx.lineJoin = "round";
+		ctx.lineCap = "round";
+		if (tipo === "montana") {
+			ctx.beginPath();
+			ctx.moveTo(cx - r, cy + r * 0.7);
+			ctx.lineTo(cx - r * 0.2, cy - r * 0.6);
+			ctx.lineTo(cx + r * 0.2, cy);
+			ctx.lineTo(cx + r * 0.45, cy - r * 0.35);
+			ctx.lineTo(cx + r, cy + r * 0.7);
+			ctx.closePath();
+			ctx.fill();
+		} else if (tipo === "tablero") {
+			for (let c = 0; c < 3; c++) {
+				const x = cx - r + c * r * 0.72;
+				ctx.fillRect(x, cy - r * 0.8, r * 0.56, r * 0.22);
+				for (let n = 0; n < 3 - c; n++) ctx.fillRect(x, cy - r * 0.45 + n * r * 0.42, r * 0.56, r * 0.32);
+			}
+		} else if (tipo === "engranes") {
+			ctx.beginPath();
+			for (let k = 0; k < 16; k++) {
+				const ang = (k / 16) * Math.PI * 2;
+				const rr = k % 2 ? r * 0.72 : r;
+				ctx.lineTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr);
+			}
+			ctx.closePath();
+			ctx.fill();
+			ctx.fillStyle = COLORES.blanco;
+			circulo(cx, cy, r * 0.3);
+		} else if (tipo === "nube") {
+			circulo(cx - r * 0.45, cy + r * 0.15, r * 0.45);
+			circulo(cx + r * 0.1, cy - r * 0.2, r * 0.6);
+			circulo(cx + r * 0.55, cy + r * 0.2, r * 0.42);
+			ctx.fillRect(cx - r * 0.45, cy + r * 0.15, r, r * 0.47);
+		} else if (tipo === "escudo") {
+			ctx.beginPath();
+			ctx.moveTo(cx, cy - r);
+			ctx.lineTo(cx + r * 0.85, cy - r * 0.65);
+			ctx.quadraticCurveTo(cx + r * 0.8, cy + r * 0.55, cx, cy + r);
+			ctx.quadraticCurveTo(cx - r * 0.8, cy + r * 0.55, cx - r * 0.85, cy - r * 0.65);
+			ctx.closePath();
+			ctx.fill();
+			ctx.strokeStyle = COLORES.blanco;
+			ctx.beginPath();
+			ctx.moveTo(cx - r * 0.38, cy);
+			ctx.lineTo(cx - r * 0.08, cy + r * 0.3);
+			ctx.lineTo(cx + r * 0.42, cy - r * 0.3);
+			ctx.stroke();
+		} else if (tipo === "chispa") {
+			const estrella = (x, y, rr) => {
+				ctx.beginPath();
+				ctx.moveTo(x, y - rr);
+				ctx.quadraticCurveTo(x, y, x + rr, y);
+				ctx.quadraticCurveTo(x, y, x, y + rr);
+				ctx.quadraticCurveTo(x, y, x - rr, y);
+				ctx.quadraticCurveTo(x, y, x, y - rr);
+				ctx.fill();
+			};
+			estrella(cx - r * 0.15, cy + r * 0.1, r * 0.85);
+			estrella(cx + r * 0.62, cy - r * 0.55, r * 0.38);
+		} else {
+			ctx.fillRect(cx - r * 0.6, cy - r * 0.8, r * 1.2, r * 1.6);
+		}
+		ctx.restore();
+	}
+
+	// Edificio de un módulo sobre su meseta (con candado: apagado y gris)
+	function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
+		const w = 124;
+		const h = 108 + (i % 3) * 16;
+		const col = mezclar(m.color, "#9aa0a0", apagado * 0.7);
+		ctx.fillStyle = "rgba(4,37,35,0.25)";
+		ctx.beginPath();
+		ctx.ellipse(bx, by + 2, w * 0.65, 12, 0, 0, Math.PI * 2);
+		ctx.fill();
+		if (acercado > 0 && !apagado) {
+			// Al acercar, el edificio late: es lo que hay que tocar
+			const pulso = 0.5 + 0.5 * Math.sin(tiempo * 4);
+			ctx.save();
+			ctx.globalAlpha = acercado;
+			ctx.shadowColor = conAlfa(COLORES.blanco, 0.9);
+			ctx.shadowBlur = 20 + 18 * pulso;
+			ctx.fillStyle = col;
+			ctx.fillRect(bx - w / 2, by - h, w, h);
+			ctx.restore();
+		}
+		ctx.fillStyle = col;
+		ctx.fillRect(bx - w / 2, by - h, w, h);
+		ctx.fillStyle = "rgba(0,0,0,0.16)";
+		ctx.fillRect(bx + w * 0.3, by - h, w * 0.2, h);
+		ctx.fillStyle = mezclar(COLORES.verdeProfundo, "#7b8180", apagado * 0.6);
+		ctx.fillRect(bx - w / 2 - 6, by - h - 10, w + 12, 12);
+		ctx.fillRect(bx + w * 0.18, by - h - 26, 4, 16); // antena
+		// Ventanas: encendidas al completarlo, claras si está abierto
+		for (let y = by - h + 54; y < by - 42; y += 20) {
+			for (let c = 0; c < 4; c++) {
+				ctx.fillStyle = apagado
+					? "rgba(40,52,54,0.55)"
+					: m.completo
+						? (c + y) % 3 === 0
+							? "rgba(255,255,255,0.9)"
+							: "rgba(255,232,160,0.95)"
+						: "rgba(227,238,235,0.85)";
+				ctx.fillRect(bx - w / 2 + 12 + c * 27, y, 18, 12);
+			}
+		}
+		// Ícono del sistema en un círculo blanco
+		ctx.fillStyle = mezclar(COLORES.blanco, "#c9cccb", apagado);
+		circulo(bx, by - h + 26, 20);
+		dibujarIconoMundo(m.icono, bx, by - h + 26, 12, col);
+		// Puerta
+		ctx.fillStyle = mezclar(COLORES.verdeProfundo, "#7b8180", apagado * 0.6);
+		ctx.fillRect(bx - 17, by - 38, 34, 38);
+		ctx.fillStyle = apagado ? "#5d6667" : m.completo ? "#fff1c1" : mezclar(COLORES.fondoVerdeClaro, COLORES.verdeInstitucional, 0.3 + 0.3 * Math.sin(tiempo * 3));
+		ctx.fillRect(bx - 13, by - 34, 26, 34);
+	}
+
+	// Talento: el camino por la zona industrial y la Cueva, en miniatura
+	function dibujarEscenaTalento(bx, by, acercado) {
+		// Montaña de fondo (Celaque)
+		ctx.fillStyle = mezclar(COLORES.verdeInstitucional, COLORES.verdeProfundo, 0.55);
+		ctx.beginPath();
+		ctx.moveTo(bx - 40, by - 30);
+		ctx.lineTo(bx + 50, by - 150);
+		ctx.lineTo(bx + 90, by - 110);
+		ctx.lineTo(bx + 120, by - 135);
+		ctx.lineTo(bx + 190, by - 30);
+		ctx.fill();
+		// Fábrica con chimenea que echa humo
+		ctx.fillStyle = "#8a9294";
+		ctx.fillRect(bx - 150, by - 62, 70, 52);
+		ctx.fillStyle = "#6f777a";
+		ctx.fillRect(bx - 136, by - 104, 14, 44);
+		ctx.fillStyle = "#ffe8a0";
+		for (let k = 0; k < 3; k++) ctx.fillRect(bx - 142 + k * 20, by - 48, 12, 10);
+		for (let k = 0; k < 3; k++) {
+			const t = (tiempo * 0.5 + k / 3) % 1;
+			ctx.fillStyle = `rgba(240,244,243,${(0.8 * (1 - t)).toFixed(3)})`;
+			circulo(bx - 129 + t * 18, by - 110 - t * 46, 8 + t * 10);
+		}
+		// Camino hacia la cueva
+		ctx.strokeStyle = mezclar(COLORES.beige, "#ffffff", 0.45);
+		ctx.lineWidth = 18;
+		ctx.lineCap = "round";
+		ctx.beginPath();
+		ctx.moveTo(bx - 170, by + 12);
+		ctx.quadraticCurveTo(bx - 40, by + 26, bx + 60, by - 4);
+		ctx.stroke();
+		ctx.lineCap = "butt";
+		// Cueva: roca con la boca oscura y cristales
+		ctx.fillStyle = "#7d6f62";
+		ctx.beginPath();
+		ctx.ellipse(bx + 80, by - 4, 70, 60, 0, Math.PI, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = "#1c1612";
+		ctx.beginPath();
+		ctx.ellipse(bx + 80, by - 2, 30, 34, 0, Math.PI, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = "#7fd6c8";
+		for (const [x, y] of [
+			[bx + 36, by - 30],
+			[bx + 124, by - 24],
+		]) {
+			ctx.beginPath();
+			ctx.moveTo(x, y - 10);
+			ctx.lineTo(x + 5, y);
+			ctx.lineTo(x, y + 6);
+			ctx.lineTo(x - 5, y);
+			ctx.fill();
+		}
+		// Tubo verde (la entrada a la cueva)
+		ctx.fillStyle = "#2f9e62";
+		ctx.fillRect(bx - 44, by - 40, 30, 40);
+		ctx.fillStyle = "#3fbf78";
+		ctx.fillRect(bx - 50, by - 50, 42, 13);
+		if (acercado > 0) {
+			const pulso = 0.5 + 0.5 * Math.sin(tiempo * 4);
+			ctx.strokeStyle = conAlfa(COLORES.blanco, acercado * (0.4 + 0.5 * pulso));
+			ctx.lineWidth = 4;
+			ctx.beginPath();
+			ctx.ellipse(bx + 10, by - 50, 190, 110, 0, 0, Math.PI * 2);
+			ctx.stroke();
+		}
+	}
+
+	// Candado (cerrado) o medalla con el número del mundo / ✓ al completarlo
+	function dibujarMedallaMundo(x, y, i, m, candado, abrir) {
+		const bote = Math.sin(tiempo * 2.5 + i) * 3;
+		if (candado || abrir < 1.4) {
+			const p = candado ? 0 : abrir;
+			const sacude = (mapa.sacudir[i] || 0) > 0 ? Math.sin(tiempo * 60) * 6 : p < 0.8 ? Math.sin(tiempo * 50) * 4 * (p / 0.8) : 0;
+			const sube = p > 0.8 ? (p - 0.8) / 0.6 : 0; // 0..1: el candado se suelta y desaparece
+			ctx.save();
+			ctx.globalAlpha = 1 - sube;
+			ctx.translate(x + sacude, y + bote - sube * 40);
+			ctx.strokeStyle = COLORES.grisClaro;
+			ctx.lineWidth = 7;
+			ctx.beginPath();
+			ctx.arc(0, -14 - sube * 14, 13, Math.PI, Math.PI * 2);
+			ctx.lineTo(13, -6 - sube * 14);
+			ctx.stroke();
+			ctx.fillStyle = COLORES.beige;
+			rectRedondo(-21, -14, 42, 34, 7);
+			ctx.fill();
+			ctx.strokeStyle = mezclar(COLORES.beige, COLORES.verdeProfundo, 0.4);
+			ctx.lineWidth = 3;
+			ctx.stroke();
+			ctx.fillStyle = COLORES.verdeProfundo;
+			circulo(0, 0, 5);
+			ctx.fillRect(-2, 0, 4, 10);
+			ctx.restore();
+			if (p > 0.8) {
+				// Destello al abrirse
+				const t = Math.min(1, (p - 0.8) / 0.8);
+				ctx.strokeStyle = conAlfa(COLORES.blanco, 1 - t);
+				ctx.lineWidth = 6;
+				ctx.beginPath();
+				ctx.arc(x, y, 20 + t * 90, 0, Math.PI * 2);
+				ctx.stroke();
+			}
+			if (candado || p < 0.9) return;
+		}
+		const aparece = abrir < 1.8 ? suave(0.9, 1.6, abrir) : 1;
+		ctx.save();
+		ctx.translate(x, y + bote);
+		ctx.scale(aparece, aparece);
+		ctx.fillStyle = m.completo ? COLORES.verdeInstitucional : COLORES.verdeProfundo;
+		circulo(0, 0, 26);
+		ctx.strokeStyle = COLORES.beige;
+		ctx.lineWidth = 5;
+		ctx.beginPath();
+		ctx.arc(0, 0, 26, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.strokeStyle = "rgba(255,255,255,0.35)";
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		ctx.arc(0, 0, 19, 0, Math.PI * 2);
+		ctx.stroke();
+		if (m.completo) {
+			ctx.strokeStyle = COLORES.blanco;
+			ctx.lineWidth = 6;
+			ctx.lineCap = "round";
+			ctx.beginPath();
+			ctx.moveTo(-10, 1);
+			ctx.lineTo(-3, 9);
+			ctx.lineTo(11, -8);
+			ctx.stroke();
+			ctx.lineCap = "butt";
+		} else {
+			ctx.fillStyle = COLORES.blanco;
+			ctx.font = `700 26px ${FUENTE}`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(String(i + 1), 0, 2);
+		}
+		ctx.restore();
+	}
+
+	function dibujarLetreroMapa(x, y, texto, apagado) {
+		ctx.font = `700 22px ${FUENTE}`;
+		const ancho = ctx.measureText(texto).width + 30;
+		ctx.fillStyle = apagado ? "#7b8180" : COLORES.verdeProfundo;
+		rectRedondo(x - ancho / 2, y - 17, ancho, 34, 10);
+		ctx.fill();
+		ctx.strokeStyle = COLORES.blanco;
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		ctx.fillStyle = COLORES.blanco;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(texto, x, y + 1);
+	}
+
+	// 1 = gris (con candado), 0 = con color; mientras el candado se abre, se va pintando
+	function apagadoMundo(i) {
+		if (!desbloqueado(i)) return 1;
+		return mapa.abriendo === i ? 1 - suave(0.8, 1.5, mapa.abrirT) : 0;
+	}
+
+	// Lo que va sobre la meseta (ya dibujada, igual que los caminos)
+	function dibujarMundoMapa(q, m, i) {
+		const abrir = mapa.abriendo === i ? mapa.abrirT : 99;
+		const candado = !desbloqueado(i);
+		const apagado = apagadoMundo(i);
+		const acercado = mapa.foco === i ? suave(0.6, 1, mapa.z) : 0;
+		if (mapa.hover === i || (mapa.sel === i && mapa.foco < 0)) {
+			ctx.strokeStyle = conAlfa(COLORES.blanco, 0.55 + 0.35 * Math.sin(tiempo * 5));
+			ctx.lineWidth = 6;
+			trazarContorno(q.contorno, 0, 0, 1.02, q.x, q.y);
+			ctx.stroke();
+		}
+		const bx = q.x + q.rx * 0.12;
+		const by = q.y + q.ry * 0.22;
+		for (const a of q.arboles) if (a.y < by) dibujarArbolMapa(a, apagado);
+		if (m.completoAlSalirDeLaCueva) dibujarEscenaTalento(bx - 10, by, acercado);
+		else dibujarEdificioMapa(bx, by, m, i, apagado, acercado);
+		for (const a of q.arboles) if (a.y >= by) dibujarArbolMapa(a, apagado);
+		dibujarLetreroMapa(q.x, q.y + q.ry + ACANTILADO * 0.5, m.nombre.toUpperCase(), apagado > 0.5);
+		const mx = q.x - q.rx * 0.6;
+		const my = q.y - q.ry * 0.5 - 18;
+		dibujarMedallaMundo(mx, my, i, m, candado, abrir);
+		// Flecha sobre el mundo señalado (vista general)
+		if (mapa.sel === i && mapa.foco < 0) {
+			const y = my - 46 + Math.sin(tiempo * 5) * 5;
+			ctx.fillStyle = COLORES.blanco;
+			ctx.strokeStyle = COLORES.verdeProfundo;
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.moveTo(mx - 13, y - 10);
+			ctx.lineTo(mx + 13, y - 10);
+			ctx.lineTo(mx, y + 6);
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+		}
+	}
+
+	// Caminos entre mundos (en orden) y de la meseta central al primero.
+	// Hacia un mundo con candado: gris y punteado.
+	function dibujarCaminosMapa() {
+		const tramos = [[puntaCamino({ ...CENTRO_MAPA, rx: CENTRO_MAPA.rx * 1.6, ry: CENTRO_MAPA.ry * 1.05 }), puntaCamino(mesetas[0]), 0]];
+		for (let i = 0; i + 1 < mesetas.length; i++) tramos.push([puntaCamino(mesetas[i]), puntaCamino(mesetas[i + 1]), i + 1]);
+		ctx.lineCap = "round";
+		for (const [a, b, destino] of tramos) {
+			const abierto = desbloqueado(destino) && mapa.abriendo !== destino;
+			const mx = (a.x + b.x) / 2;
+			const my = (a.y + b.y) / 2;
+			// Curva hacia afuera del centro del mapa
+			const ox = mx - MAPA_ANCHO / 2;
+			const oy = my - MAPA_ALTO / 2;
+			const largo = Math.hypot(ox, oy) || 1;
+			const empuje = Math.hypot(b.x - a.x, b.y - a.y) * 0.18;
+			const cx = mx + (ox / largo) * empuje;
+			const cy = my + (oy / largo) * empuje;
+			const trazar = () => {
+				ctx.beginPath();
+				ctx.moveTo(a.x, a.y);
+				ctx.quadraticCurveTo(cx, cy, b.x, b.y);
+				ctx.stroke();
+			};
+			ctx.strokeStyle = conAlfa(COLORES.verdeProfundo, 0.45);
+			ctx.lineWidth = 30;
+			trazar();
+			ctx.strokeStyle = abierto ? mezclar(COLORES.beige, "#ffffff", 0.55) : COLORES.grisClaro;
+			ctx.lineWidth = 21;
+			trazar();
+			ctx.setLineDash([10, 16]);
+			ctx.strokeStyle = abierto ? "rgba(255,255,255,0.8)" : "rgba(4,37,35,0.25)";
+			ctx.lineWidth = 4;
+			trazar();
+			ctx.setLineDash([]);
+		}
+		ctx.lineCap = "butt";
+	}
+
+	// Meseta central: plaza de Celaque (el rectángulo HTML va encima)
+	function dibujarCentroMapa() {
+		const q = mesetaCentro;
+		dibujarMesetaBase(q, 0);
+		for (const a of q.arboles) dibujarArbolMapa(a, 0);
+		ctx.fillStyle = mezclar(COLORES.beige, "#ffffff", 0.55);
+		ctx.beginPath();
+		ctx.ellipse(q.x, q.y + 10, q.rx * 0.72, q.ry * 0.62, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.strokeStyle = conAlfa(COLORES.beige, 0.7);
+		ctx.lineWidth = 3;
+		ctx.stroke();
+	}
+
+	function dibujarOlasMapa() {
+		ctx.strokeStyle = conAlfa(COLORES.fondoVerdeClaro, 0.35);
+		ctx.lineWidth = 3;
+		ctx.lineCap = "round";
+		for (const o of OLAS_MAPA) {
+			const x = o.x + Math.sin(tiempo * 0.8 + o.fase) * 8;
+			ctx.beginPath();
+			ctx.arc(x, o.y, 9, Math.PI * 1.15, Math.PI * 1.85);
+			ctx.arc(x + 16, o.y, 9, Math.PI * 1.15, Math.PI * 1.85);
+			ctx.stroke();
+		}
+		ctx.lineCap = "butt";
+	}
+
+	function dibujarNubesMapa() {
+		for (const n of NUBES_MAPA) {
+			const x = modulo(n.x + tiempo * n.vel, MAPA_ANCHO + 400) - 200;
+			const r = 26 * n.tam;
+			ctx.fillStyle = "rgba(255,255,255,0.9)";
+			circulo(x, n.y, r);
+			circulo(x + r * 0.95, n.y + r * 0.25, r * 0.75);
+			circulo(x - r * 0.95, n.y + r * 0.3, r * 0.65);
+			ctx.fillRect(x - r * 1.5, n.y + r * 0.2, r * 3.1, r * 0.7);
+		}
+	}
+
+	// Ficha del héroe elegido, parada (o caminando) sobre su mundo
+	function dibujarHeroeMapa() {
+		if (mapa.heroeX === null) return;
+		const sAntes = S;
+		S = 0.62;
+		const o = {
+			...aparienciaHeroe(personaje, 1, { dir: mapa.dir, fase: mapa.fase, moviendo: mapa.moviendo, marcha: mapa.moviendo ? 0.45 : 0 }),
+			agachado: false,
+			atacando: false,
+		};
+		const sprites = SPRITES_POR_PERSONAJE[personaje];
+		if (!(sprites && dibujarHeroeSprite(mapa.heroeX, mapa.heroeY, o, sprites, 1))) dibujarPersona(mapa.heroeX, mapa.heroeY, o);
+		S = sAntes;
+	}
+
+	// Aviso del mapa (candado, mundo desbloqueado), arriba al centro
+	function dibujarMensajeMapa() {
+		if (mapa.mensajeT <= 0) return;
+		const alfa = Math.min(1, mapa.mensajeT / 0.4);
+		ctx.save();
+		ctx.globalAlpha = alfa;
+		ctx.font = `700 ${Math.round(clamp(W / 50, 15, 22))}px ${FUENTE}`;
+		const ancho = Math.min(W - 32, ctx.measureText(mapa.mensaje).width + 40);
+		const y = mapa.foco >= 0 ? 92 : 24;
+		ctx.fillStyle = COLORES.blanco;
+		rectRedondo(W / 2 - ancho / 2, y, ancho, 46, 14);
+		ctx.fill();
+		ctx.strokeStyle = COLORES.verdeInstitucional;
+		ctx.lineWidth = 3;
+		ctx.stroke();
+		ctx.fillStyle = COLORES.verdeProfundo;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(mapa.mensaje, W / 2, y + 24, ancho - 24);
+		ctx.restore();
+	}
+
+	function dibujarMapa(dt) {
+		const v = vistaMapa();
+		ubicarPanelMapa(v);
+		ctx.fillStyle = degradadoAgua();
+		ctx.fillRect(0, 0, W, H);
+		ctx.setTransform(DPR * v.k, 0, 0, DPR * v.k, DPR * v.ox, DPR * v.oy);
+		const sAntes = S;
+		S = 1;
+		dibujarOlasMapa();
+		dibujarCentroMapa();
+		mesetas.forEach((q, i) => dibujarMesetaBase(q, apagadoMundo(i)));
+		dibujarCaminosMapa();
+		mesetas.forEach((q, i) => dibujarMundoMapa(q, modulos[i], i));
+		dibujarHeroeMapa();
+		dibujarNubesMapa();
+		S = sAntes;
+		ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+		dibujarAves(dt, true); // guacamayas y loros sobre el mar
+		dibujarMensajeMapa();
+	}
+
 	// ---------- Dibujo: efectos ----------
 	function dibujarMariposas() {
 		for (const m of mariposas) {
@@ -5461,6 +6923,11 @@
 	}
 
 	function dibujar(dt) {
+		if (estado === "mapa" || estado === "victoria") {
+			dibujarMapa(dt);
+			dibujarPetalos(dt);
+			return;
+		}
 		if (estado === "transicion") {
 			// Pantalla negra mientras cruzas un tubo (ver actualizar(dt))
 			ctx.fillStyle = "#000";
@@ -5472,14 +6939,15 @@
 		// afuera (camino rural) | cueva (oscura) | urbano (al salir, con edificios)
 		// | oficina (adentro de un módulo)
 		if (oficinaActual) {
-			dibujarFondoOficina(oficinaActual);
-			dibujarSueloOficina();
+			dibujarFondoOficina(oficinaActual, dt);
+			dibujarSueloOficina(oficinaActual);
+			dibujarDecoracionOficina(oficinaActual);
 			dibujarPuertaSalida(oficinaActual);
 			dibujarComputadora(oficinaActual);
 			dibujarLetrerosObra("oficina", oficinaActual);
 			dibujarGuias();
 			dibujarObstaculos(oficinaActual.oficina.obstaculos);
-			dibujarCompanero(oficinaActual);
+			dibujarCompaneros(oficinaActual);
 			dibujarHeroe(t);
 			dibujarAvisos(dt);
 			return;
@@ -5572,6 +7040,8 @@
 	}
 
 	// ---------- Bucle principal ----------
+	cargarProgreso();
+	abrirMapa();
 	let ultimo = performance.now();
 	function bucle(ahora) {
 		const dt = Math.min(0.05, (ahora - ultimo) / 1000);
@@ -5579,7 +7049,7 @@
 		tiempo += dt;
 		actualizar(dt);
 		dibujar(dt);
-		if (estado === "inicio") dibujarVistasPrevias();
+		if (estado === "mapa" && mapa.foco < 0) dibujarVistasPrevias();
 		requestAnimationFrame(bucle);
 	}
 	requestAnimationFrame(bucle);
