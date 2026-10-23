@@ -7,16 +7,25 @@
 // vuelta a B, donde te explica para qué sirve. Hasta entregarlo no se abre
 // la estación del fondo. B queda donde iría el 2.º compañero y A donde
 // iría el 3.º (LUGARES_COMPANEROS): ese mundo no lleva "comentarios".
+// Con a.nube, A está arriba, en una nube: se sube saltando por una
+// escalera de nubes (se atraviesan desde abajo, como los andamios).
+const ALTURAS_NUBES = [80, 160, 240]; // la última es la del punto A (más alto no cabe en celular)
+const SEPARACION_NUBES = 175;
 function crearMision(d, i, x0) {
 	if (!d.mision) return null;
 	const b = d.mision.b || {};
+	const aX = x0 + LUGARES_COMPANEROS[2];
+	const enNube = !!(d.mision.a && d.mision.a.nube);
 	return {
 		...d.mision,
-		aX: x0 + LUGARES_COMPANEROS[2],
+		aX,
 		bX: x0 + LUGARES_COMPANEROS[1],
+		nubes: enNube
+			? ALTURAS_NUBES.map((alto, k) => ({ x: aX - (ALTURAS_NUBES.length - 1 - k) * SEPARACION_NUBES, alto, medioAncho: k === ALTURAS_NUBES.length - 1 ? 80 : 62 }))
+			: [],
 		paso: "pedir", // pedir → buscar → llevar → listo
 		persona: {
-			nombre: b.nombre || "Colaborador",
+			nombre: b.nombre || "Miembro del equipo",
 			x: x0 + LUGARES_COMPANEROS[1],
 			alto: 0,
 			enOficina: true,
@@ -39,6 +48,15 @@ function reiniciarMision(mi) {
 	mi.persona.dialogo = (mi.b && mi.b.pide) || ["¿Me traes lo que está en el punto A?"];
 }
 
+// Alturas de las nubes que hay en x (para pararse encima; ver alturasPlataformaEn)
+function alturasNubesEn(x) {
+	const mi = oficinaActual && oficinaActual.mision;
+	if (!mi) return [];
+	return mi.nubes.filter((n) => Math.abs(x - n.x) < (n.medioAncho + 14) * S).map((n) => n.alto);
+}
+// Altura donde está A: arriba de su nube, o el piso
+const alturaPuntoA = (mi) => (mi.nubes.length ? mi.nubes[mi.nubes.length - 1].alto : 0);
+
 // La estación del fondo espera a que se entregue (true si no hay misión)
 const misionLista = (m) => !m.mision || m.mision.paso === "listo" || m.completo;
 
@@ -58,7 +76,7 @@ function actualizarMision() {
 	if (mi.paso === "pedir" && enB) {
 		mi.paso = "buscar";
 		abrirDialogo(mi.persona);
-	} else if ((mi.paso === "pedir" || mi.paso === "buscar") && Math.abs(heroe.x - mi.aX) < 60) {
+	} else if ((mi.paso === "pedir" || mi.paso === "buscar") && Math.abs(heroe.x - mi.aX) < 60 && heroe.y === alturaPuntoA(mi)) {
 		// (si pasó de largo por B sin que le pidieran nada, igual lo recoge)
 		mi.paso = "llevar";
 		avisos.push({ texto: `¡Ya tienes ${mi.objeto}! Ve al punto B`, t: 0 });
@@ -87,16 +105,34 @@ function dibujarFolderMision(x, y, escala) {
 	dibujarIconoMundo("escudo", x, y + 4 * u, 5 * u, COLORES.blanco);
 }
 
-// Un punto en el piso con su letra y su letrero
-function dibujarPuntoMision(x, letra, texto, activo) {
-	const piso = SUELO + 38 * S;
+// Una nube para pararse: la parte de arriba (plana) queda en arriba
+function dibujarNubeMision(x, arriba, medio) {
+	if (x < -medio - 60 || x > W + medio + 60) return;
+	ctx.fillStyle = "rgba(4,37,35,0.10)"; // sombrita abajo
+	ctx.beginPath();
+	ctx.ellipse(x, arriba + 26 * S, medio * 0.9, 9 * S, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillStyle = COLORES.blanco;
+	for (const [dx, dy, r] of [[-0.62, 8, 20], [-0.25, 4, 27], [0.15, 2, 30], [0.55, 7, 22], [0, 14, 22]]) circulo(x + dx * medio, arriba + dy * S, r * S);
+	// Panza verde clarito: se distingue de las nubes del ventanal
+	ctx.fillStyle = mezclar(COLORES.blanco, COLORES.verdeInstitucional, 0.3);
+	rectRedondo(x - medio, arriba + 8 * S, medio * 2, 14 * S, 7 * S);
+	ctx.fill();
+	ctx.fillStyle = COLORES.blanco;
+	rectRedondo(x - medio, arriba, medio * 2, 14 * S, 7 * S);
+	ctx.fill();
+}
+
+// Un punto (en el piso o a cierta altura) con su letra y su letrero
+function dibujarPuntoMision(x, letra, texto, activo, alto = 0) {
+	const piso = SUELO + 38 * S - alto;
 	const pulso = 0.5 + 0.5 * Math.sin(tiempo * 4);
 	ctx.fillStyle = conAlfa("#7fd6c8", activo ? 0.35 + 0.25 * pulso : 0.18);
 	ctx.beginPath();
 	ctx.ellipse(x, piso, 54 * S, 10 * S, 0, 0, Math.PI * 2);
 	ctx.fill();
 	// Letra y letrero bien arriba, sobre el punto (no tapan a nadie)
-	const y = piso - 178 * S;
+	const y = piso - (alto ? 82 : 178) * S; // en la nube, más cerca (arriba está el HUD)
 	ctx.font = `bold ${12 * S}px ${FUENTE}`;
 	const w = ctx.measureText(texto).width + 16 * S + 26 * S;
 	ctx.fillStyle = COLORES.verdeProfundo;
@@ -116,15 +152,19 @@ function dibujarMision(m) {
 	const mi = m.mision;
 	if (!mi) return;
 	const piso = SUELO + 38 * S;
-	// Punto A: una mesita de Sistemas con lo que hay que llevar
+	// Punto A: en una nube (arriba) o en una mesita de Sistemas (en el piso)
 	const ax = mi.aX - camara;
+	const altoA = alturaPuntoA(mi) * S;
+	for (const n of mi.nubes) dibujarNubeMision(n.x - camara, piso - n.alto * S, n.medioAncho * S);
 	if (ax > -200 && ax < W + 200) {
-		dibujarPuntoMision(ax, "A", (mi.a && mi.a.letrero) || "Punto A", mi.paso === "buscar");
-		ctx.fillStyle = COLORES.verdeProfundo;
-		ctx.fillRect(ax - 30 * S, piso - 46 * S, 60 * S, 8 * S);
-		ctx.fillRect(ax - 24 * S, piso - 40 * S, 6 * S, 40 * S);
-		ctx.fillRect(ax + 18 * S, piso - 40 * S, 6 * S, 40 * S);
-		if (mi.paso === "pedir" || mi.paso === "buscar") dibujarFolderMision(ax, piso - 66 * S + Math.sin(tiempo * 3) * 3 * S, 1);
+		dibujarPuntoMision(ax, "A", (mi.a && mi.a.letrero) || "Punto A", mi.paso === "buscar", altoA);
+		if (!mi.nubes.length) {
+			ctx.fillStyle = COLORES.verdeProfundo;
+			ctx.fillRect(ax - 30 * S, piso - 46 * S, 60 * S, 8 * S);
+			ctx.fillRect(ax - 24 * S, piso - 40 * S, 6 * S, 40 * S);
+			ctx.fillRect(ax + 18 * S, piso - 40 * S, 6 * S, 40 * S);
+		}
+		if (mi.paso === "pedir" || mi.paso === "buscar") dibujarFolderMision(ax, piso - altoA - (mi.nubes.length ? 30 : 66) * S + Math.sin(tiempo * 3) * 3 * S, 1);
 	}
 	// Punto B: quien espera
 	const bx = mi.bX - camara;

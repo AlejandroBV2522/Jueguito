@@ -148,9 +148,11 @@ window.TEMAS_OFICINA = {};
                   Caben 2 (el resto no se muestra).
    - mision:      (opcional) llevar algo del punto A al punto B antes de
                   la estación del fondo: { objeto: "los permisos",
-                  a: { letrero }, b: { letrero, nombre, cuerpo,
+                  a: { letrero, nube }, b: { letrero, nombre, cuerpo,
                   pide: [frases], explica: [frases] } }. En B espera quien
-                  lo pide y, al entregárselo, explica para qué sirve. Ese
+                  lo pide y, al entregárselo, explica para qué sirve. Con
+                  a.nube: true, A está arriba, en una nube, y se sube
+                  saltando por una escalera de nubes. Ese
                   mundo no lleva "comentarios" (A y B usan sus lugares).
    - preguntasPorModulo: (opcional) cuántas preguntas hace este mundo, si
                   no son las de CONFIG_JUEGO (arriba). Con robots: por robot.

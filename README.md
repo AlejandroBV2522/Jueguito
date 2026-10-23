@@ -97,7 +97,7 @@ objeto propio. Al fondo, las preguntas se contestan en la computadora, salvo
 en IA (se arman tres robots: de tierra, aéreo y humanoide, con dos aciertos cada uno) y en
 Seguridad (primero esquivas los virus agachándote o saltando y luego cada
 acierto repara una parte del antivirus). En SharePoint, antes de la
-computadora, llevas los permisos de un colaborador nuevo del punto A al B.
+computadora, llevas los permisos de un miembro nuevo del punto A al B.
 Con el nombre de pruebas (Kojima) todos los mundos están abiertos y ninguno
 queda completado, para poder jugarlos una y otra vez.
 

@@ -21,7 +21,7 @@ window.MODULOS.push({
       "¡Hola! Soy Luis Morán y te doy la bienvenida al módulo de Plataformas.",
       "SharePoint es el repositorio principal de información de Celaque: cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
       "Ahí los equipos trabajan juntos un documento en tiempo real, y el historial de versiones deja ver los cambios y recuperar una versión anterior.",
-      "Te pido un favor: hay un colaborador nuevo que todavía no puede trabajar. Ve al punto A, en Sistemas, por sus permisos y llévaselos al punto B.",
+      "Te pido un favor: hay un miembro nuevo que todavía no puede trabajar. Sube a la nube, al punto A, por sus permisos y llévaselos al punto B.",
     ],
   },
   intro: [
@@ -30,22 +30,22 @@ window.MODULOS.push({
   ],
   // Solo Luis: lo demás lo explica quien recibe los permisos en el punto B
   comentarios: [],
-  // Llevar los permisos del punto A (Sistemas) al punto B (ver mision.js)
+  // Llevar los permisos del punto A (arriba, en la nube) al punto B (ver mision.js)
   mision: {
     objeto: "los permisos",
-    a: { letrero: "Sistemas" },
+    a: { letrero: "La nube", nube: true },
     b: {
-      letrero: "Colaborador nuevo",
-      nombre: "Colaborador nuevo",
+      letrero: "Miembro nuevo",
+      nombre: "Miembro nuevo",
       cuerpo: "chico",
-      pide: ["¡Hola! Soy nuevo y todavía no tengo acceso a nada.", "Mis permisos están en el punto A, en Sistemas. ¿Me los traes?"],
+      pide: ["¡Hola! Soy nuevo y todavía no tengo acceso a nada.", "Mis permisos están arriba, en la nube: el punto A. Sube saltando por las nubes. ¿Me los traes?"],
       // ✏️ Revisar con Luis Morán (sobre todo cómo se solicita la licencia)
       explica: [
         "¡Gracias! Con estos permisos llega mi licencia de Microsoft.",
         "Con la licencia tengo mi correo empresarial en Outlook, con calendario, contactos y grupos, en la web o en la aplicación de escritorio.",
         "También Microsoft Teams, para chatear y tener reuniones con mi departamento o con otros.",
         "Y acceso a SharePoint, para guardar y trabajar en equipo los documentos de mi departamento.",
-        "Sin licencia no hay correo, ni Teams, ni SharePoint: por eso cada colaborador necesita la suya.",
+        "Sin licencia no hay correo, ni Teams, ni SharePoint: por eso cada miembro del equipo necesita la suya.",
         "La licencia se solicita a Sistemas cuando alguien entra, y Sistemas la registra en su control de licencias.",
         "Ahora ve a la computadora del fondo y demuestra lo que aprendiste.",
       ],
@@ -55,7 +55,7 @@ window.MODULOS.push({
   preguntas: [
     {
       // ✏️ Revisar con Luis Morán
-      pregunta: "¿Por qué cada colaborador necesita su licencia de Microsoft?",
+      pregunta: "¿Por qué cada miembro del equipo necesita su licencia de Microsoft?",
       opciones: [
         "Porque con ella tiene su correo en Outlook, Teams y acceso a SharePoint.",
         "Para poder jugar en la computadora.",
@@ -102,7 +102,7 @@ window.MODULOS.push({
       correcta: 2,
     },
     {
-      pregunta: "¿Qué herramienta usas para chatear y tener reuniones con otros colaboradores?",
+      pregunta: "¿Qué herramienta usas para chatear y tener reuniones con otros miembros del equipo?",
       opciones: ["Microsoft Teams.", "El historial de versiones.", "La papelera de reciclaje."],
       correcta: 0,
       explicacion: "Y en Outlook gestionas tu correo, calendario, contactos y grupos.",

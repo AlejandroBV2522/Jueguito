@@ -74,6 +74,7 @@ function alturaSolidaEn(x) {
 // parado en vez de pasar de largo.
 const MARGEN_BORDE = 26;
 function alturasPlataformaEn(x) {
+	if (oficinaActual) return alturasNubesEn(x); // nubes de una misión (mision.js)
 	if (dentroCueva || vistaUrbana) return [];
 	return PLATAFORMAS.filter((pl) => Math.abs(x - pl.x) < pl.medioAncho + MARGEN_BORDE).map((pl) => pl.alto);
 }

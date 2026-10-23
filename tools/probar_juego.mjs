@@ -297,8 +297,18 @@ async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
 			await tecla("ArrowDown", "up");
 			agachado = false;
 		}
-		// Misión A → B (mision.js): con lo recogido, de vuelta hacia B
-		const atras = await evalua("!!(oficinaActual && oficinaActual.mision && oficinaActual.mision.paso === 'llevar')");
+		// Misión A → B (mision.js): sube por las nubes hasta A y, con lo
+		// recogido, vuelve hacia B
+		const nube = await evalua(LEER_NUBE);
+		if (nube && nube.subir) {
+			const dir = Math.abs(nube.dx) < 15 ? 0 : Math.sign(nube.dx);
+			await tecla(dir > 0 ? "ArrowLeft" : "ArrowRight", "up");
+			if (dir) await tecla(dir > 0 ? "ArrowRight" : "ArrowLeft", "down");
+			if (nube.enSuelo && Math.abs(nube.dx) < 130 && nube.dy > 0) await tecla("ArrowUp");
+			await paso(60);
+			continue;
+		}
+		const atras = nube && nube.volver;
 		await tecla(atras ? "ArrowRight" : "ArrowLeft", "up");
 		await tecla(atras ? "ArrowLeft" : "ArrowRight", "down");
 		const saltaVirus = virus && !virus.alto && virus.d < 120;
@@ -312,6 +322,16 @@ async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
 	await tecla("ArrowLeft", "up");
 	return false;
 }
+// Misión: hacia qué nube subir (la más baja que esté más arriba que el
+// héroe, o A) y si ya toca volver a B
+const LEER_NUBE = `(() => {
+	const mi = oficinaActual && oficinaActual.mision;
+	if (!mi) return null;
+	if (mi.paso === "llevar") return { volver: true };
+	if (!mi.nubes.length || mi.paso === "listo" || heroe.x < mi.bX + 60) return null;
+	const n = mi.nubes.find((n) => n.alto > heroe.y + 1) || mi.nubes[mi.nubes.length - 1];
+	return { subir: true, dx: n.x - heroe.x, dy: n.alto - heroe.y, enSuelo: heroeEnSuelo() };
+})()`;
 // El virus más cercano que viene hacia el héroe: distancia (en unidades
 // de S) y si vuela alto
 const LEER_VIRUS = `(() => {
