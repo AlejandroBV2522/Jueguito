@@ -1,5 +1,6 @@
-/* Mundo 6 · IA: oficina con la estación del robot de IA.
-   Qué significa cada campo: config.js, sección "Módulos de capacitación". */
+/* Mundo 6 · IA: oficina con el taller de IA, donde se arman tres robots.
+   Qué significa cada campo: config.js, sección "Módulos de capacitación".
+   El contenido sale de la capacitación "Introducción a IA" de Sistemas. */
 
 "use strict";
 
@@ -7,56 +8,95 @@ window.MODULOS.push({
   nombre: "IA",
   subtitulo: "Inteligencia artificial",
   sistema: "Inteligencia artificial",
-  // ✏️ Borrador: revisar con el área responsable
   descripcion:
-    "La inteligencia artificial nos ayuda a trabajar mejor si la usamos con criterio: revisa siempre lo que genera antes de usarlo y comparte información de la empresa solo en las herramientas aprobadas.",
+    "La IA generativa nos ayuda a trabajar mejor si sabemos pedirle bien: un buen prompt tiene rol, instrucciones, contexto y objetivo. Revisa siempre lo que genera y cuida la información de Celaque.",
   icono: "chispa",
   color: "#A99886", // beige
   foto: "assets/edificios/Zorzales.png",
-  oficina: { vista: "ciudad", tema: "ia", estacion: "robot", edificio: "Zorzales del Merendón" },
+  // Cada robot se arma con 2 preguntas, en este orden (config.js → robots)
+  oficina: { vista: "ciudad", tema: "ia", estacion: "robot", robots: ["tierra", "aereo", "humanoide"], edificio: "Zorzales del Merendón" },
   anfitrion: {
-    nombre: "Gracia",
+    nombre: "Gracia Hidalgo",
     cuerpo: "chica",
-    // ✏️ Borrador: revisar con Gracia
+    // ✏️ Revisar con Gracia
     dialogo: [
-      "¡Hola! Soy Gracia y te doy la bienvenida al edificio de IA.",
-      "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio.",
+      "¡Hola! Soy Gracia Hidalgo y te doy la bienvenida al módulo de IA.",
+      "Al fondo, en el taller, vas a armar tres robots: uno de tierra, uno aéreo y uno humanoide.",
     ],
   },
-  intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
+  intro: ["Bienvenido al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [
-    // ✏️ Borrador
     {
       nombre: "Innovación",
       cuerpo: "chica",
-      dialogo: ["Una respuesta de IA puede sonar segura y estar equivocada.", "Revísala y verifícala antes de usarla."],
+      dialogo: ["La calidad del prompt determina la calidad del resultado.", "Dale a la IA un rol, instrucciones, contexto y un objetivo."],
     },
     {
       nombre: "Datos",
       cuerpo: "chico",
-      dialogo: ["La información confidencial va solo en las herramientas aprobadas por la empresa.", "Si tienes dudas, pregunta primero."],
+      dialogo: ["La IA no sustituye el criterio humano: revisa siempre lo que genera.", "Y antes de pegar información, cambia los nombres de la empresa, productos o personas."],
     },
   ],
+  // ✏️ Revisar con Gracia. 2 por robot: tierra (qué es la IA), aéreo
+  // (prompts) y humanoide (cuidar la información y por dónde empezar).
   preguntas: [
     {
-      // ✏️ Borrador: revisar con el área responsable
-      pregunta: "¿Qué debes hacer con una respuesta generada por IA antes de usarla?",
+      pregunta: "¿Qué es un LLM (Large Language Model), como los de ChatGPT, Claude o Gemini?",
       opciones: [
-        "Copiarla sin leerla.",
-        "Revisarla y verificar que sea correcta.",
-        "Enviarla a todos los clientes.",
+        "Un modelo diseñado para entender y generar texto humano.",
+        "Un programa para dibujar planos de construcción.",
+        "Un tipo de cable para conectar computadoras.",
+      ],
+      correcta: 0,
+    },
+    {
+      pregunta: "Si necesitas crear una imagen a partir de un texto, ¿qué tipo de IA usas?",
+      opciones: [
+        "Texto a audio, como ElevenLabs.",
+        "Texto a imagen, como DALL-E, Midjourney o Leonardo.",
+        "Texto a video, como Sora o HeyGen.",
       ],
       correcta: 1,
     },
     {
-      // ✏️ Borrador
-      pregunta: "¿Se puede pegar información confidencial de la empresa en cualquier herramienta de IA?",
+      pregunta: "¿Qué elementos lleva un buen prompt?",
       opciones: [
-        "Sí, siempre.",
-        "Solo en las herramientas aprobadas por la empresa.",
-        "Sí, si nadie se entera.",
+        "Solo una pregunta corta, como en Google.",
+        "Rapidez, idioma, color y ortografía.",
+        "Rol, instrucciones, contexto y objetivo.",
+      ],
+      correcta: 2,
+      explicacion: "Por ejemplo: «Eres un experto en selección de personal…», los pasos, quiénes somos y qué resultado quieres.",
+    },
+    {
+      pregunta: "¿Por qué la IA a veces da respuestas genéricas o inútiles?",
+      opciones: [
+        "Porque el prompt es muy corto, sin contexto y poco claro.",
+        "Porque la IA no sirve para el trabajo.",
+        "Porque solo entiende inglés.",
+      ],
+      correcta: 0,
+      explicacion: "La calidad del prompt determina la calidad del resultado.",
+    },
+    {
+      pregunta: "¿Cómo cuidas la información de Celaque al usar IA?",
+      opciones: [
+        "Pegando los datos tal cual en cualquier herramienta gratuita.",
+        "Cambiando nombres de la empresa, productos o personas y usando las licencias empresariales.",
+        "Dándole tu contraseña a la IA para que te ayude mejor.",
       ],
       correcta: 1,
+      explicacion: "También ayuda usar el modo incógnito.",
+    },
+    {
+      pregunta: "¿Por dónde se empieza a usar la IA en el trabajo?",
+      opciones: [
+        "Por la herramienta de moda, y luego se le busca un uso.",
+        "Por un problema real que quieras resolver.",
+        "Comprando todas las herramientas que existan.",
+      ],
+      correcta: 1,
+      explicacion: "La IA debe estar centrada en el problema, no en la herramienta.",
     },
   ],
 });

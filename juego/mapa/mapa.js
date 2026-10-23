@@ -257,7 +257,7 @@ function abrirCarta(i) {
 			]
 		: [
 				`Habla con ${m.oficina.companeros.length} compañeros de la oficina.`,
-				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length),
+				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length, m),
 			];
 	ui.cartaLista.innerHTML = "";
 	for (const texto of [...anfitrion, ...pasos]) {
@@ -265,7 +265,7 @@ function abrirCarta(i) {
 		li.textContent = texto;
 		ui.cartaLista.appendChild(li);
 	}
-	ui.cartaEntrarTexto.textContent = m.completoAlSalirDeLaCueva ? "Empezar el camino" : "Entrar al edificio";
+	ui.cartaEntrarTexto.textContent = m.completoAlSalirDeLaCueva ? "Empezar el camino" : "Entrar al módulo";
 	ui.cartaLogo.setAttribute("aria-label", `Logo de ${m.nombre}`);
 	ponerLogo(ui.cartaLogo, m.rutaLogo);
 	ui.carta.hidden = false;

@@ -94,7 +94,7 @@ zona industrial desde el Edificio Lirios, solo nubes desde la Torre Atlas,
 montaña o puntas de edificios al atardecer), lo que flota en el aire
 (planos, engranes, documentos, escudos, una red de IA), la pizarra y un
 objeto propio. Al fondo, las preguntas se contestan en la computadora, salvo
-en IA (cada acierto le pone piezas al robot asistente hasta que saluda) y en
+en IA (se arman tres robots: de tierra, aéreo y humanoide, con dos aciertos cada uno) y en
 Seguridad (cada acierto completa el escudo antivirus y espanta a los virus).
 
 En la Cueva cada enemigo es un **antivalor**, lo opuesto a lo que promueve

@@ -70,8 +70,18 @@ const companeroCerca = () =>
 	(estado === "oficina" && oficinaActual.oficina.companeros.find((n) => cercaDe(n.x, CFG.distanciaParaHablar * 1.3))) || null;
 
 // Preguntas que se hacen en la computadora (menos que antes: config.js →
-// preguntasPorModulo, por defecto 2).
-const preguntasDe = (m) => (m.preguntas || []).slice(0, CFG.preguntasPorModulo || 2);
+// preguntasPorModulo, por defecto 2). En el taller de IA son esas por cada
+// robot (mundo.js → oficina.robots).
+const preguntasDe = (m) => (m.preguntas || []).slice(0, (CFG.preguntasPorModulo || 2) * Math.max(1, m.oficina.robots.length));
+
+// Con varios robots, cuál se arma con la pregunta k: cada uno se lleva una
+// parte seguida de las preguntas (desde..hasta, sin incluir hasta).
+function tramoRobot(m, r) {
+	const total = preguntasDe(m).length;
+	const n = m.oficina.robots.length;
+	return { desde: Math.floor((r * total) / n), hasta: Math.floor(((r + 1) * total) / n) };
+}
+const robotDePregunta = (m, k) => m.oficina.robots.findIndex((_, r) => k < tramoRobot(m, r).hasta);
 
 function abrirTerminal(m) {
 	m.terminalVisitada = true;
@@ -95,6 +105,7 @@ function mostrarPreguntaTerminal(m) {
 	const preguntas = preguntasDe(m);
 	const p = preguntas[m.preguntaActual];
 	ui.terminalProgreso.textContent = `Pregunta ${m.preguntaActual + 1} de ${preguntas.length}`;
+	if (m.oficina.robots.length > 1) ui.terminalTitulo.textContent = `Taller de IA · Arma al robot ${ROBOTS_IA[m.oficina.robots[robotDePregunta(m, m.preguntaActual)]]}`;
 	ui.terminalPregunta.textContent = p.pregunta;
 	ui.terminalPista.textContent = "Elige una respuesta (o presiona 1, 2, 3).";
 	ui.terminalOpciones.innerHTML = "";
@@ -140,7 +151,9 @@ function responderTerminal(indice, m, btn) {
 function terminarModulo(m) {
 	m.desbloqueo = completarModulo(m);
 	ui.terminalProgreso.textContent = "Completado";
-	const fin = ESTACIONES[m.oficina.estacion].fin;
+	const varios = m.oficina.robots.length > 1;
+	if (varios) ui.terminalTitulo.textContent = "Taller de IA · ¡Robots listos!";
+	const fin = varios ? "¡Los robots de IA están listos para ayudarte!" : ESTACIONES[m.oficina.estacion].fin;
 	ui.terminalPregunta.textContent = `${fin ? fin + " " : ""}¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`;
 	ui.terminalOpciones.innerHTML = "";
 	ui.terminalPista.textContent = "";

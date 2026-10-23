@@ -131,9 +131,14 @@ window.TEMAS_OFICINA = {};
                          tema.js de la carpeta de su mundo (window.TEMAS_OFICINA).
                   edificio / piso: (opcionales) letrero junto a la salida.
                   estacion: dónde se contestan las preguntas: "computadora"
-                         (por defecto), "robot" (cada acierto arma una pieza
-                         del asistente de IA) o "antivirus" (cada acierto arma
+                         (por defecto), "robot" (cada acierto arma piezas de
+                         los robots de IA) o "antivirus" (cada acierto arma
                          una parte del escudo).
+                  robots: (solo con estacion "robot") cuáles se arman y en
+                         qué orden: "tierra", "aereo" y/o "humanoide", ej.
+                         ["tierra", "aereo", "humanoide"]. Cada robot hace
+                         "preguntasPorModulo" preguntas (con 2: 6 en total).
+                         Sin esto, solo el de tierra.
    - comentarios: más compañeros dentro de la oficina, cada uno con
                   { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
                   Caben 2 (el resto no se muestra).

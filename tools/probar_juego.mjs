@@ -10,7 +10,7 @@
 //   oficina   juega la oficina de Proyectos completa y vuelve al mapa
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina y muestra la tarjeta final
-//   estaciones  arma el robot de IA y el antivirus de Seguridad (capturas a medias y al final)
+//   estaciones  arma los 3 robots de IA y el antivirus de Seguridad (capturas a medias y al final)
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
 //

@@ -18,12 +18,12 @@ window.MODULOS.push({
     cuerpo: "chico",
     // ✏️ Borrador: revisar con Luis
     dialogo: [
-      "¡Hola! Soy Luis Morán y te doy la bienvenida al edificio de Plataformas, en lo alto de la Torre Atlas.",
+      "¡Hola! Soy Luis Morán y te doy la bienvenida al módulo de Plataformas, en lo alto de la Torre Atlas.",
       "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
     ],
   },
   intro: [
-    "Bienvenido al edificio de Plataformas.",
+    "Bienvenido al módulo de Plataformas.",
     "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
   ],
   comentarios: [

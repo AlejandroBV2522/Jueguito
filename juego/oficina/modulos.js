@@ -69,7 +69,10 @@ const ESTACIONES = {
 		lugar: "al taller de IA",
 		titulo: "Taller de IA · Arma al asistente",
 		usar: "Armar al asistente",
-		carta: (n) => `Arma al asistente de IA: cada una de las ${n} respuestas correctas le pone piezas.`,
+		carta: (n, m) =>
+			m.oficina.robots.length > 1
+				? `Arma ${m.oficina.robots.length} robots de IA (${m.oficina.robots.map((r) => ROBOTS_IA[r]).join(", ")}): cada una de las ${n} respuestas correctas les pone piezas.`
+				: `Arma al asistente de IA: cada una de las ${n} respuestas correctas le pone piezas.`,
 		fin: "¡El asistente de IA está listo para ayudarte!",
 	},
 	antivirus: {
@@ -81,6 +84,14 @@ const ESTACIONES = {
 	},
 };
 const PIEZAS_ESTACION = 6; // partes del robot o del escudo
+// Robots que se arman en el taller de IA (mundo.js → oficina.robots), en
+// orden: cada uno se lleva su parte de las preguntas. Sin "robots", solo el
+// de tierra. Cómo se dibuja cada uno: estaciones.js.
+const ROBOTS_IA = { tierra: "de tierra", aereo: "aéreo", humanoide: "humanoide" };
+function robotsDe(oficina) {
+	const lista = ((oficina && oficina.robots) || []).filter((r) => ROBOTS_IA[r]);
+	return lista.length ? lista : ["tierra"];
+}
 function companeroOficina(d, i, k, x0) {
 	if (k === 0 && d.anfitrion) {
 		// El personaje fijo del mundo es quien te recibe
@@ -148,6 +159,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 			edificio: (d.oficina && d.oficina.edificio) || "",
 			piso: (d.oficina && d.oficina.piso) || 0,
 			estacion: ESTACIONES[d.oficina && d.oficina.estacion] ? d.oficina.estacion : "computadora",
+			robots: d.oficina && d.oficina.estacion === "robot" ? robotsDe(d.oficina) : [],
 			// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
 			companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0)),
 		},

@@ -1,15 +1,15 @@
-/* Mundo 2 · Proyectos: oficina de Wrike.
+/* Mundo 2 · Proyectos: oficina en el Distrito Artemisa.
    Qué significa cada campo: config.js, sección "Módulos de capacitación". */
 
 "use strict";
 
 window.MODULOS.push({
   nombre: "Proyectos",
-  subtitulo: "Nuestro trabajo en Wrike",
-  sistema: "Wrike",
-  // ✏️ Borrador: revisar con el área de Proyectos
+  subtitulo: "Cómo llevamos un proyecto",
+  sistema: "Gestión de proyectos",
+  // ✏️ Borrador: revisar con Nazareth Gallardo
   descripcion:
-    "Wrike es la plataforma donde planeamos y damos seguimiento al trabajo en equipo: proyectos, tareas, responsables, fechas y avances, todo en un mismo lugar y a la vista de todos.",
+    "Cada proyecto de Celaque se planea desde el inicio: un objetivo claro, un responsable, un cronograma y un presupuesto. Darle seguimiento y avisar a tiempo de cualquier cambio es trabajo de todo el equipo.",
   icono: "tablero",
   color: "#042523", // verde profundo
   foto: "assets/edificios/DistritoArtemisa.png",
@@ -17,49 +17,46 @@ window.MODULOS.push({
   anfitrion: {
     nombre: "Nazareth Gallardo",
     cuerpo: "chica",
-    // ✏️ Borrador: revisar con Nazareth
+    // ✏️ Borrador: revisar con Nazareth Gallardo
     dialogo: [
-      "¡Hola! Soy Nazareth Gallardo y te doy la bienvenida al edificio de Proyectos.",
-      "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
+      "¡Hola! Soy Nazareth Gallardo y te doy la bienvenida al módulo de Proyectos.",
+      "Aquí aprendes cómo llevamos un proyecto: objetivo, responsable, cronograma y presupuesto.",
     ],
   },
-  intro: [
-    "Bienvenido al edificio de Proyectos.",
-    "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
-  ],
+  intro: ["Bienvenido al módulo de Proyectos.", "Aquí aprendes cómo llevamos un proyecto: objetivo, responsable, cronograma y presupuesto."],
   comentarios: [
     // ✏️ Borrador
     {
       nombre: "Coordinación de Proyectos",
       cuerpo: "chica",
-      dialogo: ["Cada tarea en Wrike tiene un responsable y una fecha.", "Así todo el equipo sabe quién hace qué y para cuándo."],
+      dialogo: ["Todo proyecto empieza con un objetivo claro, un cronograma y un presupuesto.", "Sin eso, cada quien va por su lado."],
     },
     {
       nombre: "Analista de Proyectos",
       cuerpo: "chico",
-      dialogo: ["Cuando avances en una tarea, actualiza su estado.", "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!"],
+      dialogo: ["¿Ves que algo se va a atrasar? Avísalo a tiempo: las sorpresas al final salen caras.", "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!"],
     },
   ],
   preguntas: [
     {
-      // ✏️ Borrador: revisar con el área de Proyectos
-      pregunta: "¿Qué es Wrike?",
+      // ✏️ Borrador: revisar con Nazareth Gallardo
+      pregunta: "¿Qué necesita todo proyecto desde el inicio?",
       opciones: [
-        "Una plataforma para planear y dar seguimiento a proyectos y tareas en equipo.",
-        "Un programa para editar fotos.",
-        "Una red social personal.",
+        "Solo las ganas de empezar.",
+        "Un objetivo claro, un responsable, un cronograma y un presupuesto.",
+        "Esperar a que el cliente diga qué hacer cada día.",
       ],
-      correcta: 0,
+      correcta: 1,
     },
     {
       // ✏️ Borrador
-      pregunta: "Si te asignan una tarea en Wrike, ¿qué es lo correcto?",
+      pregunta: "Si ves que una actividad del proyecto se va a atrasar, ¿qué es lo correcto?",
       opciones: [
-        "Ignorarla hasta que alguien pregunte.",
-        "Actualizar su estado y avances para que el equipo sepa cómo va.",
-        "Borrarla si no te gusta.",
+        "Avisar a tiempo al líder del proyecto y proponer cómo recuperarlo.",
+        "No decir nada y esperar que nadie se dé cuenta.",
+        "Saltarse las actividades siguientes.",
       ],
-      correcta: 1,
+      correcta: 0,
     },
   ],
 });

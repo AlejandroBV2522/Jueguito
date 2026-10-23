@@ -15,15 +15,15 @@ window.MODULOS.push({
   foto: "assets/edificios/Acacias.png",
   oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", edificio: "Acacias San Ignacio" },
   anfitrion: {
-    nombre: "Sergio",
+    nombre: "Sergio Aguiriano",
     cuerpo: "chico",
-    // ✏️ Borrador: revisar con Sergio
+    // ✏️ Borrador: revisar con Sergio Aguiriano
     dialogo: [
-      "¡Hola! Soy Sergio y te doy la bienvenida al edificio de Seguridad.",
+      "¡Hola! Soy Sergio Aguiriano y te doy la bienvenida al módulo de Seguridad.",
       "La información de Celaque es valiosa: cuidarla es trabajo de todos.",
     ],
   },
-  intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
+  intro: ["Este es el módulo de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
   comentarios: [
     // ✏️ Borrador
     {
