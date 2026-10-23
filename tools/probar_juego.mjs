@@ -15,6 +15,7 @@
 //   mision    SharePoint: lleva los permisos del punto A al B y contesta
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
+//   edificios  todos los mundos abiertos: mapa general y cada edificio acercado
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
 // (densidad, por defecto 1), MOVIL=1 (pantalla táctil) y ARCHIVO=1 (abre
@@ -573,6 +574,21 @@ try {
 		for (let k = 0; k < 18; k++) {
 			console.log(await evalua(leer));
 			await paso(50);
+		}
+	} else if (escenario === "edificios") {
+		// Todos los mundos abiertos: el mapa general y cada edificio acercado
+		// (fotos con bordes desvanecidos y aura dorada)
+		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");
+		await conProgreso({ completos: nombres, nivel: 9, personaje: "chico", nombre: "Prueba" });
+		await paso(600);
+		await foto("general");
+		for (let i = 0; i < nombres.length; i++) {
+			await tecla("Enter");
+			await paso(1300);
+			await foto(`acercado-${nombres[i].toLowerCase()}`);
+			await tecla("Escape");
+			await paso(900);
+			await tecla("ArrowRight");
 		}
 	} else if (escenario === "victoria") {
 		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");

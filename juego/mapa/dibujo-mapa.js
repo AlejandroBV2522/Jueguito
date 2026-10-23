@@ -264,24 +264,65 @@ function dibujarIconoMundo(tipo, cx, cy, r, col) {
 	ctx.restore();
 }
 
+// Halo verde (de Celaque) alrededor del edificio de un mundo abierto:
+// ilumina el contorno de la foto y disimula dónde termina. Sale de la
+// silueta original (sin bordes desvanecidos), así brilla justo donde la
+// foto se funde. Verde institucional aclarado: sobre el pasto y el agua del
+// mapa (también verdes) el puro no se distinguiría.
+const VERDE_AURA = mezclar(COLORES.verdeInstitucional, COLORES.blanco, 0.6);
+
+// Se arma una sola vez por foto (difuminar cada cuadro sería caro):
+// la silueta, difuminada y pintada de verde, en un lienzo con margen
+function haloDeFoto(f) {
+	if (f.halo) return f.halo;
+	const fuente = f.original || f.elemento;
+	const w = fuente.width;
+	const h = fuente.height;
+	const m = Math.round(Math.max(w, h) * 0.07);
+	const c = document.createElement("canvas");
+	c.width = w + m * 2;
+	c.height = h + m * 2;
+	const g = c.getContext("2d");
+	g.filter = `blur(${(m / 2.2).toFixed(1)}px)`;
+	g.drawImage(fuente, m, m);
+	g.drawImage(fuente, m, m); // dos veces: el borde difuminado queda más intenso
+	g.filter = "none";
+	g.globalCompositeOperation = "source-in";
+	g.fillStyle = VERDE_AURA;
+	g.fillRect(0, 0, c.width, c.height);
+	f.halo = { lienzo: c, margen: m / w };
+	return f.halo;
+}
+
+// fuerza (0..1) es 1 - apagado: aparece poco a poco al quitarle el
+// candado. Acercado late más fuerte (es lo que hay que tocar).
+function dibujarHalo(f, x, y, w, h, fuerza, acercado) {
+	if (fuerza <= 0) return;
+	const halo = haloDeFoto(f);
+	const m = halo.margen * w;
+	const pulso = 0.8 + 0.2 * Math.sin(tiempo * (acercado > 0 ? 4 : 2.2) + x);
+	ctx.save();
+	ctx.globalAlpha = fuerza * Math.min(1, pulso + 0.25 * acercado);
+	ctx.drawImage(halo.lienzo, x - m, y - m, w + m * 2, h + m * 2);
+	ctx.restore();
+}
+
 // Edificio de un módulo sobre su meseta (con candado: apagado y gris)
 function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
 	// Con foto real (mundo.js → foto) se dibuja el edificio de verdad
 	const foto = m.fotoImg && m.fotoImg.elemento;
 	if (foto) {
-		const k = Math.min(210 / foto.naturalHeight, 200 / foto.naturalWidth);
-		const w = foto.naturalWidth * k;
-		const h = foto.naturalHeight * k;
+		const k = Math.min(210 / foto.height, 200 / foto.width);
+		const w = foto.width * k;
+		const h = foto.height * k;
 		ctx.fillStyle = "rgba(4,37,35,0.25)";
 		ctx.beginPath();
 		ctx.ellipse(bx, by + 2, w * 0.55, 12, 0, 0, Math.PI * 2);
 		ctx.fill();
+		dibujarHalo(m.fotoImg, bx - w / 2, by - h, w, h, 1 - apagado, acercado);
 		ctx.save();
+		ctx.imageSmoothingQuality = "high"; // la foto se achica mucho: sin esto se ve granulada
 		if (apagado > 0) ctx.filter = `grayscale(${apagado.toFixed(2)}) brightness(${(1 - 0.15 * apagado).toFixed(2)})`;
-		if (acercado > 0 && !apagado) {
-			ctx.shadowColor = conAlfa(COLORES.blanco, 0.9);
-			ctx.shadowBlur = 20 + 18 * (0.5 + 0.5 * Math.sin(tiempo * 4));
-		}
 		ctx.drawImage(foto, bx - w / 2, by - h, w, h);
 		ctx.restore();
 		return;
@@ -337,10 +378,13 @@ function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
 
 // Talento: el camino por la zona industrial y la Cueva, en miniatura
 // Foto del edificio de Talento, detrás de su escena (la tapan el camino y la cueva)
-function dibujarFotoEscenaTalento(foto, x, y, apagado) {
-	const k = 170 / foto.naturalHeight;
-	const w = foto.naturalWidth * k;
+function dibujarFotoEscenaTalento(f, x, y, apagado) {
+	const foto = f.elemento;
+	const k = 170 / foto.height;
+	const w = foto.width * k;
+	dibujarHalo(f, x - w / 2, y - 170, w, 170, 1 - apagado, 0);
 	ctx.save();
+	ctx.imageSmoothingQuality = "high";
 	if (apagado > 0) ctx.filter = `grayscale(${apagado.toFixed(2)})`;
 	ctx.drawImage(foto, x - w / 2, y - 170, w, 170);
 	ctx.restore();
@@ -524,7 +568,7 @@ function dibujarMundoMapa(q, m, i) {
 	for (const a of q.arboles) if (a.y < by) dibujarArbolMapa(a, apagado);
 	if (m.completoAlSalirDeLaCueva) {
 		// Su edificio queda atrás, entre la fábrica y la montaña
-		if (m.fotoImg && m.fotoImg.elemento) dibujarFotoEscenaTalento(m.fotoImg.elemento, bx - 60, by - 14, apagado);
+		if (m.fotoImg && m.fotoImg.elemento) dibujarFotoEscenaTalento(m.fotoImg, bx - 60, by - 14, apagado);
 		dibujarEscenaTalento(bx - 10, by, acercado);
 	}
 	else dibujarEdificioMapa(bx, by, m, i, apagado, acercado);

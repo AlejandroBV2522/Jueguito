@@ -174,6 +174,69 @@ function cargarImagen(ruta) {
 	return estado;
 }
 
+// Como cargarImagen, pero desvanece los bordes de la foto (mundo.js →
+// fotoBordes) para que no se vea cortada en línea recta: abajo se funde con
+// el pasto y a los lados o arriba con el mapa. Cada lado es la fracción del
+// ancho o alto que se desvanece (0 = sin tocar). Cerca del borde la foto
+// además se desenfoca, como algo lejano: así las texturas finas (ladrillo,
+// jardines) no se ven granuladas al desvanecerse. Solo dibuja, no lee
+// píxeles, así que también funciona abriendo el juego con doble clic.
+function cargarImagenFundida(ruta, bordes) {
+	const estado = { elemento: null };
+	const img = new Image();
+	img.onload = () => {
+		const w = img.naturalWidth;
+		const h = img.naturalHeight;
+		const lienzo = () => {
+			const c = document.createElement("canvas");
+			c.width = w;
+			c.height = h;
+			return c;
+		};
+		// Borra cada borde con un degradado; "ancho" estira la franja
+		const borrarBordes = (g, ancho) => {
+			g.globalCompositeOperation = "destination-out";
+			// [fracción, x0, y0, x1, y1]: del borde (se borra todo) hacia adentro
+			const lados = [
+				[bordes.arriba, 0, 0, 0, h],
+				[bordes.abajo, 0, h, 0, 0],
+				[bordes.izquierda, 0, 0, w, 0],
+				[bordes.derecha, w, 0, 0, 0],
+			];
+			for (const [f, x0, y0, x1, y1] of lados) {
+				if (!f) continue;
+				const k = Math.min(1, f * ancho);
+				const d = g.createLinearGradient(x0, y0, x0 + (x1 - x0) * k, y0 + (y1 - y0) * k);
+				d.addColorStop(0, "rgba(0,0,0,1)");
+				d.addColorStop(0.45, "rgba(0,0,0,0.35)");
+				d.addColorStop(1, "rgba(0,0,0,0)");
+				g.fillStyle = d;
+				g.fillRect(0, 0, w, h);
+			}
+			g.globalCompositeOperation = "source-over";
+		};
+		// Abajo: la foto desenfocada, solo dentro de la silueta del edificio
+		const c = lienzo();
+		const g = c.getContext("2d");
+		g.filter = `blur(${Math.max(1.5, w / 180).toFixed(1)}px)`;
+		g.drawImage(img, 0, 0);
+		g.filter = "none";
+		g.globalCompositeOperation = "destination-in";
+		g.drawImage(img, 0, 0);
+		borrarBordes(g, 1);
+		// Encima: la foto nítida, que se desvanece antes que la desenfocada
+		const nitida = lienzo();
+		const gn = nitida.getContext("2d");
+		gn.drawImage(img, 0, 0);
+		borrarBordes(gn, 1.4);
+		g.drawImage(nitida, 0, 0);
+		estado.original = img; // la silueta completa, para el halo del mapa
+		estado.elemento = c;
+	};
+	img.src = ruta;
+	return estado;
+}
+
 // Atlas.png fue pre-procesado (horneado) con cargarEdificioSinCielo y
 // guardado como PNG transparente y recortado, para que se vea igual de
 // bien en cualquier computadora y forma de abrir el juego. La función de
