@@ -353,7 +353,7 @@ function accion() {
 		if (m) entrarOficina(m);
 	} else if (estado === "oficina") {
 		const companero = companeroCerca();
-		if (enTerminal() && !oficinaActual.completo) abrirTerminal(oficinaActual);
+		if (enTerminal()) abrirTerminal(oficinaActual); // también para repasar uno ya completo
 		else if (companero) abrirDialogo(companero);
 		else if (enSalidaOficina()) salirDeOficina();
 	} else if (estado === "terminal" && !ui.terminalSalir.hidden) {
@@ -367,7 +367,7 @@ function hayAccion() {
 	if (estado === "mapa" || estado === "dialogo") return true;
 	if (estado === "jugando") return !!npcCercano();
 	if (estado === "urbano") return !!moduloEnPuerta();
-	if (estado === "oficina") return (enTerminal() && !oficinaActual.completo) || !!companeroCerca() || enSalidaOficina();
+	if (estado === "oficina") return enTerminal() || !!companeroCerca() || enSalidaOficina();
 	if (estado === "terminal") return !ui.terminalSalir.hidden;
 	return false;
 }

@@ -184,6 +184,8 @@ function actualizar(dt) {
 		if (siguiente && heroe.x >= siguiente.x - 100 && heroeEnSuelo()) abrirDialogo(siguiente);
 		else if (!oficinaActual.terminalVisitada && enTerminal()) abrirTerminal(oficinaActual);
 	}
+	actualizarVirus(dt); // virus de la oficina (mundo.js → oficina.virus)
+	actualizarMision(); // llevar algo del punto A al B (mundo.js → mision)
 	for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);
 	if (estado === "mapa") actualizarMapa(dt);
 

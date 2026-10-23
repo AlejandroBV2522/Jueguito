@@ -11,6 +11,8 @@
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina y muestra la tarjeta final
 //   estaciones  arma los 3 robots de IA y el antivirus de Seguridad (capturas a medias y al final)
+//   virus     cruza Seguridad esquivando virus (agachado o saltando) y repara el antivirus
+//   mision    SharePoint: lleva los permisos del punto A al B y contesta
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
 //
@@ -247,10 +249,13 @@ async function entrarAlMundo(indice) {
 	await paso(1500);
 }
 // Recorre una oficina: camina saltando, avanza diálogos y contesta la terminal
-async function jugarOficina(limite = 60000, fotoTerminal = "") {
+async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
+	let ultimaFoto = ahora();
+	let nFoto = 0;
 	const t0 = ahora();
 	let ultimoSalto = -Infinity;
 	let respuestas = 0;
+	let agachado = false;
 	while (ahora() - t0 < limite) {
 		if (await visible("#terminal")) {
 			await tecla("ArrowRight", "up");
@@ -274,16 +279,46 @@ async function jugarOficina(limite = 60000, fotoTerminal = "") {
 			await paso(120);
 			continue;
 		}
-		await tecla("ArrowRight", "down");
-		if (ahora() - ultimoSalto > 450) {
+		if (fotoCada && ahora() - ultimaFoto >= fotoCada) {
+			ultimaFoto = ahora();
+			await foto(`${fotoTerminal || "oficina"}-camino-${String(++nFoto).padStart(2, "0")}`);
+		}
+		// Virus de Seguridad (virus.js): se agacha ante los que vuelan y
+		// salta los que ruedan
+		const virus = await evalua(LEER_VIRUS);
+		if (virus && virus.alto && virus.d < 150) {
+			await tecla("ArrowRight", "up");
+			await tecla("ArrowDown", "down");
+			agachado = true;
+			await paso(60);
+			continue;
+		}
+		if (agachado) {
+			await tecla("ArrowDown", "up");
+			agachado = false;
+		}
+		// Misión A → B (mision.js): con lo recogido, de vuelta hacia B
+		const atras = await evalua("!!(oficinaActual && oficinaActual.mision && oficinaActual.mision.paso === 'llevar')");
+		await tecla(atras ? "ArrowRight" : "ArrowLeft", "up");
+		await tecla(atras ? "ArrowLeft" : "ArrowRight", "down");
+		const saltaVirus = virus && !virus.alto && virus.d < 120;
+		if (saltaVirus || ((!virus || virus.d > 450) && ahora() - ultimoSalto > 450)) {
 			await tecla("ArrowUp");
 			ultimoSalto = ahora();
 		}
 		await paso(60);
 	}
 	await tecla("ArrowRight", "up");
+	await tecla("ArrowLeft", "up");
 	return false;
 }
+// El virus más cercano que viene hacia el héroe: distancia (en unidades
+// de S) y si vuela alto
+const LEER_VIRUS = `(() => {
+	if (typeof virusOficina === "undefined" || virusOficina.oficina !== oficinaActual) return null;
+	const z = virusOficina.lista.filter((z) => !z.pum && z.x > heroe.x - 10).sort((a, b) => a.x - b.x)[0];
+	return z ? { d: (z.x - heroe.x) / S, alto: z.alto } : null;
+})()`;
 // Talento completo: camina saltando, avanza diálogos, responde bien a cada
 // antivalor (busca la opción correcta en config.js) y se agacha en los tubos.
 // Saca una captura al entrar a la Cueva, en cada pregunta y al salir al mapa.
@@ -485,6 +520,22 @@ try {
 			await tecla("Enter");
 			await paso(1500);
 		}
+	} else if (escenario === "virus") {
+		// Seguridad: esquiva los virus (captura cada 1.5 s) y repara el antivirus
+		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
+		const i = await evalua("window.MODULOS.findIndex((m) => m.oficina && m.oficina.virus)");
+		await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
+		await entrarAlMundo(i);
+		console.log(`mundo ${i + 1} completado:`, await jugarOficina(90000, `mundo${i + 1}`, 1500));
+		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"));
+	} else if (escenario === "mision") {
+		// SharePoint: lleva los permisos del punto A al B (captura cada 1.5 s) y contesta
+		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
+		const i = await evalua("window.MODULOS.findIndex((m) => m.mision)");
+		await conProgreso({ completos: [], nivel: 0, personaje: "chica", nombre: pruebas });
+		await entrarAlMundo(i);
+		console.log(`mundo ${i + 1} completado:`, await jugarOficina(120000, `mundo${i + 1}`, 1500));
+		console.log("misión:", await evalua(`modulos[${i}].mision.paso`));
 	} else if (escenario === "victoria") {
 		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");
 		await conProgreso({ completos: nombres.slice(0, -1), nivel: 8, personaje: "chico", nombre: "Prueba" });

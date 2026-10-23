@@ -85,8 +85,10 @@ function dibujar(dt) {
 		dibujarLetrerosObra("oficina", oficinaActual);
 		dibujarGuias();
 		dibujarObstaculos(oficinaActual.oficina.obstaculos);
+		dibujarMision(oficinaActual);
 		dibujarCompaneros(oficinaActual);
 		dibujarHeroe(t);
+		dibujarVirusOficina();
 		dibujarAvisos(dt);
 		return;
 	}

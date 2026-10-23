@@ -31,6 +31,7 @@ const mapa = {
 	delfin: { t: -1, x: 0, y: 0, dir: 1, proxima: 6, cx: 0, cy: 0 },
 };
 // Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
+// los mundos, pero ninguno queda completado: se pueden jugar una y otra vez.
 const modoPruebas = () => !!CFG.nombrePruebas && nombreJugador.toLowerCase() === CFG.nombrePruebas.toLowerCase();
 const desbloqueado = (i) => i === 0 || modoPruebas() || (!!modulos[i - 1] && modulos[i - 1].completo);
 const todosCompletos = () => modulos.length > 0 && modulos.every((m) => m.completo);
@@ -39,22 +40,29 @@ const primerPendiente = () => Math.max(0, modulos.findIndex((m) => !m.completo))
 // Progreso guardado en este navegador. Si no se puede (modo privado o
 // almacenamiento bloqueado), el juego sigue igual y solo dura la partida.
 const CLAVE_PROGRESO = "camino-a-celaque:progreso";
+function leerGuardado() {
+	try {
+		return JSON.parse(localStorage.getItem(CLAVE_PROGRESO) || "null");
+	} catch (e) {
+		return null;
+	}
+}
+
 function guardarProgreso() {
 	try {
-		const completos = modulos.filter((m) => m.completo).map((m) => m.nombre);
-		localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel, personaje, nombre: nombreJugador }));
+		// En modo pruebas se guarda el nombre, pero los mundos completados y el
+		// nivel se quedan como estaban (al volver a tu nombre siguen ahí)
+		const antes = modoPruebas() ? leerGuardado() || {} : null;
+		const completos = antes ? antes.completos || [] : modulos.filter((m) => m.completo).map((m) => m.nombre);
+		const nivelGuardado = antes ? Number(antes.nivel) || 0 : nivel;
+		localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel: nivelGuardado, personaje, nombre: nombreJugador }));
 	} catch (e) {
 		/* sin almacenamiento */
 	}
 }
 
 function cargarProgreso() {
-	let d = null;
-	try {
-		d = JSON.parse(localStorage.getItem(CLAVE_PROGRESO) || "null");
-	} catch (e) {
-		d = null;
-	}
+	const d = leerGuardado();
 	if (d && Array.isArray(d.completos)) {
 		modulos.forEach((m) => (m.completo = d.completos.includes(m.nombre)));
 		nivel = Math.max(0, Number(d.nivel) || 0);
@@ -62,6 +70,7 @@ function cargarProgreso() {
 		if (CFG.personajes[d.personaje]) elegirPersonaje(d.personaje);
 		nombreJugador = typeof d.nombre === "string" ? d.nombre.slice(0, 24) : "";
 		ui.nombreJugador.value = nombreJugador;
+		if (modoPruebas()) modulos.forEach((m) => (m.completo = false));
 	}
 	mapa.sel = mapa.heroeMundo = primerPendiente();
 }
@@ -80,6 +89,7 @@ function reiniciarProgreso(todo) {
 		m.terminalVisitada = false;
 		m.preguntaActual = 0;
 		m.oficina.companeros.forEach((n) => (n.hablado = false));
+		if (m.mision) reiniciarMision(m.mision);
 	});
 	nivel = 0;
 	vidas = VIDAS_BASE;
@@ -94,6 +104,11 @@ function reiniciarProgreso(todo) {
 // mundo que se acaba de desbloquear, o -1.
 function completarModulo(m) {
 	if (m.completo) return -1;
+	if (modoPruebas()) {
+		// Pruebas: se juega completo, pero no queda terminado ni sube de nivel
+		avisoMapa(`Modo de pruebas: ${m.nombre} sigue sin completar`);
+		return -1;
+	}
 	m.completo = true;
 	m.brillo = 1;
 	nivel++;
@@ -256,7 +271,10 @@ function abrirCarta(i) {
 				`Cruza la Cueva y vence a ${enemigos.length} antivalores (como ${enemigos.map((e) => e.antivalor).filter(Boolean).slice(0, 2).join(" y ")}) respondiendo bien.`,
 			]
 		: [
-				`Habla con ${m.oficina.companeros.length} compañeros de la oficina.`,
+				m.oficina.companeros.length > 1
+					? `Habla con ${m.oficina.companeros.length} compañeros de la oficina.`
+					: `Escucha lo que te explica ${m.oficina.companeros[0].nombre}.`,
+				...(m.mision ? [`Lleva ${m.mision.objeto} del punto A al punto B.`] : []),
 				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length, m),
 			];
 	ui.cartaLista.innerHTML = "";

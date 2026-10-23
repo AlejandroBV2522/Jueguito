@@ -973,7 +973,7 @@ function dibujarComputadora(m) {
 	if (of.estacion !== "computadora") {
 		// IA y Seguridad: en vez de computadora, lo que se va armando
 		const alto = dibujarEstacionArmable(m, sx, piso);
-		if (estado === "oficina" && enTerminal() && !m.completo) dibujarGlobo(sx - 50 * S, piso - alto - 6 * S, tocar, COLORES.fondoVerdeClaro);
+		if (estado === "oficina" && enTerminal()) dibujarGlobo(sx - 50 * S, piso - alto - 6 * S, tocar, COLORES.fondoVerdeClaro);
 		return;
 	}
 
@@ -1017,7 +1017,7 @@ function dibujarComputadora(m) {
 	ctx.fillStyle = "#2e3a3c";
 	ctx.fillRect(sx - 44 * S, piso - 34 * S, 4 * S, 30 * S);
 
-	if (estado === "oficina" && enTerminal() && !m.completo) {
+	if (estado === "oficina" && enTerminal()) {
 		dibujarGlobo(sx - 50 * S, my - 22 * S, tocar, COLORES.fondoVerdeClaro);
 	}
 }

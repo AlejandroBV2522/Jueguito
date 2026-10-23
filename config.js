@@ -134,6 +134,10 @@ window.TEMAS_OFICINA = {};
                          (por defecto), "robot" (cada acierto arma piezas de
                          los robots de IA) o "antivirus" (cada acierto arma
                          una parte del escudo).
+                  virus: (opcional) true para que crucen virus por la
+                         oficina: se esquivan agachándose (los que vuelan) o
+                         saltando (los que ruedan). Salen después de hablar
+                         con todos los compañeros.
                   robots: (solo con estacion "robot") cuáles se arman y en
                          qué orden: "tierra", "aereo" y/o "humanoide", ej.
                          ["tierra", "aereo", "humanoide"]. Cada robot hace
@@ -142,6 +146,14 @@ window.TEMAS_OFICINA = {};
    - comentarios: más compañeros dentro de la oficina, cada uno con
                   { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
                   Caben 2 (el resto no se muestra).
+   - mision:      (opcional) llevar algo del punto A al punto B antes de
+                  la estación del fondo: { objeto: "los permisos",
+                  a: { letrero }, b: { letrero, nombre, cuerpo,
+                  pide: [frases], explica: [frases] } }. En B espera quien
+                  lo pide y, al entregárselo, explica para qué sirve. Ese
+                  mundo no lleva "comentarios" (A y B usan sus lugares).
+   - preguntasPorModulo: (opcional) cuántas preguntas hace este mundo, si
+                  no son las de CONFIG_JUEGO (arriba). Con robots: por robot.
    - preguntas:   { pregunta, opciones, correcta (índice desde 0),
                     explicacion (opcional, se muestra al acertar) }.
 

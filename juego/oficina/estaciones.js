@@ -298,6 +298,28 @@ function dibujarRobotHumanoide(cx, piso, m, est) {
 
 const DIBUJO_ROBOT = { tierra: dibujarRobotTierra, aereo: dibujarRobotAereo, humanoide: dibujarRobotHumanoide };
 
+// Un virus rojo con púas y ojitos (escala 1 = 10·S de radio con las púas).
+// También lo usan los virus que cruzan la oficina (virus.js).
+function dibujarVirus(x, y, escala, giro, alfa) {
+	const u = S * escala;
+	ctx.save();
+	ctx.globalAlpha = alfa;
+	ctx.translate(x, y);
+	ctx.rotate(giro);
+	ctx.strokeStyle = "#e3262b";
+	ctx.lineWidth = 2 * u;
+	for (let p = 0; p < 6; p++) {
+		const a = (p / 6) * Math.PI * 2;
+		linea(Math.cos(a) * 5 * u, Math.sin(a) * 5 * u, Math.cos(a) * 10 * u, Math.sin(a) * 10 * u);
+	}
+	ctx.fillStyle = "#e3262b";
+	circulo(0, 0, 6 * u);
+	ctx.fillStyle = COLORES.blanco;
+	circulo(-2 * u, -1.5 * u, 1.4 * u);
+	circulo(2 * u, -1.5 * u, 1.4 * u);
+	ctx.restore();
+}
+
 // Escudo antivirus: se llena por franjas con cada acierto y los virus que
 // lo rodean van desapareciendo; al terminar brilla con su ✓.
 function trazarEscudo(cx, cy, r) {
@@ -319,22 +341,7 @@ function dibujarEscudoArmado(cx, cy, r, m, est) {
 		const d = r * (1.35 + 0.1 * Math.sin(tiempo * 3 + k)) + quita * r;
 		const vx = cx + Math.cos(ang) * d;
 		const vy = cy + Math.sin(ang) * d * 0.8;
-		ctx.save();
-		ctx.globalAlpha = 1 - quita;
-		ctx.translate(vx, vy);
-		ctx.rotate(tiempo * 2 + k);
-		ctx.strokeStyle = "#e3262b";
-		ctx.lineWidth = 2 * S;
-		for (let p = 0; p < 6; p++) {
-			const a = (p / 6) * Math.PI * 2;
-			linea(Math.cos(a) * 5 * S, Math.sin(a) * 5 * S, Math.cos(a) * 10 * S, Math.sin(a) * 10 * S);
-		}
-		ctx.fillStyle = "#e3262b";
-		circulo(0, 0, 6 * S);
-		ctx.fillStyle = COLORES.blanco;
-		circulo(-2 * S, -1.5 * S, 1.4 * S);
-		circulo(2 * S, -1.5 * S, 1.4 * S);
-		ctx.restore();
+		dibujarVirus(vx, vy, 1, tiempo * 2 + k, 1 - quita);
 	}
 	ctx.save();
 	if (listo) {

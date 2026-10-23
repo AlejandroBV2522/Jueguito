@@ -45,6 +45,7 @@ Otras reglas:
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
 | `camino/` | `npcs-y-andamios.js` | la gente del camino, sus andamios, los antivalores |
+| `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, SharePoint); va antes de `modulos.js` |
 | `oficina/` | `modulos.js` | `modulos` (un objeto por mundo), muebles, compañeros, `ESTACIONES` |
 | `camino/` | `letreros.js` | dónde van los letreros de obra |
 | `dibujo/` | `sprites-enemigos.js`, `sprites-personajes.js` | imágenes de enemigos, héroe y NPC |
@@ -63,6 +64,7 @@ Otras reglas:
 | `camino/` | `dibujo-cueva.js` | la Cueva y la calle de Celaque (logos, edificios) |
 | `oficina/` | `dibujo-oficina.js` | ventanal, muebles, computadora; llama al tema de cada oficina (`mundos/<mundo>/tema.js`, registrado en `window.TEMAS_OFICINA`) |
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
+| `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`, Seguridad) |
 | `camino/` | `dibujo-letreros.js` | dibujo de los letreros de obra |
 | `dibujo/` | `aves.js`, `guias.js`, `personajes.js` | aves, guías y enemigos, héroe y NPC |
 | `mapa/` | `dibujo-mapa.js` | el mapa de mundos, el delfín |

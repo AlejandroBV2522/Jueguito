@@ -128,7 +128,14 @@ ui.ayuda.addEventListener("click", (e) => {
 ui.nombreJugador.addEventListener("input", () => {
 	const antes = modoPruebas();
 	nombreJugador = ui.nombreJugador.value.trim();
-	if (!antes && modoPruebas()) avisoMapa("Modo de pruebas: todos los mundos abiertos");
+	if (!antes && modoPruebas()) {
+		modulos.forEach((m) => (m.completo = false)); // solo en esta partida: lo guardado no se toca
+		avisoMapa("Modo de pruebas: todos los mundos abiertos y sin completar");
+	} else if (antes && !modoPruebas()) {
+		// Sales del modo pruebas: vuelven los mundos que tenías completados
+		const d = leerGuardado();
+		modulos.forEach((m) => (m.completo = !!d && Array.isArray(d.completos) && d.completos.includes(m.nombre)));
+	}
 	ui.nombreEtiqueta.classList.remove("falta");
 	guardarProgreso();
 	actualizarPanelMapa();

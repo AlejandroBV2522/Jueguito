@@ -16,29 +16,54 @@ window.MODULOS.push({
   anfitrion: {
     nombre: "Luis Morán",
     cuerpo: "chico",
-    // ✏️ Borrador: revisar con Luis
+    // ✏️ Revisar con Luis Morán
     dialogo: [
-      "¡Hola! Soy Luis Morán y te doy la bienvenida al módulo de Plataformas, en lo alto de la Torre Atlas.",
-      "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
+      "¡Hola! Soy Luis Morán y te doy la bienvenida al módulo de Plataformas.",
+      "SharePoint es el repositorio principal de información de Celaque: cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
+      "Ahí los equipos trabajan juntos un documento en tiempo real, y el historial de versiones deja ver los cambios y recuperar una versión anterior.",
+      "Te pido un favor: hay un colaborador nuevo que todavía no puede trabajar. Ve al punto A, en Sistemas, por sus permisos y llévaselos al punto B.",
     ],
   },
   intro: [
     "Bienvenido al módulo de Plataformas.",
     "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
   ],
-  comentarios: [
-    {
-      nombre: "Soporte de Plataformas",
-      cuerpo: "chica",
-      dialogo: ["En SharePoint cada área tiene una carpeta por departamento.", "Ahí está la documentación de sus procesos y reportes."],
-    },
-    {
-      nombre: "Equipo de Teams",
+  // Solo Luis: lo demás lo explica quien recibe los permisos en el punto B
+  comentarios: [],
+  // Llevar los permisos del punto A (Sistemas) al punto B (ver mision.js)
+  mision: {
+    objeto: "los permisos",
+    a: { letrero: "Sistemas" },
+    b: {
+      letrero: "Colaborador nuevo",
+      nombre: "Colaborador nuevo",
       cuerpo: "chico",
-      dialogo: ["¿Te equivocaste en un documento? El historial de versiones te deja recuperar uno anterior.", "Y para chatear o reunirte, usa Teams."],
+      pide: ["¡Hola! Soy nuevo y todavía no tengo acceso a nada.", "Mis permisos están en el punto A, en Sistemas. ¿Me los traes?"],
+      // ✏️ Revisar con Luis Morán (sobre todo cómo se solicita la licencia)
+      explica: [
+        "¡Gracias! Con estos permisos llega mi licencia de Microsoft.",
+        "Con la licencia tengo mi correo empresarial en Outlook, con calendario, contactos y grupos, en la web o en la aplicación de escritorio.",
+        "También Microsoft Teams, para chatear y tener reuniones con mi departamento o con otros.",
+        "Y acceso a SharePoint, para guardar y trabajar en equipo los documentos de mi departamento.",
+        "Sin licencia no hay correo, ni Teams, ni SharePoint: por eso cada colaborador necesita la suya.",
+        "La licencia se solicita a Sistemas cuando alguien entra, y Sistemas la registra en su control de licencias.",
+        "Ahora ve a la computadora del fondo y demuestra lo que aprendiste.",
+      ],
     },
-  ],
+  },
+  preguntasPorModulo: 3,
   preguntas: [
+    {
+      // ✏️ Revisar con Luis Morán
+      pregunta: "¿Por qué cada colaborador necesita su licencia de Microsoft?",
+      opciones: [
+        "Porque con ella tiene su correo en Outlook, Teams y acceso a SharePoint.",
+        "Para poder jugar en la computadora.",
+        "No hace falta: todos usan la misma cuenta.",
+      ],
+      correcta: 0,
+      explicacion: "La licencia se solicita a Sistemas cuando alguien entra.",
+    },
     {
       pregunta: "¿Qué es SharePoint?",
       opciones: [

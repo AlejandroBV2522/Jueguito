@@ -77,10 +77,11 @@ const ESTACIONES = {
 	},
 	antivirus: {
 		lugar: "al laboratorio",
-		titulo: "Laboratorio de Seguridad · Arma el antivirus",
-		usar: "Armar el antivirus",
-		carta: (n) => `Arma el antivirus: cada una de las ${n} respuestas correctas completa el escudo.`,
-		fin: "¡Antivirus activado! La información está protegida.",
+		titulo: "Laboratorio de Seguridad · Repara el antivirus",
+		usar: "Reparar el antivirus",
+		carta: (n, m) =>
+			`${m.oficina.virus ? "Esquiva los virus (agáchate o salta) y repara" : "Repara"} el antivirus: cada una de las ${n} respuestas correctas completa el escudo.`,
+		fin: "¡Antivirus reparado! La información está protegida.",
 	},
 };
 const PIEZAS_ESTACION = 6; // partes del robot o del escudo
@@ -152,6 +153,8 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		logoImg: cargarImagen(rutaLogo),
 		// Foto real de su edificio en el mapa (mundo.js → foto)
 		fotoImg: d.foto ? cargarImagen(d.foto) : null,
+		// Llevar algo del punto A al B (mundo.js → mision; ver mision.js)
+		mision: crearMision(d, i, x0),
 		oficina: {
 			x0,
 			terminalX: x0 + LARGO_OFICINA,
@@ -167,6 +170,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 			piso: (d.oficina && d.oficina.piso) || 0,
 			estacion: ESTACIONES[d.oficina && d.oficina.estacion] ? d.oficina.estacion : "computadora",
 			robots: d.oficina && d.oficina.estacion === "robot" ? robotsDe(d.oficina) : [],
+			virus: !!(d.oficina && d.oficina.virus), // virus que cruzan la oficina (virus.js)
 			// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
 			companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0)),
 		},

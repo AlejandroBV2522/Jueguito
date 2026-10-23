@@ -60,6 +60,8 @@ function actualizarHudOficina() {
 	ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
 	ui.hudTexto.textContent = oficinaActual.completo
 		? `Módulo ${oficinaActual.nombre} ✓  ·  Vuelve a la puerta para salir`
+		: !misionLista(oficinaActual) && oficinaActual.oficina.companeros.every((n) => n.hablado)
+		? `Módulo ${oficinaActual.nombre}  ·  ${textoMision(oficinaActual)}`
 		: `Módulo ${oficinaActual.nombre}  ·  Llega ${ESTACIONES[oficinaActual.oficina.estacion].lugar} del fondo`;
 }
 
@@ -70,9 +72,10 @@ const companeroCerca = () =>
 	(estado === "oficina" && oficinaActual.oficina.companeros.find((n) => cercaDe(n.x, CFG.distanciaParaHablar * 1.3))) || null;
 
 // Preguntas que se hacen en la computadora (menos que antes: config.js →
-// preguntasPorModulo, por defecto 2). En el taller de IA son esas por cada
+// preguntasPorModulo, por defecto 2; un mundo.js puede pedir otra cantidad
+// con su propio preguntasPorModulo). En el taller de IA son esas por cada
 // robot (mundo.js → oficina.robots).
-const preguntasDe = (m) => (m.preguntas || []).slice(0, (CFG.preguntasPorModulo || 2) * Math.max(1, m.oficina.robots.length));
+const preguntasDe = (m) => (m.preguntas || []).slice(0, (m.preguntasPorModulo || CFG.preguntasPorModulo || 2) * Math.max(1, m.oficina.robots.length));
 
 // Con varios robots, cuál se arma con la pregunta k: cada uno se lleva una
 // parte seguida de las preguntas (desde..hasta, sin incluir hasta).
@@ -85,6 +88,11 @@ const robotDePregunta = (m, k) => m.oficina.robots.findIndex((_, r) => k < tramo
 
 function abrirTerminal(m) {
 	m.terminalVisitada = true;
+	if (!misionLista(m)) {
+		const texto = textoMision(m);
+		avisos.push({ texto: `Primero: ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, t: 0 });
+		return;
+	}
 	m.preguntaActual = 0;
 	m.aciertos = 0;
 	estado = "terminal";
@@ -151,12 +159,13 @@ function responderTerminal(indice, m, btn) {
 
 // Completar un módulo sube de nivel y abre el siguiente mundo del mapa.
 function terminarModulo(m) {
+	const repaso = m.completo || modoPruebas(); // no sube de nivel
 	m.desbloqueo = completarModulo(m);
 	ui.terminalProgreso.textContent = "Completado";
 	const varios = m.oficina.robots.length > 1;
 	if (varios) ui.terminalTitulo.textContent = "Taller de IA · ¡Robots listos!";
 	const fin = varios ? "¡Los robots de IA están listos para ayudarte!" : ESTACIONES[m.oficina.estacion].fin;
-	ui.terminalPregunta.textContent = `${fin ? fin + " " : ""}¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`;
+	ui.terminalPregunta.textContent = `${fin ? fin + " " : ""}${repaso ? `¡Repasaste el módulo ${m.nombre}!` : `¡Completaste el módulo ${m.nombre}! Subiste al nivel ${nivel}.`}`;
 	ui.terminalOpciones.innerHTML = "";
 	ui.terminalPista.textContent = "";
 	ui.terminalSalir.hidden = false;

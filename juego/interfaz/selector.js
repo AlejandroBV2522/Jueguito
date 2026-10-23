@@ -108,6 +108,8 @@ function iniciarOficina(m) {
 	avisos = [];
 	petalos = [];
 	oficinaActual = m;
+	virusOficina.oficina = null; // los virus (Seguridad) empiezan de cero
+	vidas = vidasMax();
 	m.visitado = true;
 	m.terminalVisitada = m.completo; // ya completo: la computadora no se abre sola
 	heroe.x = m.oficina.x0 + 170; // fuera del alcance de la puerta: Espacio salta, no sale

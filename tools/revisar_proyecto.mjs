@@ -89,10 +89,11 @@ mundos.forEach((m, i) => {
 		if (!t) problemas.push(`${donde}: su oficina usa el tema "${tema}", pero ningún tema.js lo registra en window.TEMAS_OFICINA`);
 		else for (const parte of ["flotante", "pizarra", "especial"]) if (typeof t[parte] !== "function") problemas.push(`${donde}: al tema "${tema}" le falta ${parte}()`);
 		for (const r of m.oficina.robots || []) if (!["tierra", "aereo", "humanoide"].includes(r)) problemas.push(`${donde}: el robot "${r}" no existe (puede ser "tierra", "aereo" o "humanoide")`);
-		const porRobot = (w.CONFIG_JUEGO && w.CONFIG_JUEGO.preguntasPorModulo) || 2;
+		const porRobot = m.preguntasPorModulo || (w.CONFIG_JUEGO && w.CONFIG_JUEGO.preguntasPorModulo) || 2;
 		const robots = (m.oficina.robots || []).length;
 		if (robots > 1 && (m.preguntas || []).length < robots * porRobot) problemas.push(`${donde}: tiene ${robots} robots y ${(m.preguntas || []).length} preguntas; cada robot necesita ${porRobot}`);
 	}
+	if (m.mision && (m.comentarios || []).length) problemas.push(`${donde}: tiene "mision" y "comentarios"; los puntos A y B usan el lugar de los compañeros`);
 	(m.preguntas || []).forEach((p, k) => revisarPregunta(p, `${donde}, pregunta ${k + 1}`));
 });
 npcs.forEach((n, i) => (!n.nombre || !Array.isArray(n.dialogo) || !n.dialogo.length) && problemas.push(`NPC ${i + 1} (${n.nombre || "sin nombre"}): falta nombre o diálogo`));
