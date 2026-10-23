@@ -44,6 +44,9 @@ const ORDEN_MUEBLES = ["planta", "escritorio", "silla", "archivero", "cajas", "e
 const POSICIONES_MUEBLES = [440, 600, 1060, 1240, 1680, 1860, 2300];
 // El primero te recibe (intro); los otros dicen los "comentarios" del módulo
 const LUGARES_COMPANEROS = [800, 1450, 2070];
+// Con 3 "comentarios" (4 personas) el hueco del medio se reparte entre dos
+const LUGARES_CUATRO = [800, 1370, 1560, 2070];
+const lugaresCompaneros = (cuantos) => (cuantos > LUGARES_COMPANEROS.length ? LUGARES_CUATRO : LUGARES_COMPANEROS);
 // Decoración que no estorba (se pasa por delante): libreros, sillones...
 const DECORACION_OFICINA = [
 	{ d: 300, tipo: "librero" },
@@ -100,12 +103,12 @@ function robotsDe(oficina) {
 	const lista = ((oficina && oficina.robots) || []).filter((r) => ROBOTS_IA[r]);
 	return lista.length ? lista : ["tierra"];
 }
-function companeroOficina(d, i, k, x0) {
+function companeroOficina(d, i, k, x0, lugares) {
 	if (k === 0 && d.anfitrion) {
 		// El personaje fijo del mundo es quien te recibe
 		return {
 			nombre: d.anfitrion.nombre,
-			x: x0 + LUGARES_COMPANEROS[0],
+			x: x0 + lugares[0],
 			alto: 0,
 			enOficina: true,
 			importante: true,
@@ -118,7 +121,7 @@ function companeroOficina(d, i, k, x0) {
 	const cuerpo = datos.cuerpo || ((i + k) % 2 ? "chica" : "chico");
 	return {
 		nombre: datos.nombre || `Equipo de ${d.nombre}`,
-		x: x0 + LUGARES_COMPANEROS[k],
+		x: x0 + lugares[k],
 		alto: 0,
 		enOficina: true,
 		hablado: false,
@@ -138,7 +141,11 @@ function companeroOficina(d, i, k, x0) {
 const modulos = MODULOS_DATOS.map((d, i) => {
 	const x0 = OFICINA_BASE + i * SEPARACION_OFICINAS;
 	const rutaLogo = d.logo || RUTA_LOGOS + "modulo-" + nombreArchivo(d.nombre) + ".png";
-	const cuantos = 1 + Math.min((d.comentarios || []).length, LUGARES_COMPANEROS.length - 1);
+	const cuantos = 1 + Math.min((d.comentarios || []).length, LUGARES_CUATRO.length - 1);
+	// Una oficina más larga (mundo.js → oficina.largo) estira todo por igual
+	const largo = (d.oficina && d.oficina.largo) || LARGO_OFICINA;
+	const estirar = largo / LARGO_OFICINA;
+	const lugares = lugaresCompaneros(cuantos).map((l) => Math.round(l * estirar));
 	return {
 		...d,
 		indice: i,
@@ -152,17 +159,17 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		rutaLogo,
 		logoImg: cargarImagen(rutaLogo),
 		// Foto real de su edificio en el mapa (mundo.js → foto)
-		fotoImg: d.foto ? cargarImagen(d.foto) : null,
+		fotoImg: d.foto ? (d.fotoBordes ? cargarImagenFundida(d.foto, d.fotoBordes) : cargarImagen(d.foto)) : null,
 		// Llevar algo del punto A al B (mundo.js → mision; ver mision.js)
 		mision: crearMision(d, i, x0),
 		oficina: {
 			x0,
-			terminalX: x0 + LARGO_OFICINA,
+			terminalX: x0 + largo,
 			obstaculos: POSICIONES_MUEBLES.map((dist, k) => {
 				const tipo = ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
-				return { x: x0 + dist, tipo, ...MUEBLES[tipo] };
+				return { x: x0 + Math.round(dist * estirar), tipo, ...MUEBLES[tipo] };
 			}),
-			decoracion: DECORACION_OFICINA.map((o) => ({ x: x0 + o.d, tipo: o.tipo })),
+			decoracion: DECORACION_OFICINA.map((o) => ({ x: x0 + Math.round(o.d * estirar), tipo: o.tipo })),
 			// Cómo se ve por dentro (mundo.js → oficina)
 			vista: (d.oficina && d.oficina.vista) || "ciudad",
 			tema: (d.oficina && d.oficina.tema) || "planos",
@@ -172,7 +179,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 			robots: d.oficina && d.oficina.estacion === "robot" ? robotsDe(d.oficina) : [],
 			virus: !!(d.oficina && d.oficina.virus), // virus que cruzan la oficina (virus.js)
 			// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
-			companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0)),
+			companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0, lugares)),
 		},
 	};
 });

@@ -13,8 +13,10 @@ window.MODULOS.push({
   icono: "escudo",
   color: "#042523", // verde profundo
   foto: "assets/edificios/Acacias.png",
-  // virus: salen virus que hay que esquivar (agacharse o saltar) antes del antivirus
-  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, edificio: "Acacias San Ignacio" },
+  fotoBordes: { arriba: 0.05, abajo: 0.12, izquierda: 0.08, derecha: 0.08 },
+  // virus: salen virus que hay que esquivar (agacharse o saltar) antes del antivirus.
+  // largo: oficina más larga que las demás (2600), para esquivar más virus
+  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, largo: 3200, edificio: "Acacias San Ignacio" },
   anfitrion: {
     nombre: "Sergio Aguiriano",
     cuerpo: "chico",
@@ -23,14 +25,28 @@ window.MODULOS.push({
       "¡Hola! Soy Sergio Aguiriano y te doy la bienvenida al módulo de Seguridad.",
       "Aquí cuidamos la información de Celaque, y hoy tenemos un problema: unos virus dañaron el antivirus del fondo.",
       "Vienen hacia ti: agáchate para que no te den los que vuelan alto y salta los que ruedan por el piso.",
-      "Antes de ir, recuerda: nadie de Celaque te va a pedir tu contraseña por correo. Si te llega algo así, no respondas y repórtalo a Sistemas.",
-      "Y si encuentras una memoria USB que no es tuya, no la conectes: entrégala a Sistemas.",
-      "Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
+      "En el camino, el equipo te va a dar unos consejos: al hablar con alguien los virus se detienen. Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
     ],
   },
   intro: ["Este es el módulo de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
-  // Solo Sergio: él explica todo
-  comentarios: [],
+  // ✏️ Borrador: revisar con Sergio Aguiriano
+  comentarios: [
+    {
+      nombre: "Mario Flores",
+      cuerpo: "chico",
+      dialogo: ["Nadie de Celaque te va a pedir tu contraseña por correo.", "Si te llega algo así, no respondas y repórtalo a Sistemas."],
+    },
+    {
+      nombre: "Melida Ordoñez",
+      cuerpo: "chica",
+      dialogo: ["Si encuentras una memoria USB que no es tuya, no la conectes: entrégala a Sistemas."],
+    },
+    {
+      nombre: "Allan Pineda",
+      cuerpo: "chico",
+      dialogo: ["Cuidar la información de Celaque es trabajo de todos: reporta cualquier incidente al área de Sistemas.", "Ya casi llegas al antivirus. ¡Sigue esquivando!"],
+    },
+  ],
   preguntas: [
     {
       // ✏️ Borrador: revisar con Sergio Aguiriano

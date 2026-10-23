@@ -25,7 +25,7 @@
 
 window.NPCS = [
   {
-    nombre: "Don Javi",
+    nombre: "Buena Vibra",
     posicion: 0.25, // justo después de la puerta de luz (zona de planos)
     apariencia: {
       piel: "#c99468", ropa: "#5a7bb5", pantalon: "#3c5a99", pelo: "#dcdcdc", cuerpo: "chico",
@@ -39,7 +39,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Keidy",
+    nombre: "Creativa",
     posicion: 0.42,
     apariencia: {
       piel: "#ddbfac", ropa: "#6592fd", pantalon: "#5a4a7a", pelo: "#2b1a12", cuerpo: "chica",
@@ -52,7 +52,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Mario",
+    nombre: "Logrador",
     posicion: 0.57,
     apariencia: {
       piel: "#d8a47f", ropa: "#e0664f", pantalon: "#2f5fa8", pelo: "#6e6e6e", cuerpo: "chico",
@@ -65,7 +65,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Ingeniero Allan",
+    nombre: "Directo",
     posicion: 0.72,
     apariencia: {
       piel: "#b98458", ropa: "#3f8f4f", pantalon: "#5b4a2e", pelo: "#3a2616", cuerpo: "chico",
@@ -78,7 +78,7 @@ window.NPCS = [
     ],
   },
   {
-    nombre: "Carlos",
+    nombre: "Valiente",
     posicion: 0.86,
     apariencia: {
       piel: "#e2b08a", ropa: "#2fa3d6", pantalon: "#2d4f7c", pelo: "#a0522d", cuerpo: "chico",

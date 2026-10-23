@@ -21,7 +21,7 @@ window.MODULOS.push({
       "¡Hola! Soy Luis Morán y te doy la bienvenida al módulo de Plataformas.",
       "SharePoint es el repositorio principal de información de Celaque: cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
       "Ahí los equipos trabajan juntos un documento en tiempo real, y el historial de versiones deja ver los cambios y recuperar una versión anterior.",
-      "Te pido un favor: hay un miembro nuevo que todavía no puede trabajar. Sube a la nube, al punto A, por sus permisos y llévaselos al punto B.",
+      "Te pido un favor: Aldo, un solicitante, todavía no puede trabajar. Sube a la nube, al punto A, por sus permisos y llévaselos al punto B.",
     ],
   },
   intro: [
@@ -35,10 +35,10 @@ window.MODULOS.push({
     objeto: "los permisos",
     a: { letrero: "La nube", nube: true },
     b: {
-      letrero: "Miembro nuevo",
-      nombre: "Miembro nuevo",
+      letrero: "Solicitante",
+      nombre: "Aldo Anduray",
       cuerpo: "chico",
-      pide: ["¡Hola! Soy nuevo y todavía no tengo acceso a nada.", "Mis permisos están arriba, en la nube: el punto A. Sube saltando por las nubes. ¿Me los traes?"],
+      pide: ["¡Hola! Soy Aldo Anduray y todavía no tengo acceso a nada.", "Mis permisos están arriba, en la nube: el punto A. Sube saltando por las nubes. ¿Me los traes?"],
       // ✏️ Revisar con Luis Morán (sobre todo cómo se solicita la licencia)
       explica: [
         "¡Gracias! Con estos permisos llega mi licencia de Microsoft.",

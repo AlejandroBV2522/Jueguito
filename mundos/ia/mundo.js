@@ -13,6 +13,7 @@ window.MODULOS.push({
   icono: "chispa",
   color: "#A99886", // beige
   foto: "assets/edificios/Zorzales.png",
+  fotoBordes: { abajo: 0.1, izquierda: 0.04, derecha: 0.04 },
   // Cada robot se arma con 2 preguntas, en este orden (config.js → robots)
   oficina: { vista: "ciudad", tema: "ia", estacion: "robot", robots: ["tierra", "aereo", "humanoide"], edificio: "Zorzales del Merendón" },
   anfitrion: {
@@ -27,14 +28,19 @@ window.MODULOS.push({
   intro: ["Bienvenido al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [
     {
-      nombre: "Innovación",
+      nombre: "Keidy Duron",
       cuerpo: "chica",
       dialogo: ["La calidad del prompt determina la calidad del resultado.", "Dale a la IA un rol, instrucciones, contexto y un objetivo."],
     },
     {
-      nombre: "Datos",
+      nombre: "James Velasquez",
       cuerpo: "chico",
-      dialogo: ["La IA no sustituye el criterio humano: revisa siempre lo que genera.", "Y antes de pegar información, cambia los nombres de la empresa, productos o personas."],
+      dialogo: ["La IA no sustituye el criterio humano: revisa siempre lo que genera."],
+    },
+    {
+      nombre: "Cristian Betancourth",
+      cuerpo: "chico",
+      dialogo: ["Antes de pegar información en una IA, cambia los nombres de la empresa, productos o personas.", "Así cuidas la información de Celaque. ¡Suerte con los robots!"],
     },
   ],
   // ✏️ Revisar con Gracia. 2 por robot: tierra (qué es la IA), aéreo

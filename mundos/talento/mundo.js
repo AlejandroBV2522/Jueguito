@@ -12,6 +12,7 @@ window.MODULOS.push({
     "Conoce quiénes somos: nuestro sueño, nuestros valores y la cultura de Celaque. Recorre el camino por la zona industrial, conoce a la gente de la obra y cruza la Cueva respondiendo a sus guardianes.",
   icono: "montana",
   foto: "assets/edificios/Agalta.png", // Agalta, detrás del camino y la Cueva
+  fotoBordes: { abajo: 0.12 },
   color: "#488478", // verde institucional
   completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
   anfitrion: {

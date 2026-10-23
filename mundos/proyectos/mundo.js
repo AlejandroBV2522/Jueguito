@@ -1,5 +1,6 @@
 /* Mundo 2 · Proyectos: oficina en el Distrito Artemisa.
-   Qué significa cada campo: config.js, sección "Módulos de capacitación". */
+   Qué significa cada campo: config.js, sección "Módulos de capacitación".
+   El contenido sale de la capacitación "Gestión de proyectos" de Sistemas (2025). */
 
 "use strict";
 
@@ -7,56 +8,93 @@ window.MODULOS.push({
   nombre: "Proyectos",
   subtitulo: "Cómo llevamos un proyecto",
   sistema: "Gestión de proyectos",
-  // ✏️ Borrador: revisar con Nazareth Gallardo
   descripcion:
-    "Cada proyecto de Celaque se planea desde el inicio: un objetivo claro, un responsable, un cronograma y un presupuesto. Darle seguimiento y avisar a tiempo de cualquier cambio es trabajo de todo el equipo.",
+    "Un proyecto es un esfuerzo temporal para crear un producto, servicio o resultado único. En Celaque se solicita en Wrike con el formulario «S - Nuevo Proyecto», se define su alcance con Sistemas y pasa por cinco fases: inicio, planificación, ejecución, monitoreo y control, y cierre.",
   icono: "tablero",
   color: "#042523", // verde profundo
   foto: "assets/edificios/DistritoArtemisa.png",
+  fotoBordes: { abajo: 0.12, izquierda: 0.05, derecha: 0.05 },
   oficina: { vista: "construccion", tema: "planos", edificio: "Distrito Artemisa" },
   anfitrion: {
     nombre: "Nazareth Gallardo",
     cuerpo: "chica",
-    // ✏️ Borrador: revisar con Nazareth Gallardo
+    // ✏️ Revisar con Nazareth Gallardo
     dialogo: [
-      "¡Hola! Soy Nazareth Gallardo y te doy la bienvenida al módulo de Proyectos.",
-      "Aquí aprendes cómo llevamos un proyecto: objetivo, responsable, cronograma y presupuesto.",
+      "¡Hola! Soy Nazareth Gallardo, administradora de Proyectos TI, y te doy la bienvenida al módulo de Proyectos.",
+      "Un proyecto es temporal, único, con un propósito claro, y requiere planificación: recursos, tareas y cronograma.",
+      "¿Tu área necesita uno? Se pide en Wrike: signo + arriba a la derecha, «Solicitud», y el formulario «S - Nuevo Proyecto».",
     ],
   },
-  intro: ["Bienvenido al módulo de Proyectos.", "Aquí aprendes cómo llevamos un proyecto: objetivo, responsable, cronograma y presupuesto."],
+  intro: ["Bienvenido al módulo de Proyectos.", "Aquí aprendes cómo se solicita un proyecto en Wrike y cómo lo llevamos de inicio a cierre."],
   comentarios: [
-    // ✏️ Borrador
     {
-      nombre: "Coordinación de Proyectos",
+      nombre: "Keydi Rodriguez",
       cuerpo: "chica",
-      dialogo: ["Todo proyecto empieza con un objetivo claro, un cronograma y un presupuesto.", "Sin eso, cada quien va por su lado."],
+      dialogo: [
+        "Con la solicitud va el requerimiento de usuario: objetivo, descripción de la necesidad, criterios de aceptación y las áreas impactadas.",
+        "La historia de usuario siempre lleva tres palabras clave: «Como», «Quiero» y «Para qué».",
+        "Por ejemplo: como usuario final, quiero un buscador fácil de usar, para encontrar rápido lo que necesito.",
+      ],
     },
     {
-      nombre: "Analista de Proyectos",
+      nombre: "Estefanía Amador",
+      cuerpo: "chica",
+      dialogo: [
+        "Todo proyecto pasa por cinco fases: inicio, planificación, ejecución, monitoreo y control, y cierre.",
+        "Al final se oficializa el cierre con el acta de cierre y la encuesta de calidad.",
+      ],
+    },
+    {
+      nombre: "Carlos Jimenez",
       cuerpo: "chico",
-      dialogo: ["¿Ves que algo se va a atrasar? Avísalo a tiempo: las sorpresas al final salen caras.", "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!"],
+      dialogo: [
+        "El área solicitante también tiene su parte: que su N3 apruebe el alcance, ir a las reuniones de seguimiento y participar en las pruebas.",
+        "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!",
+      ],
     },
   ],
+  // ✏️ Revisar con Nazareth Gallardo
+  preguntasPorModulo: 4,
   preguntas: [
     {
-      // ✏️ Borrador: revisar con Nazareth Gallardo
-      pregunta: "¿Qué necesita todo proyecto desde el inicio?",
+      pregunta: "¿Qué es un proyecto?",
       opciones: [
-        "Solo las ganas de empezar.",
-        "Un objetivo claro, un responsable, un cronograma y un presupuesto.",
-        "Esperar a que el cliente diga qué hacer cada día.",
+        "Cualquier tarea que se repite todos los meses.",
+        "Un esfuerzo temporal para crear un producto, servicio o resultado único.",
+        "Una reunión para revisar pendientes.",
       ],
       correcta: 1,
+      explicacion: "Es temporal (tiene inicio y fin), único, con un propósito claro, y requiere planificación.",
     },
     {
-      // ✏️ Borrador
-      pregunta: "Si ves que una actividad del proyecto se va a atrasar, ¿qué es lo correcto?",
+      pregunta: "Tu área necesita un proyecto nuevo de Sistemas. ¿Cómo lo solicitas?",
       opciones: [
-        "Avisar a tiempo al líder del proyecto y proponer cómo recuperarlo.",
-        "No decir nada y esperar que nadie se dé cuenta.",
-        "Saltarse las actividades siguientes.",
+        "Por correo o WhatsApp a alguien de Sistemas.",
+        "Se lo pides de palabra a tu jefe y esperas.",
+        "En Wrike: signo +, «Solicitud» y el formulario «S - Nuevo Proyecto».",
+      ],
+      correcta: 2,
+      explicacion: "Se llenan todos los campos de la solicitud y el requerimiento detallado del alcance.",
+    },
+    {
+      pregunta: "¿Qué palabras clave lleva una historia de usuario bien escrita?",
+      opciones: [
+        "«Como», «Quiero» y «Para qué».",
+        "«Urgente», «Importante» y «Ya».",
+        "«Inicio», «Fin» y «Responsable».",
       ],
       correcta: 0,
+      explicacion: "«Como» es el rol, «Quiero» lo que necesita y «Para qué» el beneficio que busca.",
+    },
+    {
+      pregunta: "¿En qué fase del proyecto se hacen el acta de cierre y la encuesta de calidad?",
+      opciones: [
+        "En la planificación.",
+        "En el cierre.",
+        "En el inicio, antes de empezar.",
+      ],
+      correcta: 1,
+      explicacion: "Las fases son inicio, planificación, ejecución, monitoreo y control, y cierre.",
     },
   ],
 });

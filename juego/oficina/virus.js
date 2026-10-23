@@ -30,8 +30,9 @@ function actualizarVirus(dt) {
 	const of = m.oficina;
 	v.inmune = Math.max(0, v.inmune - dt);
 
-	// Salen después de hablar con todos y dejan de salir cerca del antivirus
-	if (of.companeros.every((n) => n.hablado) && heroe.x < of.terminalX - 260) {
+	// Salen después de hablar con el anfitrión y dejan de salir cerca del
+	// antivirus. Mientras hablas con alguien el juego se detiene: no te dan.
+	if (of.companeros[0].hablado && heroe.x < of.terminalX - 260) {
 		if (!v.avisado) {
 			v.avisado = true;
 			avisos.push({ texto: esTactil ? "¡Virus! Agáchate o salta" : "¡Virus! ↓ agáchate · ↑ salta", t: 0 });

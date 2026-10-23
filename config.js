@@ -109,6 +109,11 @@ window.TEMAS_OFICINA = {};
                   cielo (PNG transparente y recortado), ej.
                   "assets/edificios/Agalta.png". Sin foto se dibuja un
                   edificio genérico del color del módulo.
+   - fotoBordes:  (opcional) desvanece los bordes de la foto para que no se
+                  vea cortada en línea recta: { arriba, abajo, izquierda,
+                  derecha }, cada uno la fracción que se desvanece (ej.
+                  abajo: 0.2 la funde con el pasto). Sin esto, la foto
+                  se dibuja tal cual (Atlas, Lirios).
    - logo:        (opcional) ruta a un PNG/SVG con el logo del módulo, ej.
                   "assets/logos/Proyectos.png". Se dibuja SIN deformar
                   (respeta su proporción). Sin logo se ve el recuadro "LOGO".
@@ -137,7 +142,11 @@ window.TEMAS_OFICINA = {};
                   virus: (opcional) true para que crucen virus por la
                          oficina: se esquivan agachándose (los que vuelan) o
                          saltando (los que ruedan). Salen después de hablar
-                         con todos los compañeros.
+                         con el anfitrión; mientras hablas con alguien se
+                         detienen.
+                  largo: (opcional) largo de la oficina en px (normal:
+                         2600, máximo 3400). Muebles y compañeros se
+                         estiran con ella. Seguridad usa 3200.
                   robots: (solo con estacion "robot") cuáles se arman y en
                          qué orden: "tierra", "aereo" y/o "humanoide", ej.
                          ["tierra", "aereo", "humanoide"]. Cada robot hace
@@ -145,7 +154,7 @@ window.TEMAS_OFICINA = {};
                          Sin esto, solo el de tierra.
    - comentarios: más compañeros dentro de la oficina, cada uno con
                   { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
-                  Caben 2 (el resto no se muestra).
+                  Caben 3 (el resto no se muestra).
    - mision:      (opcional) llevar algo del punto A al punto B antes de
                   la estación del fondo: { objeto: "los permisos",
                   a: { letrero, nube }, b: { letrero, nombre, cuerpo,
@@ -159,9 +168,9 @@ window.TEMAS_OFICINA = {};
    - preguntas:   { pregunta, opciones, correcta (índice desde 0),
                     explicacion (opcional, se muestra al acertar) }.
 
-   ✏️ Las preguntas de SharePoint salen de la capacitación "Suite de
-   Microsoft". Las demás son un BORRADOR: cada departamento debe
-   reemplazarlas con su contenido real.
+   ✏️ Las preguntas de Proyectos, Procesos, SharePoint e IA salen de las
+   capacitaciones de cada área. Las de Seguridad todavía son un BORRADOR:
+   el departamento debe reemplazarlas con su contenido real.
    --------------------------------------------------------------------- */
 
 /* Proyectos de Celaque que se ven como edificios de fondo en la calle

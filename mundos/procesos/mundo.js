@@ -27,7 +27,7 @@ window.MODULOS.push({
   intro: ["Este es el módulo de Procesos.", "Los procesos nos dan organización, eficiencia y responsabilidad, y todos viven en Wrike."],
   comentarios: [
     {
-      nombre: "Calidad y Procesos",
+      nombre: "Juan Flores",
       cuerpo: "chico",
       dialogo: [
         "Hay procesos recurrentes, que se repiten: diario, semanal, mensual...",
@@ -36,11 +36,17 @@ window.MODULOS.push({
       ],
     },
     {
-      nombre: "Seguimiento",
+      nombre: "Andrea Ortiz",
       cuerpo: "chica",
       dialogo: [
         "Cada proceso tiene un código. En «T-RH-4-1 Revisión Mensual Talento»: T es el departamento, RH el macroproceso, 4 la recurrencia (mensual) y 1 el nivel de revisión.",
-        "Y una buena práctica: no completes un proceso que todavía tiene subtareas activas, y deja la evidencia de lo que hiciste.",
+      ],
+    },
+    {
+      nombre: "Franklin Matute",
+      cuerpo: "chico",
+      dialogo: [
+        "Una buena práctica: no completes un proceso que todavía tiene subtareas activas, y deja la evidencia de lo que hiciste.",
         "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!",
       ],
     },
