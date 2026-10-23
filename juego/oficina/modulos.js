@@ -88,6 +88,13 @@ const PIEZAS_ESTACION = 6; // partes del robot o del escudo
 // orden: cada uno se lleva su parte de las preguntas. Sin "robots", solo el
 // de tierra. Cómo se dibuja cada uno: estaciones.js.
 const ROBOTS_IA = { tierra: "de tierra", aereo: "aéreo", humanoide: "humanoide" };
+// Las PIEZAS_ESTACION partes de cada robot, en el orden en que se arman
+// (lo que dice la terminal al acertar)
+const PIEZAS_ROBOT = {
+	tierra: ["las ruedas", "el cuerpo", "el brazo izquierdo", "el brazo derecho", "la cabeza", "la cara y la antena"],
+	aereo: ["las patas", "el cuerpo", "el brazo izquierdo", "el brazo derecho", "las hélices", "la cámara"],
+	humanoide: ["las piernas", "el torso", "el brazo izquierdo", "el brazo derecho", "la cabeza", "la cara"],
+};
 function robotsDe(oficina) {
 	const lista = ((oficina && oficina.robots) || []).filter((r) => ROBOTS_IA[r]);
 	return lista.length ? lista : ["tierra"];

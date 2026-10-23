@@ -1276,10 +1276,23 @@ kbd {
 	display: none;
 }
 
+/* Taller con varios robots: los tres en fila */
+#terminal.robots-varios #terminal-figura {
+	width: 360px;
+	max-width: 100%;
+	height: auto;
+	aspect-ratio: 12 / 5;
+}
+
 @media (max-height: 640px) {
 	#terminal-figura {
 		width: 160px;
 		height: 100px;
+	}
+
+	#terminal.robots-varios #terminal-figura {
+		width: 240px;
+		height: auto;
 	}
 }
 

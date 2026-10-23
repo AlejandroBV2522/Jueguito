@@ -93,6 +93,7 @@ function abrirTerminal(m) {
 	const est = m.oficina.estacion;
 	ui.terminal.classList.toggle("estacion-robot", est === "robot");
 	ui.terminal.classList.toggle("estacion-antivirus", est === "antivirus");
+	ui.terminal.classList.toggle("robots-varios", m.oficina.robots.length > 1);
 	ui.terminalFigura.hidden = est === "computadora";
 	ui.terminalTitulo.textContent = est === "computadora" ? `${ESTACIONES[est].titulo} · Módulo ${m.nombre}` : ESTACIONES[est].titulo;
 	ui.terminalSalir.hidden = true;
@@ -135,16 +136,17 @@ function responderTerminal(indice, m, btn) {
 	}
 	btn.classList.add("correcta");
 	ui.terminalOpciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
-	ui.terminalPista.textContent = p.explicacion ? `¡Correcto! ${p.explicacion}` : "¡Correcto!";
 	// Robot o antivirus: la pieza nueva entra ya (ver dibujarFiguraTerminal)
 	m.aciertos = m.preguntaActual + 1;
 	m.ultimoAcierto = tiempo;
+	const piezas = m.oficina.estacion === "robot" ? textoPiezasNuevas(m, robotDePregunta(m, m.preguntaActual)) : "";
+	ui.terminalPista.textContent = ["¡Correcto!", piezas, p.explicacion].filter(Boolean).join(" ");
 	const conFigura = m.oficina.estacion !== "computadora";
 	setTimeout(() => {
 		m.preguntaActual++;
 		if (m.preguntaActual < preguntasDe(m).length) mostrarPreguntaTerminal(m);
 		else terminarModulo(m);
-	}, p.explicacion ? 2200 : conFigura ? 1400 : 900);
+	}, (p.explicacion ? 2200 : conFigura ? 1400 : 900) + (piezas ? 900 : 0)); // un rato más para leer qué se armó
 }
 
 // Completar un módulo sube de nivel y abre el siguiente mundo del mapa.

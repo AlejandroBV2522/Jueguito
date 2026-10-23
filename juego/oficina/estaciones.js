@@ -20,6 +20,18 @@ function piezasEstacion(m, r = 0) {
 	};
 }
 
+// Qué le puso el último acierto al robot r: "Piezas nuevas del robot
+// aéreo: las patas y el cuerpo." o "¡Robot aéreo terminado!"
+function textoPiezasNuevas(m, r) {
+	const tipo = m.oficina.robots[r];
+	const est = piezasEstacion(m, r);
+	const nuevas = PIEZAS_ROBOT[tipo].slice(est.antes, est.piezas);
+	if (!nuevas.length) return "";
+	const lista = nuevas.length > 1 ? `${nuevas.slice(0, -1).join(", ")} y ${nuevas[nuevas.length - 1]}` : nuevas[0];
+	const fin = est.listo ? ` ¡Robot ${ROBOTS_IA[tipo]} terminado!` : "";
+	return `${nuevas.length > 1 ? "Piezas nuevas" : "Pieza nueva"} del robot ${ROBOTS_IA[tipo]}: ${lista}.${fin}`;
+}
+
 // 0..1: cuánto entró la pieza k (las nuevas caen desde arriba, una tras otra)
 function entradaPieza(m, k, est) {
 	if (k < est.antes) return 1;
@@ -67,7 +79,7 @@ function dibujarRobotTierra(cx, piso, m, est) {
 	const flota = listo ? Math.sin(tiempo * 2) * 3 * u : 0;
 	ctx.save();
 	ctx.translate(cx, piso);
-	siluetaRobot([...(est.piezas < 2 ? [[-24, -62, 48, 46]] : []), ...(est.piezas < 5 ? [[-20, -100, 40, 34]] : [])]);
+	siluetaRobot([...(est.piezas < 1 ? [[-28, -16, 56, 14]] : []), ...(est.piezas < 2 ? [[-24, -62, 48, 46]] : []), ...(est.piezas < 5 ? [[-20, -100, 40, 34]] : [])]);
 	const pieza = (k, dibujo) => piezaRobot(m, est, k, k > 0 ? flota : 0, dibujo);
 	pieza(0, () => {
 		ctx.fillStyle = COLORES.verdeProfundo;
@@ -139,7 +151,7 @@ function dibujarRobotAereo(cx, piso, m, est) {
 	ctx.save();
 	// El origen es el centro del cuerpo; posado, las patas tocan el piso
 	ctx.translate(cx, piso - 34 * u - vuelo * (38 * u + Math.sin(tiempo * 2.5) * 4 * u));
-	siluetaRobot([...(est.piezas < 2 ? [[-22, -11, 44, 22]] : []), ...(est.piezas < 5 ? [[-53, -26, 30, 6], [23, -26, 30, 6]] : [])]);
+	siluetaRobot([...(est.piezas < 1 ? [[-28, 10, 56, 24]] : []), ...(est.piezas < 2 ? [[-22, -11, 44, 22]] : []), ...(est.piezas < 5 ? [[-53, -26, 30, 6], [23, -26, 30, 6]] : [])]);
 	const pieza = (k, dibujo) => piezaRobot(m, est, k, 0, dibujo);
 	ctx.lineCap = "round";
 	pieza(0, () => {
@@ -436,7 +448,8 @@ function dibujarEstacionArmable(m, sx, piso) {
 // La figurita dentro de la ventana de la terminal (lienzo #terminal-figura)
 function dibujarFiguraTerminal(m) {
 	const lienzo = ui.terminalFigura;
-	const ancho = 240;
+	const robots = m.oficina.robots;
+	const ancho = robots.length > 1 ? 360 : 240; // varios robots: más ancha (style.css → .robots-varios)
 	const alto = 150;
 	if (lienzo.width !== ancho * DPR || lienzo.height !== alto * DPR) {
 		lienzo.width = ancho * DPR;
@@ -448,17 +461,30 @@ function dibujarFiguraTerminal(m) {
 	ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 	ctx.clearRect(0, 0, ancho, alto);
 	S = 1;
-	const robots = m.oficina.robots;
 	if (m.oficina.estacion !== "robot") dibujarEscudoArmado(ancho / 2, alto / 2, 52, m, piezasEstacion(m));
-	else if (robots.length > 1 && m.preguntaActual >= preguntasDe(m).length) {
-		// Terminado: los robots juntos, más chicos
-		S = 0.62;
-		robots.forEach((r, k) => DIBUJO_ROBOT[r](ancho / 2 + (k - (robots.length - 1) / 2) * 78, alto - 8, m, piezasEstacion(m, k)));
-	} else {
-		// El robot de la pregunta actual
-		const r = Math.max(0, robotDePregunta(m, m.preguntaActual));
-		DIBUJO_ROBOT[robots[r]](ancho / 2, alto - 8, m, piezasEstacion(m, r));
-	}
+	else if (robots.length > 1) {
+		// Los robots en fila desde el inicio (punteados lo que falta); el que
+		// se arma ahora tiene una luz debajo. Al terminar, todos completos.
+		const actual = robotDePregunta(m, m.preguntaActual);
+		const piso = alto - 22;
+		robots.forEach((r, k) => {
+			const x = ancho / 2 + (k - (robots.length - 1) / 2) * 118;
+			if (k === actual) {
+				ctx.fillStyle = conAlfa("#7fd6c8", 0.25 + 0.15 * Math.sin(tiempo * 4));
+				ctx.beginPath();
+				ctx.ellipse(x, piso, 46, 7, 0, 0, Math.PI * 2);
+				ctx.fill();
+			}
+			ctx.fillStyle = k === actual ? "#7fd6c8" : conAlfa(COLORES.blanco, 0.75);
+			ctx.font = `bold 11px ${FUENTE}`;
+			ctx.textAlign = "center";
+			ctx.textBaseline = "alphabetic";
+			ctx.fillText(r === "tierra" ? "Tierra" : r === "aereo" ? "Aéreo" : "Humanoide", x, alto - 4);
+			S = 0.85;
+			DIBUJO_ROBOT[r](x, piso, m, piezasEstacion(m, k));
+			S = 1;
+		});
+	} else DIBUJO_ROBOT[robots[0]](ancho / 2, alto - 8, m, piezasEstacion(m));
 	ctx = anteriorCtx;
 	S = anteriorS;
 }
