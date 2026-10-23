@@ -536,6 +536,24 @@ try {
 		await entrarAlMundo(i);
 		console.log(`mundo ${i + 1} completado:`, await jugarOficina(120000, `mundo${i + 1}`, 1500));
 		console.log("misión:", await evalua(`modulos[${i}].mision.paso`));
+	} else if (escenario === "zoom") {
+		// Acerca y aleja un mundo cuadro por cuadro: escala, centro, pantalla
+		// y panel del centro, para ver si algo tiembla
+		await conProgreso({ completos: ["Talento"], nivel: 1, personaje: "chico", nombre: "Prueba" });
+		await paso(300);
+		const leer = `(() => { const v = vistaMapa(); const p = ui.panel.getBoundingClientRect(); const b = document.querySelector("#mapa-barra"); return [mapa.z.toFixed(3), v.k.toFixed(4), v.ox.toFixed(1), v.oy.toFixed(1), W, H, p.x.toFixed(1), p.y.toFixed(1), b ? b.getBoundingClientRect().height.toFixed(1) : "-"].join(" "); })()`;
+		console.log("z k ox oy W H panelX panelY barra");
+		await tecla("Enter");
+		for (let k = 0; k < 18; k++) {
+			console.log(await evalua(leer));
+			if (k % 3 === 0) await foto(`acercando-${k}`);
+			await paso(50);
+		}
+		await tecla("Escape");
+		for (let k = 0; k < 18; k++) {
+			console.log(await evalua(leer));
+			await paso(50);
+		}
 	} else if (escenario === "victoria") {
 		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");
 		await conProgreso({ completos: nombres.slice(0, -1), nivel: 8, personaje: "chico", nombre: "Prueba" });

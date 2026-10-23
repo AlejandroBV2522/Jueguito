@@ -321,7 +321,9 @@ function atrasMapa() {
 
 function actualizarMapa(dt) {
 	const antes = mapa.z;
-	mapa.z = mapa.zObjetivo > mapa.z ? Math.min(1, mapa.z + dt * 1.5) : Math.max(0, mapa.z - dt * 1.5);
+	// Hacia el objetivo y ahí se queda (antes, ya acercado, bajaba y subía
+	// cada cuadro: la pantalla temblaba)
+	mapa.z = mapa.z < mapa.zObjetivo ? Math.min(mapa.zObjetivo, mapa.z + dt * 1.5) : Math.max(mapa.zObjetivo, mapa.z - dt * 1.5);
 	if (mapa.z === 0 && mapa.zObjetivo === 0 && mapa.foco >= 0) {
 		mapa.foco = -1;
 		actualizarPanelMapa();
