@@ -10,6 +10,17 @@ const TECLAS_SALTAR = ["ArrowUp", "w", "W"];
 const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 window.addEventListener("keydown", (e) => {
+	// Estadísticas abiertas: Esc las cierra (Enter y Espacio, el botón enfocado)
+	if (!uiEstadisticas.ventana.hidden) {
+		if (e.key === "Escape") cerrarEstadisticas();
+		return;
+	}
+	// Repaso final: se responde con 1, 2, 3... o con los botones
+	if (estado === "repaso") {
+		const btn = /^[1-9]$/.test(e.key) && uiRepaso.opciones.children[Number(e.key) - 1];
+		if (btn) btn.click();
+		return;
+	}
 	// Con "Cómo se juega" abierto, Enter, Espacio o Esc lo cierran
 	if (!ui.ayuda.hidden) {
 		if (e.key === "Enter" || e.key === "Escape" || e.key === " ") {
@@ -94,6 +105,48 @@ window.addEventListener(
 	},
 	{ passive: true }
 );
+
+// Sonido y modo fácil (juego/base/ajustes.js)
+const btnSonido = $("btn-sonido");
+const btnFacil = $("btn-facil");
+function mostrarAjustes() {
+	btnSonido.setAttribute("aria-pressed", String(ajustes.sonido));
+	btnSonido.textContent = ajustes.sonido ? "♪ Sonido" : "♪ Sin sonido";
+	btnSonido.classList.toggle("apagado", !ajustes.sonido);
+	btnFacil.setAttribute("aria-checked", String(ajustes.facil));
+}
+mostrarAjustes();
+btnSonido.addEventListener("click", () => {
+	ajustes.sonido = !ajustes.sonido;
+	guardarAjustes();
+	mostrarAjustes();
+	btnSonido.blur(); // Espacio vuelve a ser saltar, no apagar el sonido
+	sonar("dialogo");
+});
+btnFacil.addEventListener("click", () => {
+	ajustes.facil = !ajustes.facil;
+	guardarAjustes();
+	mostrarAjustes();
+	btnFacil.blur(); // Enter vuelve a ser del mapa
+	avisoMapa(ajustes.facil ? "Modo fácil: saltos más altos y sin perder corazones" : "Modo fácil apagado");
+	sonar(ajustes.facil ? "acierto" : "dialogo");
+});
+
+// Constancia (repaso.js): desde la bienvenida o, ya completo, desde el mapa
+// (quitan el foco: si no, el siguiente Enter del mapa volvería a imprimir)
+$("btn-constancia").addEventListener("click", imprimirConstancia);
+$("btn-constancia-mapa").addEventListener("click", (e) => {
+	e.currentTarget.blur();
+	constanciaDesdeMapa();
+});
+
+// Estadísticas: solo con el nombre de pruebas (estadisticas.js)
+uiEstadisticas.boton.addEventListener("click", abrirEstadisticas);
+uiEstadisticas.cerrar.addEventListener("click", cerrarEstadisticas);
+uiEstadisticas.borrar.addEventListener("click", borrarEstadisticas);
+uiEstadisticas.ventana.addEventListener("click", (e) => {
+	if (e.target === uiEstadisticas.ventana) cerrarEstadisticas();
+});
 
 // Victoria: "Jugar de nuevo" borra el progreso; "Ver el mapa" lo conserva
 $("btn-reiniciar").addEventListener("click", () => {

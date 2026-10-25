@@ -61,7 +61,7 @@ function dibujarPetalos(dt) {
 }
 
 function dibujar(dt) {
-	if (estado === "mapa" || estado === "victoria") {
+	if (estado === "mapa" || estado === "victoria" || estado === "repaso") {
 		dibujarMapa(dt);
 		dibujarPetalos(dt);
 		return;

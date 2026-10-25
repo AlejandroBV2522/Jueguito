@@ -2,7 +2,7 @@
 "use strict";
 
 // ---------- Estado ----------
-let estado = "mapa"; // mapa | jugando | dialogo | cueva | pregunta | transicion | oficina | terminal | victoria
+let estado = "mapa"; // mapa | jugando | dialogo | cueva | pregunta | transicion | oficina | terminal | repaso | victoria
 // Controla el fondo (afuera vs. cueva oscura): solo se activa al cruzar el
 // tubo de entrada, no con solo llegar caminando a x = LARGO (el clamp deja
 // al héroe justo ahí antes de agacharse, y aún debe verse el mundo de afuera).

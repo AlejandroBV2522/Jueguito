@@ -117,6 +117,7 @@ function mostrarPreguntaTerminal(m) {
 	if (m.oficina.robots.length > 1) ui.terminalTitulo.textContent = `Taller de IA · Arma al robot ${ROBOTS_IA[m.oficina.robots[robotDePregunta(m, m.preguntaActual)]]}`;
 	ui.terminalPregunta.textContent = p.pregunta;
 	ui.terminalPista.textContent = "Elige una respuesta (o presiona 1, 2, 3).";
+	anotarPregunta(m.nombre, p.pregunta, false);
 	ui.terminalOpciones.innerHTML = "";
 	p.opciones.forEach((texto, i) => {
 		const btn = document.createElement("button");
@@ -140,9 +141,12 @@ function responderTerminal(indice, m, btn) {
 		btn.classList.add("incorrecta");
 		btn.disabled = true;
 		ui.terminalPista.textContent = "Esa no es. ¡Intenta con otra opción!";
+		anotarPregunta(m.nombre, p.pregunta, true);
+		sonar("error");
 		return;
 	}
 	btn.classList.add("correcta");
+	sonar("acierto");
 	ui.terminalOpciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
 	// Robot o antivirus: la pieza nueva entra ya (ver dibujarFiguraTerminal)
 	m.aciertos = m.preguntaActual + 1;

@@ -27,6 +27,8 @@
     <script defer src="juego/base/constantes.js"></script>
     <script defer src="juego/camino/fisica.js"></script>
     <script defer src="juego/base/utilidades.js"></script>
+    <script defer src="juego/base/ajustes.js"></script>
+    <script defer src="juego/base/sonido.js"></script>
     <script defer src="juego/base/paleta.js"></script>
     <script defer src="juego/base/canvas.js"></script>
     <script defer src="juego/base/imagenes.js"></script>
@@ -41,6 +43,8 @@
     <script defer src="juego/base/estado.js"></script>
     <script defer src="juego/interfaz/interfaz.js"></script>
     <script defer src="juego/interfaz/dialogos.js"></script>
+    <script defer src="juego/interfaz/estadisticas.js"></script>
+    <script defer src="juego/interfaz/repaso.js"></script>
     <script defer src="juego/oficina/oficina.js"></script>
     <script defer src="juego/mapa/mapa.js"></script>
     <script defer src="juego/camino/cueva.js"></script>
@@ -130,6 +134,13 @@
             <span id="nombre-pregunta"></span>
             <input id="nombre-jugador" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Escribe tu nombre">
         </label>
+        <!-- Para quien no juega seguido (juego/base/ajustes.js) -->
+        <button id="btn-facil" class="interruptor" role="switch" aria-checked="false">
+            <span class="interruptor-riel" aria-hidden="true"><span class="interruptor-bola"></span></span>
+            <span class="interruptor-texto"><strong>Modo fácil</strong><small>Saltos más altos y sin perder corazones</small></span>
+        </button>
+        <!-- Con todo completo: volver a sacar la constancia -->
+        <button id="btn-constancia-mapa" class="boton boton-secundario boton-chico" hidden>Descargar mi constancia</button>
     </div>
 
     <!-- Cómo se juega: se abre sola la primera vez -->
@@ -146,11 +157,18 @@
                 <li><span class="ayuda-num">3</span><span><strong>Toca su edificio</strong> para ver de qué trata y entra.</span></li>
                 <li><span class="ayuda-num">4</span><span><strong>Habla con el equipo</strong> (★ es quien te recibe) y responde bien al final del nivel.</span></li>
             </ol>
+            <p class="ayuda-facil">¿No juegas seguido? Activa el <strong>Modo fácil</strong> en el centro del mapa.</p>
             <p class="ayuda-controles solo-teclado"><kbd>←</kbd><kbd>→</kbd> Caminar · <kbd>Espacio</kbd> Saltar · <kbd>Q</kbd> Correr · <kbd>E</kbd> Hablar</p>
             <p class="ayuda-controles solo-tactil">Usa los botones de la pantalla para caminar, saltar, correr y hablar.</p>
             <button id="ayuda-cerrar" class="boton boton-grande">¡A jugar! <span class="boton-icono" aria-hidden="true">▶</span></button>
         </div>
     </div>
+
+    <!-- Sonido encendido o apagado (se ve siempre, también dentro de los niveles) -->
+    <button id="btn-sonido" class="boton boton-secundario boton-chico" aria-pressed="true">♪ Sonido</button>
+
+    <!-- Solo con el nombre de pruebas: qué preguntas se fallan más -->
+    <button id="btn-estadisticas" class="boton boton-secundario boton-chico" hidden>Estadísticas</button>
 
     <!-- Empezar de cero: borra el progreso guardado en este navegador -->
     <button id="btn-reiniciar-progreso" class="boton boton-secundario boton-chico" aria-label="Empezar de cero (borra el progreso)">↻ Empezar de cero</button>
@@ -202,14 +220,63 @@
             <p id="victoria-nombre" class="final-nombre"></p>
             <p id="victoria-texto"></p>
             <ul id="victoria-modulos" class="final-modulos"></ul>
+            <p id="victoria-repaso" class="final-repaso"></p>
             <p class="lema">Tú lo sueñas, juntos lo construimos.</p>
             <p id="victoria-fecha" class="final-fecha"></p>
             <div class="botones">
-                <button id="btn-reiniciar" class="boton boton-grande">Jugar de nuevo <span class="boton-icono" aria-hidden="true">↻</span></button>
+                <button id="btn-constancia" class="boton boton-grande">Descargar constancia <span class="boton-icono" aria-hidden="true">▼</span></button>
                 <button id="btn-cambiar" class="boton boton-secundario">Ver el mapa</button>
+                <button id="btn-reiniciar" class="boton boton-secundario">Jugar de nuevo ↻</button>
+            </div>
+            <p class="final-ayuda">En la ventana de imprimir, elige «Guardar como PDF».</p>
+        </div>
+    </div>
+
+    <!-- Repaso final: una pregunta de cada módulo antes de la bienvenida -->
+    <div id="repaso" hidden role="dialog" aria-modal="true" aria-labelledby="repaso-titulo">
+        <div class="carta repaso-carta">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+            <p class="repaso-pre">Repaso final</p>
+            <h2 id="repaso-titulo">¿Estás listo?</h2>
+            <p class="repaso-datos"><span id="repaso-modulo"></span> · <span id="repaso-progreso"></span></p>
+            <p id="repaso-pregunta"></p>
+            <div id="repaso-opciones"></div>
+            <p id="repaso-pista"></p>
+        </div>
+    </div>
+
+    <!-- Estadísticas (botón de arriba, solo con el nombre de pruebas) -->
+    <div id="estadisticas" hidden role="dialog" aria-modal="true" aria-labelledby="estadisticas-titulo">
+        <div class="carta estadisticas-carta">
+            <h2 id="estadisticas-titulo">¿Qué preguntas cuestan más?</h2>
+            <p id="estadisticas-resumen"></p>
+            <div class="estadisticas-marco">
+                <table>
+                    <thead><tr><th>Módulo</th><th>Pregunta</th><th>Veces que salió</th><th>Respuestas equivocadas</th></tr></thead>
+                    <tbody id="estadisticas-tabla"></tbody>
+                </table>
+            </div>
+            <div class="botones">
+                <button id="estadisticas-cerrar" class="boton">Cerrar</button>
+                <button id="estadisticas-borrar" class="boton boton-secundario">Borrar datos</button>
             </div>
         </div>
     </div>
+
+    <!-- Constancia: solo se ve al imprimir (juego/interfaz/repaso.js) -->
+    <section id="constancia" aria-hidden="true">
+        <div class="cinta-final"></div>
+        <div class="espacio-logo logo-constancia" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+        <p class="constancia-pre">Constancia de inducción</p>
+        <p class="constancia-se">Se reconoce a</p>
+        <h1 id="constancia-nombre"></h1>
+        <p class="constancia-texto">por completar los módulos de su capacitación como miembro del equipo de Celaque:</p>
+        <ul id="constancia-modulos"></ul>
+        <p id="constancia-repaso"></p>
+        <p class="constancia-lema">Tú lo sueñas, juntos lo construimos.</p>
+        <p id="constancia-fecha"></p>
+    </section>
 
     <!-- Controles táctiles (solo se ven en celulares y tablets) -->
     <div id="controles-tactiles" hidden>

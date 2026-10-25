@@ -27,8 +27,10 @@ function objetivoActual() {
 	return null;
 }
 
-// Columna de luz sobre el objetivo + flechas luminosas a los pies del
-// héroe apuntando hacia él (se apagan al llegar).
+// Columna de luz sobre el objetivo, con una flecha que rebota encima
+// ("aquí"), + flechas luminosas a los pies del héroe apuntando hacia él
+// (se apagan al llegar). Más brillantes que antes: en la reunión pidieron
+// guías más iluminadas para quien no juega seguido.
 function dibujarGuias() {
 	const objetivo = objetivoActual();
 	if (objetivo === null) return;
@@ -36,11 +38,29 @@ function dibujarGuias() {
 	const fx = objetivo - camara;
 	if (fx > -80 && fx < W + 80) {
 		const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
-		const luz = ctx.createLinearGradient(0, SUELO + 40 * S, 0, SUELO - 320 * S);
-		luz.addColorStop(0, conAlfa(COLORES.verdeInstitucional, 0.45 + 0.2 * pulso));
+		const luz = ctx.createLinearGradient(0, SUELO + 40 * S, 0, SUELO - 380 * S);
+		luz.addColorStop(0, conAlfa(COLORES.verdeInstitucional, 0.6 + 0.25 * pulso));
+		luz.addColorStop(0.6, conAlfa(COLORES.fondoVerdeClaro, 0.18 + 0.1 * pulso));
 		luz.addColorStop(1, conAlfa(COLORES.verdeInstitucional, 0));
 		ctx.fillStyle = luz;
-		ctx.fillRect(fx - 34 * S, SUELO - 320 * S, 68 * S, 360 * S);
+		ctx.fillRect(fx - 42 * S, SUELO - 380 * S, 84 * S, 420 * S);
+		// Flecha hacia abajo que rebota sobre el objetivo
+		const ay = SUELO - 250 * S + Math.abs(Math.sin(tiempo * 3.2)) * 18 * S;
+		ctx.save();
+		ctx.shadowColor = COLORES.verdeInstitucional;
+		ctx.shadowBlur = 18 * S;
+		ctx.fillStyle = COLORES.blanco;
+		ctx.strokeStyle = COLORES.verdeInstitucional;
+		ctx.lineWidth = 4 * S;
+		ctx.lineJoin = "round";
+		ctx.beginPath();
+		ctx.moveTo(fx - 22 * S, ay - 20 * S);
+		ctx.lineTo(fx + 22 * S, ay - 20 * S);
+		ctx.lineTo(fx, ay + 8 * S);
+		ctx.closePath();
+		ctx.fill();
+		ctx.stroke();
+		ctx.restore();
 	}
 
 	const dist = objetivo - heroe.x;
@@ -58,13 +78,13 @@ function dibujarGuias() {
 	for (let k = 0; k < 3; k++) {
 		// Una ola de luz recorre las 3 flechas hacia el objetivo
 		const a = alfa * (0.35 + 0.65 * Math.max(0, Math.sin(tiempo * 6 - k * 1.1)));
-		const cx = x0 + dir * k * 17 * S;
-		ctx.strokeStyle = `rgba(220,255,250,${a.toFixed(3)})`;
-		ctx.lineWidth = 5 * S;
+		const cx = x0 + dir * k * 21 * S;
+		ctx.strokeStyle = `rgba(230,255,250,${Math.min(1, a * 1.15).toFixed(3)})`;
+		ctx.lineWidth = 6.5 * S;
 		ctx.beginPath();
-		ctx.moveTo(cx - dir * 6 * S, y - 9 * S);
-		ctx.lineTo(cx + dir * 5 * S, y);
-		ctx.lineTo(cx - dir * 6 * S, y + 9 * S);
+		ctx.moveTo(cx - dir * 8 * S, y - 12 * S);
+		ctx.lineTo(cx + dir * 6 * S, y);
+		ctx.lineTo(cx - dir * 8 * S, y + 12 * S);
 		ctx.stroke();
 	}
 	ctx.restore();

@@ -144,6 +144,13 @@ function ganar() {
 		li.style.animationDelay = `${1 + i * 0.15}s`; // van apareciendo uno por uno
 		ui.victoriaModulos.appendChild(li);
 	});
-	ui.victoriaFecha.textContent = new Date().toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" });
-	setTimeout(() => (ui.victoria.hidden = false), 700);
+	ui.victoriaFecha.textContent = fechaLarga(new Date());
+	const repaso = $("victoria-repaso");
+	repaso.textContent = textoRepaso(leerConstancia());
+	repaso.hidden = !repaso.textContent;
+	sonar("victoria");
+	setTimeout(() => {
+		ui.victoria.hidden = false;
+		$("btn-constancia").focus();
+	}, 700);
 }

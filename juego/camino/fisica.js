@@ -14,6 +14,9 @@ const GRAVEDAD = 3300;
 // Un poco más de impulso que antes (sube ~175 en vez de ~150): es la
 // introducción, y mucha gente nunca ha jugado un plataformero.
 const IMPULSO_SALTO = 1080;
+// En el modo fácil (ajustes.js) sube ~32 % más y dura más en el aire:
+// caminando ya alcanza para pasar los huecos de la Cueva.
+const impulsoSalto = () => IMPULSO_SALTO * (modoFacil() ? 1.15 : 1);
 // Niveles: cada NPC con el que hablas por PRIMERA vez te sube un nivel
 // (máximo NIVEL_MAX) y cada nivel te da un corazón más para la Cueva.
 const NIVEL_MAX = 5;

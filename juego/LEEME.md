@@ -41,6 +41,8 @@ Otras reglas:
 | `base/` | `constantes.js` | medidas del camino, colores y tipografía |
 | `camino/` | `fisica.js` | gravedad y salto, huecos y obstáculos de la Cueva, barreras |
 | `base/` | `utilidades.js` | `clamp`, `lerp`, `mezclar`, `conAlfa`, `crearAzar`… |
+| `base/` | `ajustes.js` | sonido y modo fácil del jugador (`ajustes`, `modoFacil`), guardados aparte del progreso |
+| `base/` | `sonido.js` | `sonar(nombre)`: efectos hechos con Web Audio, sin archivos |
 | `base/` | `paleta.js` | de gris a color según el avance |
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
@@ -53,6 +55,8 @@ Otras reglas:
 | `base/` | `estado.js` | `estado`, `heroe`, `camara`, `entrada`, `dlg` |
 | `interfaz/` | `interfaz.js` | `ui` (elementos HTML), `ponerLogo`, HUD |
 | `interfaz/` | `dialogos.js` | diálogos con los NPC |
+| `interfaz/` | `estadisticas.js` | anota qué preguntas salen y cuáles se fallan; ventana de estadísticas (solo con el nombre de pruebas) |
+| `interfaz/` | `repaso.js` | repaso final (una pregunta por módulo) y la constancia para imprimir o guardar en PDF |
 | `oficina/` | `oficina.js` | entrar y salir de la oficina, la terminal y sus preguntas |
 | `mapa/` | `mapa.js` | progreso guardado, `completarModulo`, carta, `entrarMundo`, `volverAlMapa` |
 | `camino/` | `cueva.js` | tubos, colisiones, peleas con antivalores, `accion` |

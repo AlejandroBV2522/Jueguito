@@ -163,9 +163,10 @@ function saltarAccion() {
 	if (estado !== "jugando" && estado !== "cueva" && estado !== "urbano" && estado !== "oficina") return;
 	const recienEnSuelo = tiempo - heroe.ultimoSuelo < 0.14 && heroe.velY <= 0;
 	if (heroeEnSuelo() || recienEnSuelo) {
-		heroe.velY = IMPULSO_SALTO;
+		heroe.velY = impulsoSalto();
 		heroe.ultimoSuelo = -1;
 		heroe.saltoPedido = -1;
+		sonar("salto");
 	} else {
 		heroe.saltoPedido = tiempo;
 	}
@@ -194,6 +195,7 @@ function entrarPorTubo(luego) {
 	heroe.moviendo = heroe.corriendo = false;
 	estado = "transicion";
 	transicion = { t: 0, luego };
+	sonar("tubo");
 }
 
 function abrirPregunta(enemigo) {
@@ -201,6 +203,7 @@ function abrirPregunta(enemigo) {
 	heroe.moviendo = heroe.corriendo = false;
 	dlg.enemigo = enemigo;
 	const p = enemigo.preguntas[enemigo.preguntaActual];
+	anotarPregunta(moduloTalento ? moduloTalento.nombre : "Talento", p.pregunta, false);
 	const titulo = enemigo.antivalor || enemigo.nombre;
 	ui.nombre.textContent = enemigo.antivalor ? `${titulo} ✗` : titulo;
 	ui.retrato.textContent = titulo.replace(/^(El|La|Los|Las)\s+/, "").charAt(0).toUpperCase();
@@ -231,6 +234,7 @@ function abrirPregunta(enemigo) {
 function responder(indice, enemigo) {
 	const p = enemigo.preguntas[enemigo.preguntaActual];
 	if (indice === p.correcta) {
+		sonar("acierto");
 		// Cierra la caja ya, para que se vea la pelea en el canvas
 		ui.opciones.hidden = true;
 		ui.opciones.innerHTML = "";
@@ -259,7 +263,10 @@ function responder(indice, enemigo) {
 		enemigo.atacandoT = 0;
 		heroe.golpeado = true;
 		heroe.golpeadoT = 0;
-		vidas--;
+		sonar("error");
+		anotarPregunta(moduloTalento ? moduloTalento.nombre : "Talento", p.pregunta, true);
+		// Modo fácil: el antivalor golpea, pero no quita corazones
+		if (!modoFacil()) vidas--;
 		if (vidas <= 0) setTimeout(perderCueva, 350);
 		else ui.pista.textContent = `Incorrecto, intenta de nuevo. Vidas: ${corazones()}`;
 	}
@@ -293,7 +300,8 @@ function perderPorHueco() {
 	heroe.dir = 1;
 	heroe.golpeado = true;
 	heroe.golpeadoT = 0;
-	avisos.push({ texto: esTactil ? "¡Ups! Corre y salta" : "¡Ups! Corre (Q) y salta", t: 0 });
+	sonar("caida");
+	avisos.push({ texto: modoFacil() ? "¡Ups! Salta antes del hueco" : esTactil ? "¡Ups! Corre y salta" : "¡Ups! Corre (Q) y salta", t: 0 });
 }
 
 function perderCueva() {

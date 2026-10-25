@@ -68,6 +68,8 @@ function golpeDeVirus(z, of) {
 	heroe.golpeado = true;
 	heroe.golpeadoT = 0;
 	heroe.x = frenarEnObstaculos(heroe.x, Math.max(of.x0 + 40, heroe.x - 50), -1, heroe.y);
+	sonar("golpe");
+	if (modoFacil()) return; // modo fácil (ajustes.js): el virus empuja, pero no quita corazones
 	vidas--;
 	if (vidas > 0) return;
 	// Sin corazones: retrocedes un tramo y se llenan otra vez

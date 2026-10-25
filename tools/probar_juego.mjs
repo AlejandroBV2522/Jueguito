@@ -9,7 +9,9 @@
 //   talento   camina hasta el primer personaje y avanza su diálogo
 //   oficina   juega la oficina de Proyectos completa y vuelve al mapa
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
-//   victoria  completa la última oficina y muestra la tarjeta final
+//   victoria  completa la última oficina, el repaso final (una equivocada a
+//             propósito), la tarjeta final, la constancia impresa y las estadísticas
+//   facil     modo fácil: el mapa con el interruptor y Seguridad sin perder corazones
 //   estaciones  arma los 3 robots de IA y el antivirus de Seguridad (capturas a medias y al final)
 //   virus     cruza Seguridad esquivando virus (agachado o saltando) y repara el antivirus
 //   mision    SharePoint: lleva los permisos del punto A al B y contesta
@@ -596,9 +598,63 @@ try {
 		await entrarAlMundo(nombres.length - 1);
 		console.log("última oficina completada:", await jugarOficina());
 		await tecla("Enter");
-		await paso(4500);
+		await paso(3000);
+		// Repaso final: la primera se contesta mal una vez (se tacha y no cuenta)
+		console.log("repaso final visible:", await visible("#repaso"));
+		await foto("repaso");
+		const total = await evalua("repasoFinal.lista.length");
+		for (let k = 0; k < total; k++) {
+			const correcta = await evalua("repasoFinal.lista[repasoFinal.actual].p.correcta");
+			if (k === 0) {
+				await tecla(String(((correcta + 1) % 2) + 1));
+				await paso(300);
+				await foto("repaso-equivocada");
+			}
+			await tecla(String(correcta + 1));
+			await paso(2400);
+		}
+		await paso(2000);
 		await foto("final");
 		console.log("tarjeta final visible:", await visible("#pantalla-victoria"));
+		console.log("resultado:", await texto("#victoria-repaso"));
+		// La constancia, como se ve al imprimir
+		await evalua("prepararConstancia()");
+		await cmd("Emulation.setEmulatedMedia", { media: "print" });
+		await paso(300);
+		await foto("constancia");
+		await cmd("Emulation.setEmulatedMedia", { media: "" });
+		// Estadísticas: del mapa, con el nombre de pruebas
+		await evalua(`document.querySelector("#btn-cambiar").click()`);
+		await paso(400);
+		console.log("botón de constancia en el mapa:", await visible("#btn-constancia-mapa"));
+		await evalua(`(() => { const i = document.querySelector("#nombre-jugador"); i.value = CONFIG_JUEGO.nombrePruebas; i.dispatchEvent(new Event("input")); })()`);
+		await paso(300);
+		console.log("botón de estadísticas:", await visible("#btn-estadisticas"));
+		await evalua(`document.querySelector("#btn-estadisticas").click()`);
+		await paso(400);
+		await foto("estadisticas");
+		console.log("filas de estadísticas:", await evalua(`document.querySelectorAll("#estadisticas-tabla tr").length`));
+		// Otra persona en el mismo navegador: no hereda la constancia, le toca el repaso
+		await tecla("Escape");
+		await evalua(`(() => { const i = document.querySelector("#nombre-jugador"); i.value = "Otra persona"; i.dispatchEvent(new Event("input")); })()`);
+		await paso(300);
+		console.log("botón del mapa para otra persona:", await texto("#btn-constancia-mapa"));
+		await foto("mapa-otra-persona");
+	} else if (escenario === "facil") {
+		// Modo fácil: el interruptor del mapa y Seguridad sin perder corazones
+		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
+		await conProgreso({ completos: [], nivel: 0, personaje: "chica", nombre: pruebas });
+		console.log("salto normal:", await evalua("impulsoSalto()"));
+		await evalua(`document.querySelector("#btn-facil").click()`);
+		await paso(300);
+		await foto("mapa-modo-facil");
+		console.log("salto en modo fácil:", await evalua("impulsoSalto()"), "· guardado:", await evalua(`localStorage.getItem("camino-a-celaque:ajustes")`));
+		const i = await evalua("window.MODULOS.findIndex((m) => m.oficina && m.oficina.virus)");
+		await entrarAlMundo(i);
+		await paso(400);
+		await foto("guias");
+		console.log(`mundo ${i + 1} completado:`, await jugarOficina(90000));
+		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"));
 	} else {
 		console.error("Escenario desconocido:", escenario);
 		terminar(2);

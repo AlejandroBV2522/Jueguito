@@ -17,6 +17,7 @@ function abrirDialogo(npc) {
 	ui.dialogo.classList.remove("arriba"); // el diálogo normal de NPC va abajo
 	document.body.classList.add("con-dialogo");
 	actualizarPista();
+	sonar("dialogo");
 }
 
 function lineaActual() {
@@ -57,6 +58,7 @@ function subirNivel() {
 	nivel++;
 	vidas = vidasMax();
 	avisos.push({ texto: `¡Nivel ${nivel}! +1 ♥`, t: 0 });
+	sonar("nivel");
 }
 
 function cerrarDialogo() {

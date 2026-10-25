@@ -93,6 +93,7 @@ function reiniciarProgreso(todo) {
 	});
 	nivel = 0;
 	vidas = VIDAS_BASE;
+	borrarConstancia();
 	mapa.sel = mapa.heroeMundo = 0;
 	mapa.abriendo = -1;
 	mapa.victoriaPendiente = false;
@@ -114,6 +115,7 @@ function completarModulo(m) {
 	nivel++;
 	vidas = vidasMax(); // el corazón nuevo llega lleno
 	avisoMapa(`¡Nivel ${nivel}! ${m.nombre} ✓`); // se ve al volver al mapa
+	sonar("nivel");
 	if (todosCompletos()) mapa.victoriaPendiente = true;
 	guardarProgreso();
 	return m.indice + 1 < modulos.length ? m.indice + 1 : -1;
@@ -162,6 +164,8 @@ function ocultarMapaUI() {
 	ui.mapaBarra.hidden = true;
 	ui.mapaAyuda.hidden = true;
 	ui.carta.hidden = true;
+	uiEstadisticas.boton.hidden = true;
+	uiEstadisticas.ventana.hidden = true;
 }
 
 // El rectángulo central solo se ve en la vista general; la barra de
@@ -173,6 +177,10 @@ function actualizarPanelMapa() {
 	ui.mapaAyuda.hidden = !general;
 	ui.btnAyuda.hidden = !general;
 	ui.reiniciarProgreso.hidden = !general || !(modulos.some((m) => m.completo) || nombreJugador);
+	uiEstadisticas.boton.hidden = !general || !modoPruebas();
+	const btnConstancia = $("btn-constancia-mapa");
+	btnConstancia.hidden = !general || !todosCompletos() || modoPruebas();
+	btnConstancia.textContent = leerConstancia() ? "Descargar mi constancia" : "Hacer el repaso final";
 	const acercado = mapa.foco >= 0 && mapa.zObjetivo === 1 && !mapa.carta;
 	ui.mapaBarra.hidden = !acercado;
 	if (acercado) {
@@ -190,6 +198,7 @@ function avisoMapa(texto) {
 function avisoCandado(i) {
 	mapa.sacudir[i] = 0.5;
 	avisoMapa(`Completa «${modulos[i - 1].nombre}» para abrir este mundo`);
+	sonar("candado");
 }
 
 // Sin nombre no se entra: se señala el campo
@@ -335,14 +344,17 @@ function actualizarMapa(dt) {
 	if (mapa.abriendo >= 0 && mapa.foco < 0) {
 		const antesT = mapa.abrirT;
 		mapa.abrirT += dt;
-		if (antesT < 0.8 && mapa.abrirT >= 0.8) avisoMapa(`¡Se abrió el mundo ${mapa.abriendo + 1}: ${modulos[mapa.abriendo].nombre}!`);
+		if (antesT < 0.8 && mapa.abrirT >= 0.8) {
+			avisoMapa(`¡Se abrió el mundo ${mapa.abriendo + 1}: ${modulos[mapa.abriendo].nombre}!`);
+			sonar("abrir");
+		}
 		if (mapa.abrirT >= 1.8) {
 			mapa.sel = mapa.heroeMundo = mapa.abriendo;
 			mapa.abriendo = -1;
 		}
 	} else if (mapa.victoriaPendiente && mapa.foco < 0 && estado === "mapa") {
 		mapa.victoriaPendiente = false;
-		ganar();
+		abrirRepaso(); // una pregunta de cada módulo y después la bienvenida
 	}
 
 	// El delfín: salta (t de 0 a 1 en 1.6 s) y vuelve a aparecer en otro lado

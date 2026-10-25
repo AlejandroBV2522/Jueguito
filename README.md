@@ -44,7 +44,9 @@ ocupado, usa otro número, por ejemplo 5501.)
 | Correr                  | Mantener Q mientras caminas | Mantener "Correr" |
 | Saltar                  | Espacio, ↑ o W            | Botón "Saltar"     |
 | Hablar / entrar / avanzar diálogo | E o Enter (Espacio también, si hay alguien o una puerta enfrente) | Botón "Hablar" o tocar la caja |
-| Responder en la computadora | Clic o teclas 1, 2, 3 | Tocar la opción |
+| Responder en la computadora y en el repaso final | Clic o teclas 1, 2, 3 | Tocar la opción |
+| Sonido sí / no          | Botón "♪ Sonido" (arriba a la derecha) | Igual |
+| Modo fácil              | Interruptor en el centro del mapa | Igual |
 
 Es un plataformero: cada NPC espera arriba de un andamio y hay que subir
 saltando por los escalones para hablarle (desde el piso no te escucha).
@@ -111,13 +113,22 @@ salta del mar en el mapa (tócalo) y una avioneta por la ventana de la Torre
 Atlas.
 
 Al completar un módulo subes de nivel, vuelves al mapa y se abre el
-siguiente mundo. Con los 6 completos aparece la tarjeta de bienvenida a
-Celaque con tu nombre. El progreso (y tu nombre) se guarda en el navegador;
-el botón "↻ Empezar de cero", arriba a la derecha del mapa, lo borra todo
-(pide tocarlo dos veces).
+siguiente mundo. Con los 6 completos viene el **repaso final** ("¿Estás
+listo?"): una pregunta al azar de cada módulo, sin castigo, que cuenta las
+que salieron bien a la primera. Después aparece la tarjeta de bienvenida a
+Celaque con tu nombre y el botón **"Descargar constancia"**: abre la ventana
+de imprimir del navegador, donde se elige "Guardar como PDF" (también se
+saca después desde el mapa).
+
+El progreso (y tu nombre) se guarda en el navegador; el botón "↻ Empezar de
+cero", arriba a la derecha del mapa, lo borra todo (pide tocarlo dos veces).
+El sonido y el **modo fácil** (saltos más altos, y ni las respuestas
+equivocadas ni los virus quitan corazones) se guardan aparte y no se borran.
 
 **Para probar:** con el nombre **Kojima** se abren todos los mundos de una
-vez (se cambia o apaga en `config.js` → `nombrePruebas`).
+vez (se cambia o apaga en `config.js` → `nombrePruebas`). Con ese nombre
+aparece también el botón **"Estadísticas"**: qué preguntas se fallan más,
+con lo que se jugó en ese navegador (lo de Kojima no se cuenta).
 
 ## Personalizar
 

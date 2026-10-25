@@ -434,8 +434,44 @@ body {
 /* Empezar de cero, arriba a la derecha del mapa */
 #btn-reiniciar-progreso {
 	position: fixed;
+	top: 72px; /* debajo del botón de sonido: así no tapa los avisos del mapa */
+	right: 16px;
+	z-index: 9;
+}
+
+@media (max-width: 1000px) {
+	#btn-reiniciar-progreso {
+		top: 14px; /* el sonido baja a la fila de la barrita del jugador */
+	}
+}
+
+/* Sonido: arriba a la derecha, siempre a mano (también en los niveles) */
+#btn-sonido {
+	position: fixed;
 	top: 14px;
 	right: 16px;
+	z-index: 14; /* debajo del diálogo (15), la computadora y las ventanas: no las tapa */
+	min-width: 140px;
+	padding: 6px 14px;
+}
+
+#btn-sonido.apagado {
+	color: var(--cel-verde-institucional);
+	background: var(--cel-fondo-verde-claro);
+}
+
+/* Pantallas angostas: en la fila de la barrita del jugador, debajo del HUD */
+@media (max-width: 1000px) {
+	#btn-sonido {
+		top: 92px;
+	}
+}
+
+/* Estadísticas: debajo de "Cómo se juega" (solo con el nombre de pruebas) */
+#btn-estadisticas {
+	position: fixed;
+	top: 72px;
+	left: 16px;
 	z-index: 9;
 }
 
@@ -1316,13 +1352,13 @@ kbd {
 
 .tactil {
 	pointer-events: auto;
-	min-width: 84px;
-	height: 84px;
-	padding: 0 18px;
+	min-width: 96px;
+	height: 96px;
+	padding: 0 20px;
 	border: 3px solid var(--cel-verde-institucional);
-	border-radius: 24px;
+	border-radius: 26px;
 	font: inherit;
-	font-size: 1.9rem;
+	font-size: 2.1rem;
 	font-weight: 700;
 	color: var(--cel-blanco);
 	background: var(--cel-verde-profundo);
@@ -1331,7 +1367,7 @@ kbd {
 }
 
 #btn-saltar {
-	min-width: 104px;
+	min-width: 124px;
 	background: var(--cel-verde-institucional);
 	border-color: var(--cel-blanco);
 }
@@ -1342,7 +1378,19 @@ kbd {
 }
 
 .tactil.texto {
-	font-size: 1.05rem;
+	font-size: 1.2rem;
+}
+
+/* Celulares acostados (poca altura): un poco más chicos para no tapar el juego */
+@media (max-height: 460px) {
+	.tactil {
+		min-width: 80px;
+		height: 80px;
+	}
+
+	#btn-saltar {
+		min-width: 104px;
+	}
 }
 
 .tactil:active {
@@ -1412,5 +1460,394 @@ body.con-dialogo #controles-tactiles {
 
 	#dialogo-texto {
 		font-size: 1rem;
+	}
+}
+
+/* ---------- Modo fácil (interruptor del centro del mapa) ---------- */
+.interruptor {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 8px 12px;
+	border: 2px solid var(--cel-gris-claro);
+	border-radius: 14px;
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.interruptor:hover,
+.interruptor:focus-visible {
+	border-color: var(--cel-verde-institucional);
+	outline: none;
+}
+
+.interruptor[aria-checked="true"] {
+	border-color: var(--cel-verde-institucional);
+	background: var(--cel-fondo-verde-claro);
+}
+
+.interruptor-riel {
+	position: relative;
+	flex: 0 0 auto;
+	width: 46px;
+	height: 26px;
+	border-radius: 999px;
+	background: var(--cel-gris-claro);
+	transition: background 0.15s;
+}
+
+.interruptor[aria-checked="true"] .interruptor-riel {
+	background: var(--cel-verde-institucional);
+}
+
+.interruptor-bola {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--cel-blanco);
+	box-shadow: 0 1px 3px rgba(4, 37, 35, 0.35);
+	transition: transform 0.15s;
+}
+
+.interruptor[aria-checked="true"] .interruptor-bola {
+	transform: translateX(20px);
+}
+
+.interruptor-texto {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.2;
+}
+
+.interruptor-texto strong {
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.interruptor-texto small {
+	font-size: 0.82rem;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+.ayuda-facil {
+	margin: 0;
+	font-weight: 400;
+}
+
+/* ---------- Final: resultado del repaso y ayuda para el PDF ---------- */
+.final-repaso {
+	margin: 0;
+	padding: 8px 16px;
+	border-radius: 12px;
+	background: var(--cel-fondo-verde-claro);
+	font-weight: 700;
+}
+
+.final-ayuda {
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--cel-verde-institucional);
+}
+
+/* ---------- Repaso final ---------- */
+#repaso,
+#estadisticas {
+	position: fixed;
+	inset: 0;
+	z-index: 21;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.5);
+	animation: aparecer 0.3s ease-out;
+}
+
+.repaso-carta {
+	position: relative;
+	align-items: center;
+	overflow-x: hidden;
+	padding-top: 34px;
+	text-align: center;
+	animation: entrada-final 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.repaso-carta .logo-celaque {
+	width: 160px;
+}
+
+.repaso-pre {
+	margin: 0;
+	font-size: 0.9rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--cel-beige);
+}
+
+#repaso-titulo {
+	margin: -8px 0 0;
+	font-size: clamp(1.6rem, 4vw, 2.1rem);
+	font-weight: 700;
+}
+
+.repaso-datos {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+#repaso-pregunta {
+	margin: 0;
+	font-size: 1.2rem;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+#repaso-opciones {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+
+.opcion-repaso {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-height: 56px;
+	padding: 10px 16px;
+	border: 2px solid var(--cel-verde-institucional);
+	border-radius: 14px;
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
+	font: inherit;
+	font-size: 1.05rem;
+	font-weight: 400;
+	text-align: left;
+	cursor: pointer;
+	transition: transform 0.1s, background 0.1s;
+}
+
+.opcion-repaso .num-pc {
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+}
+
+.opcion-repaso:hover:not(:disabled),
+.opcion-repaso:focus-visible {
+	transform: translateX(4px);
+	background: var(--cel-fondo-verde-claro);
+	outline: none;
+}
+
+.opcion-repaso.correcta {
+	background: var(--cel-verde-institucional);
+	color: var(--cel-blanco);
+}
+
+.opcion-repaso.incorrecta {
+	border-color: var(--cel-gris-claro);
+	color: var(--cel-gris-claro);
+	text-decoration: line-through;
+	cursor: default;
+}
+
+#repaso-pista {
+	margin: 0;
+	min-height: 1.4em;
+	font-weight: 700;
+	color: var(--cel-verde-institucional);
+}
+
+@media (max-height: 640px) {
+	.repaso-carta .logo-celaque {
+		display: none;
+	}
+}
+
+/* ---------- Estadísticas ---------- */
+.estadisticas-carta {
+	width: min(860px, 100%);
+}
+
+#estadisticas-titulo {
+	margin: 0;
+	font-size: 1.6rem;
+	font-weight: 700;
+}
+
+#estadisticas-resumen {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+.estadisticas-marco:has(table[hidden]) {
+	display: none;
+}
+
+.estadisticas-marco {
+	max-height: 50dvh;
+	overflow: auto;
+	border: 2px solid var(--cel-gris-claro);
+	border-radius: 12px;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.estadisticas-marco table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+}
+
+.estadisticas-marco th,
+.estadisticas-marco td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--cel-gris-claro);
+	text-align: left;
+	vertical-align: top;
+}
+
+.estadisticas-marco th {
+	position: sticky;
+	top: 0;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	font-weight: 700;
+}
+
+.estadisticas-marco td:nth-child(3),
+.estadisticas-marco td:nth-child(4) {
+	text-align: center;
+	font-weight: 700;
+}
+
+.estadisticas-marco tr.cuesta td {
+	background: var(--cel-fondo-verde-claro);
+}
+
+#estadisticas-borrar.confirmar {
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+}
+
+/* ---------- Constancia (solo al imprimir) ---------- */
+#constancia {
+	display: none;
+}
+
+@page {
+	size: A4 landscape;
+	margin: 12mm;
+}
+
+@media print {
+	html,
+	body {
+		height: auto;
+		overflow: visible;
+		background: var(--cel-blanco);
+	}
+
+	body > *:not(#constancia) {
+		display: none !important;
+	}
+
+	#constancia {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		min-height: 180mm;
+		padding: 18mm 20mm 12mm;
+		overflow: hidden;
+		border: 3px solid var(--cel-verde-institucional);
+		border-radius: 18px;
+		background: var(--cel-blanco);
+		color: var(--cel-verde-profundo);
+		text-align: center;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		break-inside: avoid;
+	}
+
+	.logo-constancia {
+		width: 230px;
+		height: 60px;
+		margin-bottom: 6px;
+	}
+
+	.constancia-pre {
+		margin: 0;
+		font-size: 13pt;
+		font-weight: 700;
+		letter-spacing: 3px;
+		text-transform: uppercase;
+		color: var(--cel-beige);
+	}
+
+	.constancia-se,
+	.constancia-texto {
+		margin: 0;
+		font-size: 13pt;
+		font-weight: 400;
+	}
+
+	#constancia-nombre {
+		margin: 0;
+		padding: 0 24px 4px;
+		border-bottom: 2px solid var(--cel-verde-institucional);
+		font-size: 30pt;
+		font-weight: 700;
+	}
+
+	#constancia-modulos {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 6px 10px;
+		max-width: 220mm;
+		margin: 4px 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	#constancia-modulos li {
+		padding: 4px 12px;
+		border: 1.5px solid var(--cel-verde-institucional);
+		border-radius: 999px;
+		font-size: 11pt;
+		font-weight: 400;
+	}
+
+	#constancia-repaso {
+		margin: 0;
+		font-size: 12pt;
+		font-weight: 700;
+	}
+
+	.constancia-lema {
+		margin: 6px 0 0;
+		font-style: italic;
+		color: var(--cel-verde-institucional);
+	}
+
+	#constancia-fecha {
+		margin: 0;
+		font-size: 10pt;
+		color: var(--cel-beige);
 	}
 }
