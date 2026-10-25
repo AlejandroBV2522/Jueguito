@@ -11,11 +11,11 @@
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina, el repaso final (una equivocada a
 //             propósito), la tarjeta final, la constancia impresa y las estadísticas
-//   kojima    con el nombre de pruebas: todo abierto y el botón "Ver bienvenida"
-//   recursos  una imagen propia en una medalla (juego y colección) y un sonido
+//   kojima    con el nombre de pruebas: todo abierto, colección completa y "Ver bienvenida"
+//   recursos  una imagen propia en una guacamaya (juego y colección) y un sonido
 //             propio (crea un .wav de prueba en assets/sonidos/ y lo borra)
 //   facil     modo fácil: el mapa con el interruptor y Seguridad sin perder corazones
-//   coleccion  cada medalla oculta: se sube al objeto de donde sale, salta y la
+//   coleccion  cada guacamaya oculta: se sube al objeto de donde sale, salta y la
 //             recoge; revisa que desde el piso no se alcance y abre la colección
 //   estaciones  arma los 3 robots de IA y el antivirus de Seguridad (capturas a medias y al final)
 //   virus     cruza Seguridad esquivando virus (agachado o saltando) y repara el antivirus
@@ -728,6 +728,11 @@ try {
 		await evalua(`document.querySelector("#btn-cambiar").click()`);
 		await paso(400);
 		console.log("de vuelta en el mapa:", await evalua("estado"));
+		console.log("colección:", await texto("#btn-coleccion"));
+		await evalua(`document.querySelector("#btn-coleccion").click()`);
+		await paso(400);
+		await foto("coleccion");
+		console.log("fichas desbloqueadas:", await evalua(`document.querySelectorAll("#coleccion-grilla .encontrada").length`));
 		console.log("lo guardado no cambió:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
 	} else if (escenario === "recursos") {
 		// Un .wav de 0,1 s (tono de 440 Hz) solo para la prueba

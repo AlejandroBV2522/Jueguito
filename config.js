@@ -34,8 +34,8 @@ window.CONFIG_JUEGO = {
     tubo: "",          // entrar o salir por un tubo
     nivel: "",         // subir de nivel
     abrir: "",         // se abre un mundo nuevo en el mapa
-    coleccionable: "", // recoger una medalla oculta
-    pista: "",         // acercarse a una medalla oculta
+    coleccionable: "", // recoger una guacamaya oculta
+    pista: "",         // acercarse a una guacamaya oculta
     recoger: "",       // tomar lo del punto A (misión)
     entregar: "",      // entregar en el punto B (misión)
     derrota: "",       // vencer a un antivalor
@@ -187,7 +187,7 @@ window.TEMAS_OFICINA = {};
                   a.nube: true, A está arriba, en una nube, y se sube
                   saltando por una escalera de nubes. Ese
                   mundo no lleva "comentarios" (A y B usan sus lugares).
-   - coleccionables: (opcional) medallas doradas escondidas en el aire. Solo
+   - coleccionables: (opcional) guacamayas escondidas en el aire. Solo
                   se alcanzan saltando DESDE algo (desde el piso no llegas).
                   Se ven en el apartado "Colección" del mapa. Cada una:
                   { nombre, sobre, n, altura }:

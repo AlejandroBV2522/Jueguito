@@ -26,12 +26,12 @@ window.MODULOS.push({
       "Recorre el camino, conoce a la gente de la obra y cruza la Cueva. ¡Te espero del otro lado!",
     ],
   },
-  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar).
-  // imagen: un archivo de assets/trofeos/ (vacío = la medalla dibujada).
+  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Casco dorado", sobre: "andamio", n: 5, altura: 190, imagen: "" },
-    { nombre: "Plano maestro", sobre: "andamio", n: 10, altura: 190, imagen: "" },
-    { nombre: "Cristal escondido", sobre: "roca", n: 4, altura: 210, imagen: "" },
+    { nombre: "Guacamaya del camino", sobre: "andamio", n: 5, altura: 190, imagen: "" },
+    { nombre: "Guacamaya de la grúa", sobre: "andamio", n: 10, altura: 190, imagen: "" },
+    { nombre: "Guacamaya de la Cueva", sobre: "roca", n: 4, altura: 210, imagen: "" },
   ],
   intro: [],
   preguntas: [],

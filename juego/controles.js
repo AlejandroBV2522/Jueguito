@@ -144,7 +144,7 @@ $("btn-constancia-mapa").addEventListener("click", (e) => {
 	constanciaDesdeMapa();
 });
 
-// Colección de medallas ocultas (coleccion.js)
+// Colección de guacamayas ocultas (coleccion.js)
 uiColeccion.boton.addEventListener("click", abrirColeccion);
 uiColeccion.cerrar.addEventListener("click", cerrarColeccion);
 uiColeccion.ventana.addEventListener("click", (e) => {

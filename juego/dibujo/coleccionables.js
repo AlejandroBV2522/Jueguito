@@ -2,14 +2,14 @@
 "use strict";
 
 // ---------- Coleccionables ----------
-// Medallas doradas que flotan arriba de un mueble, una nube, un andamio o
-// una roca (mundo.js → coleccionables). Solo se alcanzan saltando desde
+// Guacamayas escondidas que flotan arriba de un mueble, una nube, un
+// andamio o una roca (mundo.js → coleccionables). Solo se alcanzan saltando desde
 // ese objeto: desde el piso no llegas. De lejos casi no se ven; al
 // acercarte brillan y suena una pista. Lo encontrado se guarda en
 // coleccion.js y se ve en el apartado "Colección" del mapa.
 
 // De qué objeto sale cada una (su x y su alto se leen en cada cuadro: los
-// andamios que se mueven se llevan la medalla con ellos)
+// andamios que se mueven se llevan la guacamaya con ellos)
 function baseColeccionable(m, c) {
 	const k = (c.n || 1) - 1;
 	if (c.sobre === "andamio") return { zona: "camino", base: PLATAFORMAS[k] };
@@ -26,13 +26,13 @@ modulos.forEach((m) =>
 		// El id (lo que se guarda) sale de dónde está, no del nombre: así
 		// cambiar el nombre (todavía borrador) no borra lo ya encontrado
 		const id = `${m.nombre}|${c.sobre || "mueble"}${c.n || 1}`;
-		// imagen: la del equipo en assets/trofeos/ (sin imagen, la medalla dibujada)
+		// imagen: la del equipo en assets/trofeos/ (sin imagen, la guacamaya dibujada)
 		const img = c.imagen ? cargarImagen(c.imagen) : null;
 		COLECCIONABLES.push({ id, nombre: c.nombre, modulo: m, zona, base, sobre: c.sobre || "mueble", altura: Number(c.altura) || 200, img, pista: false });
 	})
 );
 
-// En el modo fácil el salto sube más: la medalla también, para que siga
+// En el modo fácil el salto sube más: la guacamaya también, para que siga
 // sin alcanzarse desde el piso (y se alcance igual desde su objeto)
 const extraFacil = () => (modoFacil() ? (impulsoSalto() ** 2 - IMPULSO_SALTO ** 2) / (2 * GRAVEDAD) : 0);
 const posColeccionable = (c) => ({ x: c.base.x, alto: c.base.alto + c.altura + extraFacil() });
@@ -82,39 +82,25 @@ function recogerColeccionable(c, p) {
 	}
 }
 
-// Medalla dorada con el ícono de su mundo; alfa para que se vea tenue de
-// lejos. Con imagen propia (ya cargada) se dibuja esa, sin deformarla,
-// dentro del mismo círculo de 2r.
-function dibujarMedalla(x, y, r, icono, alfa = 1, giro = 1, img = null) {
+// Guacamaya del coleccionable, alternando roja (Ara macao, ave nacional) y
+// azul y amarilla (los mismos colores que las que cruzan el cielo, aves.js).
+// Con imagen propia (assets/trofeos/, ya cargada) se dibuja esa, sin
+// deformarla, dentro de un cuadro de 2r. tam = tamaño de la guacamaya.
+const TIPO_GUACAMAYA = (c) => TIPOS_AVE[COLECCIONABLES.indexOf(c) % 2];
+function dibujarTrofeo(c, x, y, r, alfa = 1, fase = 0) {
 	ctx.save();
 	ctx.globalAlpha = alfa;
-	ctx.translate(x, y);
-	ctx.scale(giro, 1); // se "voltea" como una moneda
-	const el = img && img.elemento;
+	const el = c.img && c.img.elemento;
 	if (el) {
 		const w = el.naturalWidth || el.width, h = el.naturalHeight || el.height;
 		const k = (2 * r) / Math.max(w, h);
-		ctx.drawImage(el, (-w * k) / 2, (-h * k) / 2, w * k, h * k);
+		ctx.drawImage(el, x - (w * k) / 2, y - (h * k) / 2, w * k, h * k);
 		ctx.restore();
 		return;
 	}
-	const oro = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
-	oro.addColorStop(0, "#fff1c1");
-	oro.addColorStop(0.55, "#f0c64a");
-	oro.addColorStop(1, "#b8862b");
-	ctx.fillStyle = oro;
-	ctx.beginPath();
-	ctx.arc(0, 0, r, 0, Math.PI * 2);
-	ctx.fill();
-	ctx.lineWidth = r * 0.14;
-	ctx.strokeStyle = "#8a6420";
-	ctx.stroke();
-	ctx.lineWidth = r * 0.06;
-	ctx.strokeStyle = "rgba(255,241,193,0.9)";
-	ctx.beginPath();
-	ctx.arc(0, 0, r * 0.74, 0, Math.PI * 2);
-	ctx.stroke();
-	if (Math.abs(giro) > 0.25) dibujarIconoMundo(icono, 0, 0, r * 0.5, COLORES.verdeProfundo);
+	// dibujarAve escala por S; aquí se pide el tamaño en píxeles (r)
+	const tam = r / (33 * S); // la guacamaya mide ~2r de ancho, como la imagen
+	dibujarAve({ tipo: TIPO_GUACAMAYA(c), dir: 1, x: x + 8 * tam * S, y, tam, fase });
 	ctx.restore();
 }
 
@@ -130,9 +116,9 @@ function techoInterfaz(x) {
 	return techo;
 }
 
-// Medalla escondida detrás de la barra de arriba (pantallas bajas): una
+// Guacamaya escondida detrás de la barra de arriba (pantallas bajas): una
 // flecha con estrella justo debajo avisa que está ahí arriba. Se juntan
-// al dibujar las medallas y se pintan en dibujarChispas, encima del héroe.
+// al dibujar las guacamayas y se pintan en dibujarChispas, encima del héroe.
 let avisosArriba = [];
 function dibujarAvisoArriba(sx, techo, alfa) {
 	const k = Math.max(S, 1); // en pantallas bajas S es chico: que igual se note
@@ -165,7 +151,7 @@ function dibujarColeccionables() {
 		// Visibilidad: casi invisible de lejos, brilla al acercarte
 		const cerca = clamp(1 - (Math.abs(heroe.x - p.x) - 120) / 380, 0, 1);
 		const alfa = 0.14 + 0.86 * cerca;
-		const r = 18 * S;
+		const r = 30 * S;
 		ctx.save();
 		const halo = ctx.createRadialGradient(sx, sy, r * 0.5, sx, sy, r * 3.2);
 		halo.addColorStop(0, `rgba(255,226,120,${(0.45 * alfa).toFixed(3)})`);
@@ -173,7 +159,7 @@ function dibujarColeccionables() {
 		ctx.fillStyle = halo;
 		ctx.fillRect(sx - r * 3.2, sy - r * 3.2, r * 6.4, r * 6.4);
 		ctx.restore();
-		dibujarMedalla(sx, sy, r, c.modulo.icono, alfa, Math.cos(tiempo * 2.2 + p.x * 0.01), c.img);
+		dibujarTrofeo(c, sx, sy, r, alfa, tiempo * 10 + p.x); // aletea en su lugar
 		if (cerca > 0.3) {
 			const techo = techoInterfaz(sx);
 			if (sy < techo + r * 0.5) avisosArriba.push({ sx, techo, alfa: cerca }); // se dibuja después del héroe

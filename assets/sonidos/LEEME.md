@@ -47,8 +47,8 @@ Si un archivo no carga, ese efecto vuelve al sonido del juego. El botón
 | `tubo` | entras o sales por un tubo |
 | `nivel` | subes de nivel |
 | `abrir` | se abre un mundo nuevo en el mapa |
-| `coleccionable` | recoges una medalla oculta |
-| `pista` | te acercas a una medalla oculta |
+| `coleccionable` | recoges una guacamaya oculta |
+| `pista` | te acercas a una guacamaya oculta |
 | `recoger` | tomas lo del punto A (misión de SharePoint) |
 | `entregar` | entregas en el punto B |
 | `derrota` | vences a un antivalor |

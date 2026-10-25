@@ -2,9 +2,10 @@
 "use strict";
 
 // ---------- Colección ----------
-// Las medallas encontradas (juego/dibujo/coleccionables.js) se guardan en
+// Las guacamayas encontradas (juego/dibujo/coleccionables.js) se guardan en
 // este navegador. "Empezar de cero" las borra; "Jugar de nuevo" no. Con el
-// nombre de pruebas se recogen solo durante la partida: no se guardan.
+// nombre de pruebas se recogen solo durante la partida (no se guardan) y en
+// la colección se ven todas desbloqueadas.
 const CLAVE_COLECCION = "camino-a-celaque:coleccion";
 const coleccionados = new Set();
 const coleccionPruebas = new Set();
@@ -17,62 +18,66 @@ try {
 
 function guardarColeccion() {
 	try {
-			localStorage.setItem(CLAVE_COLECCION, JSON.stringify([...coleccionados]));
-		} catch (e) {
-			/* sin almacenamiento */
-		}
+		localStorage.setItem(CLAVE_COLECCION, JSON.stringify([...coleccionados]));
+	} catch (e) {
+		/* sin almacenamiento */
 	}
+}
 
-	const coleccionEncontrado = (id) => coleccionados.has(id) || (modoPruebas() && coleccionPruebas.has(id));
+const coleccionEncontrado = (id) => coleccionados.has(id) || (modoPruebas() && coleccionPruebas.has(id));
 
-	function marcarColeccionado(id) {
-		if (modoPruebas()) coleccionPruebas.add(id);
-		else {
-			coleccionados.add(id);
-			guardarColeccion();
-		}
-	}
-
-	function borrarColeccion() {
-		coleccionados.clear();
-		coleccionPruebas.clear();
+function marcarColeccionado(id) {
+	if (modoPruebas()) coleccionPruebas.add(id);
+	else {
+		coleccionados.add(id);
 		guardarColeccion();
 	}
+}
 
-	const uiColeccion = {
-		ventana: $("coleccion"),
-		resumen: $("coleccion-resumen"),
-		relleno: $("coleccion-relleno"),
-		grilla: $("coleccion-grilla"),
-		cerrar: $("coleccion-cerrar"),
-		boton: $("btn-coleccion"),
-	};
+function borrarColeccion() {
+	coleccionados.clear();
+	coleccionPruebas.clear();
+	guardarColeccion();
+}
 
-	// Pista de dónde buscarla (mundo.js → coleccionables[].sobre)
-	const PISTAS_COLECCION = { mueble: "arriba de un mueble", nube: "arriba de las nubes", andamio: "arriba de un andamio", roca: "en la Cueva, arriba de una roca" };
+const uiColeccion = {
+	ventana: $("coleccion"),
+	resumen: $("coleccion-resumen"),
+	relleno: $("coleccion-relleno"),
+	grilla: $("coleccion-grilla"),
+	cerrar: $("coleccion-cerrar"),
+	boton: $("btn-coleccion"),
+};
 
-	const cuantasEncontradas = () => COLECCIONABLES.filter((c) => coleccionEncontrado(c.id)).length;
+// Pista de dónde buscarla (mundo.js → coleccionables[].sobre)
+const PISTAS_COLECCION = { mueble: "arriba de un mueble", nube: "arriba de las nubes", andamio: "arriba de un andamio", roca: "en la Cueva, arriba de una roca" };
 
-	function actualizarBotonColeccion() {
-		uiColeccion.boton.textContent = `★ Colección ${cuantasEncontradas()}/${COLECCIONABLES.length}`;
-	}
+// En la colección: las encontradas, o todas con el nombre de pruebas (en
+// los niveles se siguen pudiendo buscar)
+const desbloqueadaEnColeccion = (c) => modoPruebas() || coleccionEncontrado(c.id);
+const cuantasEncontradas = () => COLECCIONABLES.filter(desbloqueadaEnColeccion).length;
 
-	// Una ficha por medalla: la medalla y su nombre si ya la tienes; si no,
-	// su silueta y en qué mundo buscarla
-	function abrirColeccion() {
-		const n = cuantasEncontradas();
-		const total = COLECCIONABLES.length;
-		uiColeccion.resumen.textContent =
-			n === total
-				? `¡Las encontraste todas! ${n} de ${total}.`
-				: `Encontraste ${n} de ${total}. Flotan en lo alto: súbete a algo y salta. De lejos casi no se ven, pero brillan al acercarte.`;
-		uiColeccion.relleno.style.width = `${((n / Math.max(1, total)) * 100).toFixed(1)}%`;
-		uiColeccion.grilla.innerHTML = "";
-		const sAntes = S;
-		const dpr = Math.min(window.devicePixelRatio || 1, 2);
-		try {
+function actualizarBotonColeccion() {
+	uiColeccion.boton.textContent = `★ Colección ${cuantasEncontradas()}/${COLECCIONABLES.length}`;
+}
+
+// Una ficha por guacamaya: la guacamaya y su nombre si ya la tienes; si no,
+// su silueta y en qué mundo buscarla
+function abrirColeccion() {
+	const n = cuantasEncontradas();
+	const total = COLECCIONABLES.length;
+	uiColeccion.resumen.textContent = modoPruebas()
+		? `Modo de pruebas: las ${total} guacamayas desbloqueadas para verlas (en los niveles se siguen pudiendo buscar).`
+		: n === total
+		? `¡Las encontraste todas! ${n} de ${total}.`
+		: `Encontraste ${n} de ${total} guacamayas. Están en lo alto: súbete a algo y salta. De lejos casi no se ven, pero brillan al acercarte.`;
+	uiColeccion.relleno.style.width = `${((n / Math.max(1, total)) * 100).toFixed(1)}%`;
+	uiColeccion.grilla.innerHTML = "";
+	const sAntes = S;
+	const dpr = Math.min(window.devicePixelRatio || 1, 2);
+	try {
 		for (const c of COLECCIONABLES) {
-			const tiene = coleccionEncontrado(c.id);
+			const tiene = desbloqueadaEnColeccion(c);
 			const ficha = document.createElement("li");
 			ficha.className = tiene ? "ficha encontrada" : "ficha";
 			const lienzo = document.createElement("canvas");
@@ -82,7 +87,7 @@ function guardarColeccion() {
 			ctx = lienzo.getContext("2d");
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			S = 1;
-			if (tiene) dibujarMedalla(28, 28, 22, c.modulo.icono, 1, 1, c.img);
+			if (tiene) dibujarTrofeo(c, 28, 30, 26, 1, 2.2); // alas arriba
 			else {
 				ctx.fillStyle = "rgba(4,37,35,0.12)";
 				circulo(28, 28, 22);

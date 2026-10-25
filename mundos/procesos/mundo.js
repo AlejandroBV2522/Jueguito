@@ -24,11 +24,11 @@ window.MODULOS.push({
       "Los encuentras en tus paneles de control, en los espacios «Personal» y «Compartido conmigo», y en Proyectos y carpetas.",
     ],
   },
-  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar).
-  // imagen: un archivo de assets/trofeos/ (vacío = la medalla dibujada).
+  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Engrane dorado", sobre: "mueble", n: 4, altura: 260, imagen: "" },
-    { nombre: "Flujo perfecto", sobre: "mueble", n: 7, altura: 260, imagen: "" },
+    { nombre: "Guacamaya del engrane", sobre: "mueble", n: 4, altura: 260, imagen: "" },
+    { nombre: "Guacamaya del flujo", sobre: "mueble", n: 7, altura: 260, imagen: "" },
   ],
   intro: ["Este es el módulo de Procesos.", "Los procesos nos dan organización, eficiencia y responsabilidad, y todos viven en Wrike."],
   comentarios: [
