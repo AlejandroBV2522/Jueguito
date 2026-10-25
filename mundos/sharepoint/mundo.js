@@ -24,6 +24,11 @@ window.MODULOS.push({
       "Te pido un favor: Aldo, un solicitante, todavía no puede trabajar. Sube a la nube, al punto A, por sus permisos y llévaselos al punto B.",
     ],
   },
+  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar)
+  coleccionables: [
+    { nombre: "Nube secreta", sobre: "nube", n: 2, altura: 170 },
+    { nombre: "Carpeta dorada", sobre: "mueble", n: 6, altura: 260 },
+  ],
   intro: [
     "Bienvenido al módulo de Plataformas.",
     "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",

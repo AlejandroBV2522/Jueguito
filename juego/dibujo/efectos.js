@@ -86,9 +86,11 @@ function dibujar(dt) {
 		dibujarGuias();
 		dibujarObstaculos(oficinaActual.oficina.obstaculos);
 		dibujarMision(oficinaActual);
+		dibujarColeccionables();
 		dibujarCompaneros(oficinaActual);
 		dibujarHeroe(t);
 		dibujarVirusOficina();
+		dibujarChispas();
 		dibujarAvisos(dt);
 		return;
 	}
@@ -141,9 +143,11 @@ function dibujar(dt) {
 
 	dibujarGuias(); // la columna de luz queda detrás del letrero final
 	if (modo === "urbano") dibujarMeta(); // el letrero solo se ve ya afuera
+	if (modo !== "urbano") dibujarColeccionables();
 	dibujarNpcs();
 	if (modo !== "urbano") dibujarEnemigos(); // el Guardián vive afuera, antes de LARGO
 	dibujarHeroe(t);
+	dibujarChispas();
 	dibujarAvisos(dt);
 
 	if (modo === "afuera") {

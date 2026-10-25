@@ -94,6 +94,7 @@ function reiniciarProgreso(todo) {
 	nivel = 0;
 	vidas = VIDAS_BASE;
 	borrarConstancia();
+	if (todo) borrarColeccion(); // otra persona: empieza su propia colección
 	mapa.sel = mapa.heroeMundo = 0;
 	mapa.abriendo = -1;
 	mapa.victoriaPendiente = false;
@@ -166,6 +167,8 @@ function ocultarMapaUI() {
 	ui.carta.hidden = true;
 	uiEstadisticas.boton.hidden = true;
 	uiEstadisticas.ventana.hidden = true;
+	uiColeccion.boton.hidden = true;
+	uiColeccion.ventana.hidden = true;
 }
 
 // El rectángulo central solo se ve en la vista general; la barra de
@@ -178,6 +181,8 @@ function actualizarPanelMapa() {
 	ui.btnAyuda.hidden = !general;
 	ui.reiniciarProgreso.hidden = !general || !(modulos.some((m) => m.completo) || nombreJugador);
 	uiEstadisticas.boton.hidden = !general || !modoPruebas();
+	uiColeccion.boton.hidden = !general;
+	actualizarBotonColeccion();
 	const btnConstancia = $("btn-constancia-mapa");
 	btnConstancia.hidden = !general || !todosCompletos() || modoPruebas();
 	btnConstancia.textContent = leerConstancia() ? "Descargar mi constancia" : "Hacer el repaso final";

@@ -59,6 +59,7 @@ function subirNivel() {
 	vidas = vidasMax();
 	avisos.push({ texto: `¡Nivel ${nivel}! +1 ♥`, t: 0 });
 	sonar("nivel");
+	lanzarChispas(heroe.x, heroe.y + 70, 18, ["#ffd23f", "#ff6b6b", COLORES.blanco]);
 }
 
 function cerrarDialogo() {

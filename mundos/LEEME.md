@@ -15,7 +15,8 @@ carpeta. El motor del juego (`juego/`) no se toca.
 
 Un `mundo.js` tiene la carta del mapa, la foto de su edificio (`foto`, en
 `assets/edificios/`, ya sin cielo), el anfitrión (★), los compañeros de la
-oficina con sus diálogos y las preguntas de la computadora. Qué significa
+oficina con sus diálogos, las preguntas de la computadora y sus
+medallas ocultas (`coleccionables`). Qué significa
 cada campo está explicado en `config.js`, en la sección "Módulos de
 capacitación".
 

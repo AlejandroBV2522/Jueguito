@@ -254,6 +254,10 @@ function responder(indice, enemigo) {
 		} else {
 			enemigo.cayendo = 0.001; // arranca la animación de caída (ver actualizar)
 			setTimeout(() => {
+				sonar("derrota");
+				lanzarChispas(enemigo.x, 60 * (enemigo.escala || 1), 22, [COLORES.blanco, COLORES.verdeInstitucional, COLORES.beige]);
+			}, 200);
+			setTimeout(() => {
 				enemigo.derrotado = true;
 				cerrarPregunta(enemigo);
 			}, 550);

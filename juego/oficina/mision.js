@@ -80,11 +80,15 @@ function actualizarMision() {
 		// (si pasó de largo por B sin que le pidieran nada, igual lo recoge)
 		mi.paso = "llevar";
 		avisos.push({ texto: `¡Ya tienes ${mi.objeto}! Ve al punto B`, t: 0 });
+		sonar("recoger");
+		lanzarChispas(heroe.x, heroe.y + 60, 14, [COLORES.blanco, COLORES.fondoVerdeClaro, "#ffd23f"]);
 		actualizarHudOficina();
 	} else if (mi.paso === "llevar" && enB) {
 		mi.paso = "listo";
 		m.terminalVisitada = m.completo; // ahora sí se abre sola al llegar
 		mi.persona.dialogo = (mi.b && mi.b.explica) || ["¡Gracias!"];
+		sonar("entregar");
+		lanzarChispas(mi.bX, 70, 20, [COLORES.verdeInstitucional, COLORES.blanco, "#ffd23f"]);
 		abrirDialogo(mi.persona);
 	}
 }

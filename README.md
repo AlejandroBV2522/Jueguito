@@ -125,6 +125,11 @@ cero", arriba a la derecha del mapa, lo borra todo (pide tocarlo dos veces).
 El sonido y el **modo fácil** (saltos más altos, y ni las respuestas
 equivocadas ni los virus quitan corazones) se guardan aparte y no se borran.
 
+**Medallas ocultas:** cada mundo esconde medallas doradas en lo alto. Solo se alcanzan saltando desde un mueble, una nube, un andamio o
+una roca; de lejos casi no se ven y brillan al acercarte. El botón
+**"★ Colección"** del mapa muestra las que ya encontraste y dónde buscar
+las demás. Se definen en cada `mundo.js` (`coleccionables`).
+
 **Para probar:** con el nombre **Kojima** se abren todos los mundos de una
 vez (se cambia o apaga en `config.js` → `nombrePruebas`). Con ese nombre
 aparece también el botón **"Estadísticas"**: qué preguntas se fallan más,

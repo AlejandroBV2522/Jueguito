@@ -12,6 +12,8 @@
 //   victoria  completa la última oficina, el repaso final (una equivocada a
 //             propósito), la tarjeta final, la constancia impresa y las estadísticas
 //   facil     modo fácil: el mapa con el interruptor y Seguridad sin perder corazones
+//   coleccion  cada medalla oculta: se sube al objeto de donde sale, salta y la
+//             recoge; revisa que desde el piso no se alcance y abre la colección
 //   estaciones  arma los 3 robots de IA y el antivirus de Seguridad (capturas a medias y al final)
 //   virus     cruza Seguridad esquivando virus (agachado o saltando) y repara el antivirus
 //   mision    SharePoint: lleva los permisos del punto A al B y contesta
@@ -640,6 +642,72 @@ try {
 		await paso(300);
 		console.log("botón del mapa para otra persona:", await texto("#btn-constancia-mapa"));
 		await foto("mapa-otra-persona");
+	} else if (escenario === "coleccion") {
+		const nombres = await evalua("window.MODULOS.map((m) => m.nombre)");
+		await conProgreso({ completos: nombres, nivel: 9, personaje: "chica", nombre: "Prueba" });
+		await paso(300);
+		const total = await evalua("COLECCIONABLES.length");
+		console.log("medallas:", total, "· botón:", await texto("#btn-coleccion"));
+		let bien = 0;
+		for (let k = 0; k < total; k++) {
+			// Prepara su lugar sin diálogos ni antivalores que interrumpan
+			const info = await evalua(`(() => {
+				const c = COLECCIONABLES[${k}];
+				ocultarMapaUI(); // (se entra directo, sin pasar por la carta)
+				if (c.zona === "oficina") {
+					iniciarOficina(c.modulo);
+					c.modulo.oficina.companeros.forEach((n) => (n.hablado = true));
+					c.modulo.terminalVisitada = true;
+				} else {
+					iniciarTalento();
+					npcs.forEach((n) => (n.hablado = true));
+					enemigos.forEach((e) => { e.derrotado = true; e.cayendo = 1; }); // iniciarTalento los revive
+					if (c.zona === "cueva") { dentroCueva = true; estado = "cueva"; }
+				}
+				heroe.x = c.base.x - 140;
+				heroe.y = 0;
+				camara = Math.max(0, c.base.x - W * 0.5);
+				// Alcance desde el piso con el salto de verdad, normal y en modo fácil
+				const desdePiso = (facil) => {
+					const antes = ajustes.facil;
+					ajustes.facil = facil;
+					const r = posColeccionable(c).alto <= impulsoSalto() ** 2 / (2 * GRAVEDAD) + 110;
+					ajustes.facil = antes;
+					return r;
+				};
+				const alto = posColeccionable(c).alto;
+				return { nombre: c.nombre, zona: c.zona, alto: Math.round(alto), desdePiso: desdePiso(false) || desdePiso(true) };
+			})()`);
+			await paso(400);
+			if (k % 3 === 0) await foto(`medalla-${k + 1}-de-lejos`);
+			// De cerca: se sube al objeto y salta
+			await evalua(`(() => { const c = COLECCIONABLES[${k}]; heroe.x = c.base.x; heroe.y = c.base.alto; heroe.velY = 0; })()`);
+			await paso(120);
+			if (k % 3 === 0) await foto(`medalla-${k + 1}-de-cerca`);
+			await tecla("ArrowUp");
+			await paso(250);
+			if (k % 3 === 0) await foto(`medalla-${k + 1}-salto`);
+			await paso(600);
+			const ok = await evalua(`coleccionEncontrado(COLECCIONABLES[${k}].id)`);
+			if (ok) bien++;
+			console.log(`  ${k + 1}. ${info.nombre} (${info.zona}, alto ${info.alto}): ${ok ? "recogida" : "NO SE ALCANZÓ"}${info.desdePiso ? " · ¡ojo: se alcanza desde el piso!" : ""}`);
+		}
+		console.log(`recogidas: ${bien} de ${total}`);
+		console.log("guardado:", await evalua(`localStorage.getItem("camino-a-celaque:coleccion")`));
+		await evalua("volverAlMapa(0, -1)");
+		await paso(2500);
+		console.log("botón:", await texto("#btn-coleccion"));
+		await evalua(`document.querySelector("#btn-coleccion").click()`);
+		await paso(400);
+		await foto("coleccion");
+		// Otra persona (Empezar de cero) empieza su colección vacía
+		await evalua(`document.querySelector("#btn-coleccion-cerrar, #coleccion-cerrar").click()`);
+		await evalua("reiniciarProgreso(true)");
+		await paso(200);
+		console.log("tras empezar de cero:", await texto("#btn-coleccion"));
+		await evalua(`document.querySelector("#btn-coleccion").click()`);
+		await paso(400);
+		await foto("coleccion-vacia");
 	} else if (escenario === "facil") {
 		// Modo fácil: el interruptor del mapa y Seguridad sin perder corazones
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");

@@ -95,6 +95,17 @@ mundos.forEach((m, i) => {
 	}
 	if (m.mision && (m.comentarios || []).length) problemas.push(`${donde}: tiene "mision" y "comentarios"; los puntos A y B usan el lugar de los compañeros`);
 	(m.preguntas || []).forEach((p, k) => revisarPregunta(p, `${donde}, pregunta ${k + 1}`));
+	// Medallas ocultas: si apuntan a algo que no existe, el juego no las crea
+	const lugares = m.completoAlSalirDeLaCueva ? { andamio: 99, roca: 4 } : { mueble: 7, ...(m.mision && m.mision.a && m.mision.a.nube ? { nube: 3 } : {}) };
+	(m.coleccionables || []).forEach((c, k) => {
+		const d = `${donde}, coleccionable ${k + 1} (${c.nombre || "sin nombre"})`;
+		if (!c.nombre) problemas.push(`${d}: falta "nombre"`);
+		else if (m.coleccionables.findIndex((x) => x.nombre === c.nombre) !== k) problemas.push(`${d}: el nombre se repite en este mundo`);
+		if (!(c.sobre in lugares)) problemas.push(`${d}: "sobre" debe ser ${Object.keys(lugares).map((l) => `"${l}"`).join(" o ")} en este mundo`);
+		else if (!Number.isInteger(c.n) || c.n < 1 || c.n > lugares[c.sobre]) problemas.push(`${d}: "n" debe ir de 1 a ${lugares[c.sobre]}`);
+		if (c.altura !== undefined && typeof c.altura !== "number") problemas.push(`${d}: "altura" debe ser un número (sin comillas)`);
+		if (m.coleccionables.findIndex((x) => x.sobre === c.sobre && x.n === c.n) !== k) problemas.push(`${d}: hay otra medalla en el mismo ${c.sobre} ${c.n} (se guardan por ese lugar)`);
+	});
 });
 npcs.forEach((n, i) => (!n.nombre || !Array.isArray(n.dialogo) || !n.dialogo.length) && problemas.push(`NPC ${i + 1} (${n.nombre || "sin nombre"}): falta nombre o diálogo`));
 cueva.forEach((e, i) => (e.preguntas || [e]).forEach((p, k) => revisarPregunta(p, `antivalor ${i + 1} (${e.nombre}), pregunta ${k + 1}`)));

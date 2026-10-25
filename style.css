@@ -465,12 +465,29 @@ body {
 	#btn-sonido {
 		top: 92px;
 	}
+
+	/* Colección y estadísticas bajan una fila para no tocar el botón de sonido */
+	#btn-coleccion {
+		top: 150px !important;
+	}
+
+	#btn-estadisticas {
+		top: 208px !important;
+	}
 }
 
-/* Estadísticas: debajo de "Cómo se juega" (solo con el nombre de pruebas) */
-#btn-estadisticas {
+/* Colección: debajo de "Cómo se juega" */
+#btn-coleccion {
 	position: fixed;
 	top: 72px;
+	left: 16px;
+	z-index: 9;
+}
+
+/* Estadísticas: debajo de la colección (solo con el nombre de pruebas) */
+#btn-estadisticas {
+	position: fixed;
+	top: 130px;
 	left: 16px;
 	z-index: 9;
 }
@@ -1560,7 +1577,8 @@ body.con-dialogo #controles-tactiles {
 
 /* ---------- Repaso final ---------- */
 #repaso,
-#estadisticas {
+#estadisticas,
+#coleccion {
 	position: fixed;
 	inset: 0;
 	z-index: 21;
@@ -1850,4 +1868,87 @@ body.con-dialogo #controles-tactiles {
 		font-size: 10pt;
 		color: var(--cel-beige);
 	}
+}
+
+/* ---------- Colección de medallas ocultas ---------- */
+.coleccion-carta {
+	position: relative;
+	width: min(720px, 100%);
+	padding-top: 34px;
+	text-align: center;
+	animation: entrada-final 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+#coleccion-titulo {
+	margin: 0;
+	font-size: 1.7rem;
+	font-weight: 700;
+}
+
+#coleccion-resumen {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+.coleccion-barra {
+	height: 10px;
+	border-radius: 999px;
+	background: var(--cel-fondo-verde-claro);
+	overflow: hidden;
+}
+
+#coleccion-relleno {
+	height: 100%;
+	border-radius: 999px;
+	background: var(--cel-verde-institucional);
+}
+
+#coleccion-grilla {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ficha {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 8px 6px;
+	border: 2px dashed var(--cel-gris-claro);
+	border-radius: 14px;
+}
+
+.ficha.encontrada {
+	border: 2px solid var(--cel-beige);
+	background: var(--cel-fondo-verde-claro);
+}
+
+.ficha canvas {
+	width: 56px;
+	height: 56px;
+}
+
+.ficha-pista {
+	font-style: italic;
+}
+
+.ficha strong {
+	font-size: 0.92rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.ficha:not(.encontrada) strong {
+	color: var(--cel-verde-institucional);
+}
+
+.ficha small {
+	font-size: 0.75rem;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
 }

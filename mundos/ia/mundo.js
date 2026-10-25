@@ -25,6 +25,11 @@ window.MODULOS.push({
       "Al fondo, en el taller, vas a armar tres robots: uno de tierra, uno aéreo y uno humanoide.",
     ],
   },
+  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar)
+  coleccionables: [
+    { nombre: "Chip dorado", sobre: "mueble", n: 4, altura: 260 },
+    { nombre: "Neurona brillante", sobre: "mueble", n: 5, altura: 260 },
+  ],
   intro: ["Bienvenido al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [
     {

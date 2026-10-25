@@ -163,6 +163,22 @@ window.TEMAS_OFICINA = {};
                   a.nube: true, A está arriba, en una nube, y se sube
                   saltando por una escalera de nubes. Ese
                   mundo no lleva "comentarios" (A y B usan sus lugares).
+   - coleccionables: (opcional) medallas doradas escondidas en el aire. Solo
+                  se alcanzan saltando DESDE algo (desde el piso no llegas).
+                  Se ven en el apartado "Colección" del mapa. Cada una:
+                  { nombre, sobre, n, altura }:
+                  sobre: desde qué se salta: "mueble" (oficinas, del 1 al
+                         7 desde la entrada), "nube" (escalera de nubes de
+                         la misión, de 1 a 3), "andamio" (Talento: escalones
+                         del camino en orden, contando el de cada NPC) o
+                         "roca" (Talento: obstáculos de la Cueva, de 1 a 4).
+                  n:     cuál (empezando en 1).
+                  altura: cuánto arriba de ese objeto flota. Un salto
+                         alcanza hasta ~280 arriba de donde saltas: con
+                         más ya no se llega, y si el objeto más la altura
+                         suman menos de ~290, se alcanza desde el piso.
+                         Las de oficina usan 260 (la prueba "coleccion"
+                         de tools/probar_juego.mjs lo revisa).
    - preguntasPorModulo: (opcional) cuántas preguntas hace este mundo, si
                   no son las de CONFIG_JUEGO (arriba). Con robots: por robot.
    - preguntas:   { pregunta, opciones, correcta (índice desde 0),

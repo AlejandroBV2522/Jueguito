@@ -57,6 +57,7 @@ Otras reglas:
 | `interfaz/` | `dialogos.js` | diálogos con los NPC |
 | `interfaz/` | `estadisticas.js` | anota qué preguntas salen y cuáles se fallan; ventana de estadísticas (solo con el nombre de pruebas) |
 | `interfaz/` | `repaso.js` | repaso final (una pregunta por módulo) y la constancia para imprimir o guardar en PDF |
+| `interfaz/` | `coleccion.js` | medallas encontradas (guardadas en el navegador) y el apartado "Colección" del mapa |
 | `oficina/` | `oficina.js` | entrar y salir de la oficina, la terminal y sus preguntas |
 | `mapa/` | `mapa.js` | progreso guardado, `completarModulo`, carta, `entrarMundo`, `volverAlMapa` |
 | `camino/` | `cueva.js` | tubos, colisiones, peleas con antivalores, `accion` |
@@ -69,6 +70,7 @@ Otras reglas:
 | `oficina/` | `dibujo-oficina.js` | ventanal, muebles, computadora; llama al tema de cada oficina (`mundos/<mundo>/tema.js`, registrado en `window.TEMAS_OFICINA`) |
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
 | `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`, Seguridad) |
+| `dibujo/` | `coleccionables.js` | medallas ocultas en el aire (`mundo.js → coleccionables`), cómo se ven y se recogen; chispas (`lanzarChispas`) |
 | `camino/` | `dibujo-letreros.js` | dibujo de los letreros de obra |
 | `dibujo/` | `aves.js`, `guias.js`, `personajes.js` | aves, guías y enemigos, héroe y NPC |
 | `mapa/` | `dibujo-mapa.js` | el mapa de mundos, el delfín |

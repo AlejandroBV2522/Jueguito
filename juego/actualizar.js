@@ -186,6 +186,8 @@ function actualizar(dt) {
 	}
 	actualizarVirus(dt); // virus de la oficina (mundo.js → oficina.virus)
 	actualizarMision(); // llevar algo del punto A al B (mundo.js → mision)
+	actualizarColeccionables(); // medallas ocultas (mundo.js → coleccionables)
+	actualizarChispas(dt);
 	for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);
 	if (estado === "mapa") actualizarMapa(dt);
 

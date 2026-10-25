@@ -10,9 +10,13 @@ const TECLAS_SALTAR = ["ArrowUp", "w", "W"];
 const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 window.addEventListener("keydown", (e) => {
-	// Estadísticas abiertas: Esc las cierra (Enter y Espacio, el botón enfocado)
+	// Estadísticas o colección abiertas: Esc las cierra (Enter y Espacio, el botón enfocado)
 	if (!uiEstadisticas.ventana.hidden) {
 		if (e.key === "Escape") cerrarEstadisticas();
+		return;
+	}
+	if (!uiColeccion.ventana.hidden) {
+		if (e.key === "Escape") cerrarColeccion();
 		return;
 	}
 	// Repaso final: se responde con 1, 2, 3... o con los botones
@@ -138,6 +142,13 @@ $("btn-constancia").addEventListener("click", imprimirConstancia);
 $("btn-constancia-mapa").addEventListener("click", (e) => {
 	e.currentTarget.blur();
 	constanciaDesdeMapa();
+});
+
+// Colección de medallas ocultas (coleccion.js)
+uiColeccion.boton.addEventListener("click", abrirColeccion);
+uiColeccion.cerrar.addEventListener("click", cerrarColeccion);
+uiColeccion.ventana.addEventListener("click", (e) => {
+	if (e.target === uiColeccion.ventana) cerrarColeccion();
 });
 
 // Estadísticas: solo con el nombre de pruebas (estadisticas.js)

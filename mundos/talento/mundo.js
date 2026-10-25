@@ -26,6 +26,12 @@ window.MODULOS.push({
       "Recorre el camino, conoce a la gente de la obra y cruza la Cueva. ¡Te espero del otro lado!",
     ],
   },
+  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar)
+  coleccionables: [
+    { nombre: "Casco dorado", sobre: "andamio", n: 5, altura: 190 },
+    { nombre: "Plano maestro", sobre: "andamio", n: 10, altura: 190 },
+    { nombre: "Cristal escondido", sobre: "roca", n: 4, altura: 210 },
+  ],
   intro: [],
   preguntas: [],
 });

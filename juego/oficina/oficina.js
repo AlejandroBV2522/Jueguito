@@ -154,6 +154,7 @@ function responderTerminal(indice, m, btn) {
 	const piezas = m.oficina.estacion === "robot" ? textoPiezasNuevas(m, robotDePregunta(m, m.preguntaActual)) : "";
 	ui.terminalPista.textContent = ["¡Correcto!", piezas, p.explicacion].filter(Boolean).join(" ");
 	const conFigura = m.oficina.estacion !== "computadora";
+	if (conFigura) setTimeout(() => sonar("pieza"), 450); // la pieza del robot o del escudo encaja
 	setTimeout(() => {
 		m.preguntaActual++;
 		if (m.preguntaActual < preguntasDe(m).length) mostrarPreguntaTerminal(m);

@@ -45,6 +45,7 @@
     <script defer src="juego/interfaz/dialogos.js"></script>
     <script defer src="juego/interfaz/estadisticas.js"></script>
     <script defer src="juego/interfaz/repaso.js"></script>
+    <script defer src="juego/interfaz/coleccion.js"></script>
     <script defer src="juego/oficina/oficina.js"></script>
     <script defer src="juego/mapa/mapa.js"></script>
     <script defer src="juego/camino/cueva.js"></script>
@@ -58,6 +59,7 @@
     <script defer src="juego/oficina/dibujo-oficina.js"></script>
     <script defer src="juego/oficina/estaciones.js"></script>
     <script defer src="juego/oficina/virus.js"></script>
+    <script defer src="juego/dibujo/coleccionables.js"></script>
     <script defer src="juego/camino/dibujo-letreros.js"></script>
     <script defer src="juego/dibujo/aves.js"></script>
     <script defer src="juego/dibujo/guias.js"></script>
@@ -167,6 +169,9 @@
     <!-- Sonido encendido o apagado (se ve siempre, también dentro de los niveles) -->
     <button id="btn-sonido" class="boton boton-secundario boton-chico" aria-pressed="true">♪ Sonido</button>
 
+    <!-- Colección: las medallas ocultas que ya encontraste (coleccion.js) -->
+    <button id="btn-coleccion" class="boton boton-secundario boton-chico" aria-haspopup="dialog">★ Colección</button>
+
     <!-- Solo con el nombre de pruebas: qué preguntas se fallan más -->
     <button id="btn-estadisticas" class="boton boton-secundario boton-chico" hidden>Estadísticas</button>
 
@@ -260,6 +265,20 @@
             <div class="botones">
                 <button id="estadisticas-cerrar" class="boton">Cerrar</button>
                 <button id="estadisticas-borrar" class="boton boton-secundario">Borrar datos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colección de medallas ocultas -->
+    <div id="coleccion" hidden role="dialog" aria-modal="true" aria-labelledby="coleccion-titulo">
+        <div class="carta coleccion-carta">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <h2 id="coleccion-titulo">★ Colección</h2>
+            <p id="coleccion-resumen"></p>
+            <div class="coleccion-barra" aria-hidden="true"><div id="coleccion-relleno"></div></div>
+            <ul id="coleccion-grilla"></ul>
+            <div class="botones">
+                <button id="coleccion-cerrar" class="boton">Cerrar</button>
             </div>
         </div>
     </div>
