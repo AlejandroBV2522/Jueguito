@@ -82,7 +82,7 @@ function guardarColeccion() {
 			ctx = lienzo.getContext("2d");
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 			S = 1;
-			if (tiene) dibujarMedalla(28, 28, 22, c.modulo.icono);
+			if (tiene) dibujarMedalla(28, 28, 22, c.modulo.icono, 1, 1, c.img);
 			else {
 				ctx.fillStyle = "rgba(4,37,35,0.12)";
 				circulo(28, 28, 22);

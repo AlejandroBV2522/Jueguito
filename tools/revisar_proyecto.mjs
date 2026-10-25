@@ -115,8 +115,20 @@ for (const s of [...scripts, "index.html", "style.css"].filter((s) => existsSync
 	const texto = leer(s);
 	for (const m of texto.matchAll(/https?:\/\/[^\s"'`)]+/g)) problemas.push(`${s}: dirección externa ${m[0]}`);
 	const sinComentarios = texto.replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, "").replace(/^\s*\/\/.*$|\s\/\/.*$/gm, "");
-	for (const m of sinComentarios.matchAll(/assets\/[\w./-]+\.(png|jpg|ttf)/g)) if (!existsSync(join(RAIZ, m[0]))) problemas.push(`${s}: ${m[0]} no existe`);
+	for (const m of sinComentarios.matchAll(/assets\/[\w./-]+\.(png|jpg|jpeg|webp|svg|ttf|mp3|ogg|wav)/g)) if (!existsSync(join(RAIZ, m[0]))) problemas.push(`${s}: ${m[0]} no existe`);
 }
+
+// 5. Sonidos propios (config.js → sonidos): cada uno debe ser un efecto que existe
+const efectos = [...leer("juego/base/sonido.js").matchAll(/^\t(\w+): \[/gm)].map((m) => m[1]);
+for (const [nombre, ruta] of Object.entries((w.CONFIG_JUEGO && w.CONFIG_JUEGO.sonidos) || {})) {
+	if (!efectos.includes(nombre)) problemas.push(`config.js → sonidos: "${nombre}" no es un efecto (hay: ${efectos.join(", ")})`);
+	if (ruta && typeof ruta !== "string") problemas.push(`config.js → sonidos.${nombre}: debe ser una ruta entre comillas`);
+	else if (ruta && !/^assets\/sonidos\/[\w.-]+\.(mp3|ogg|wav)$/.test(ruta)) problemas.push(`config.js → sonidos.${nombre}: "${ruta}" debe ser assets/sonidos/<archivo>.mp3, .ogg o .wav`);
+	else if (ruta && !existsSync(join(RAIZ, ruta))) problemas.push(`config.js → sonidos.${nombre}: ${ruta} no existe`);
+}
+for (const m of mundos)
+	for (const c of m.coleccionables || [])
+		if (c.imagen && !existsSync(join(RAIZ, c.imagen))) problemas.push(`${m.nombre}, coleccionable "${c.nombre}": la imagen ${c.imagen} no existe`);
 
 console.log(`${scripts.length} scripts en index.html · ${mundos.length} mundos (${nombres.join(", ")}) · ${npcs.length} NPCs del camino · ${cueva.length} antivalores`);
 if (problemas.length) {

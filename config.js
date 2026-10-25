@@ -20,6 +20,30 @@ window.CONFIG_JUEGO = {
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
   nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos (para probar); "" lo apaga
 
+  /* Sonidos propios: cada efecto puede usar un archivo de assets/sonidos/
+     (mp3, ogg o wav; ver assets/sonidos/LEEME.md). Vacío ("") = el sonido
+     que arma el juego solo. Si el archivo no carga, también usa el suyo. */
+  sonidos: {
+    salto: "",         // al saltar
+    acierto: "",       // respuesta correcta
+    error: "",         // respuesta equivocada
+    golpe: "",         // te toca un virus
+    caida: "",         // caer en un hueco de la Cueva
+    dialogo: "",       // empieza a hablar alguien
+    candado: "",       // mundo con candado en el mapa
+    tubo: "",          // entrar o salir por un tubo
+    nivel: "",         // subir de nivel
+    abrir: "",         // se abre un mundo nuevo en el mapa
+    coleccionable: "", // recoger una medalla oculta
+    pista: "",         // acercarse a una medalla oculta
+    recoger: "",       // tomar lo del punto A (misión)
+    entregar: "",      // entregar en el punto B (misión)
+    derrota: "",       // vencer a un antivalor
+    pieza: "",         // encaja una pieza del robot o del escudo
+    victoria: "",      // terminar todo / colección completa
+  },
+  volumenSonidos: 0.6, // volumen de los archivos propios (0 a 1)
+
   textos: {
     titulo: "Camino a Celaque",
     subtitulo: "Elige tu personaje y luego un mundo del mapa.",

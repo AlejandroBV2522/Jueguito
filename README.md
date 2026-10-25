@@ -130,6 +130,14 @@ una roca; de lejos casi no se ven y brillan al acercarte. El botón
 **"★ Colección"** del mapa muestra las que ya encontraste y dónde buscar
 las demás. Se definen en cada `mundo.js` (`coleccionables`).
 
+**Imágenes y sonidos propios:** las carpetas ya están listas.
+- `assets/trofeos/`: una imagen por medalla, asignada en `imagen` de su `mundo.js`.
+- `assets/sonidos/`: un archivo por efecto, asignado en `config.js → sonidos`.
+
+Cada carpeta tiene un `LEEME.md` con el formato, la lista y los nombres
+sugeridos. Mientras estén vacías, el juego usa sus medallas dibujadas y
+sus sonidos propios.
+
 **Para probar:** con el nombre **Kojima** se abren todos los mundos de una
 vez (se cambia o apaga en `config.js` → `nombrePruebas`). Con ese nombre
 aparece también el botón **"Estadísticas"**: qué preguntas se fallan más,

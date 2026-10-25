@@ -42,7 +42,7 @@ Otras reglas:
 | `camino/` | `fisica.js` | gravedad y salto, huecos y obstáculos de la Cueva, barreras |
 | `base/` | `utilidades.js` | `clamp`, `lerp`, `mezclar`, `conAlfa`, `crearAzar`… |
 | `base/` | `ajustes.js` | sonido y modo fácil del jugador (`ajustes`, `modoFacil`), guardados aparte del progreso |
-| `base/` | `sonido.js` | `sonar(nombre)`: efectos hechos con Web Audio, sin archivos |
+| `base/` | `sonido.js` | `sonar(nombre)`: el archivo propio del efecto si hay (`config.js → sonidos`, en `assets/sonidos/`), si no, el armado con Web Audio |
 | `base/` | `paleta.js` | de gris a color según el avance |
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |

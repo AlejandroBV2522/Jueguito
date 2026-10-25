@@ -26,7 +26,9 @@ modulos.forEach((m) =>
 		// El id (lo que se guarda) sale de dónde está, no del nombre: así
 		// cambiar el nombre (todavía borrador) no borra lo ya encontrado
 		const id = `${m.nombre}|${c.sobre || "mueble"}${c.n || 1}`;
-		COLECCIONABLES.push({ id, nombre: c.nombre, modulo: m, zona, base, sobre: c.sobre || "mueble", altura: Number(c.altura) || 200, pista: false });
+		// imagen: la del equipo en assets/trofeos/ (sin imagen, la medalla dibujada)
+		const img = c.imagen ? cargarImagen(c.imagen) : null;
+		COLECCIONABLES.push({ id, nombre: c.nombre, modulo: m, zona, base, sobre: c.sobre || "mueble", altura: Number(c.altura) || 200, img, pista: false });
 	})
 );
 
@@ -80,12 +82,22 @@ function recogerColeccionable(c, p) {
 	}
 }
 
-// Medalla dorada con el ícono de su mundo; alfa para que se vea tenue de lejos
-function dibujarMedalla(x, y, r, icono, alfa = 1, giro = 1) {
+// Medalla dorada con el ícono de su mundo; alfa para que se vea tenue de
+// lejos. Con imagen propia (ya cargada) se dibuja esa, sin deformarla,
+// dentro del mismo círculo de 2r.
+function dibujarMedalla(x, y, r, icono, alfa = 1, giro = 1, img = null) {
 	ctx.save();
 	ctx.globalAlpha = alfa;
 	ctx.translate(x, y);
 	ctx.scale(giro, 1); // se "voltea" como una moneda
+	const el = img && img.elemento;
+	if (el) {
+		const w = el.naturalWidth || el.width, h = el.naturalHeight || el.height;
+		const k = (2 * r) / Math.max(w, h);
+		ctx.drawImage(el, (-w * k) / 2, (-h * k) / 2, w * k, h * k);
+		ctx.restore();
+		return;
+	}
 	const oro = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r);
 	oro.addColorStop(0, "#fff1c1");
 	oro.addColorStop(0.55, "#f0c64a");
@@ -161,7 +173,7 @@ function dibujarColeccionables() {
 		ctx.fillStyle = halo;
 		ctx.fillRect(sx - r * 3.2, sy - r * 3.2, r * 6.4, r * 6.4);
 		ctx.restore();
-		dibujarMedalla(sx, sy, r, c.modulo.icono, alfa, Math.cos(tiempo * 2.2 + p.x * 0.01));
+		dibujarMedalla(sx, sy, r, c.modulo.icono, alfa, Math.cos(tiempo * 2.2 + p.x * 0.01), c.img);
 		if (cerca > 0.3) {
 			const techo = techoInterfaz(sx);
 			if (sy < techo + r * 0.5) avisosArriba.push({ sx, techo, alfa: cerca }); // se dibuja después del héroe

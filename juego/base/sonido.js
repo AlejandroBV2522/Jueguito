@@ -1,8 +1,10 @@
-/* Camino a Celaque — efectos de sonido sintetizados (sin archivos). Ver juego/LEEME.md. */
+/* Camino a Celaque — efectos de sonido: archivos propios o sintetizados. Ver juego/LEEME.md. */
 "use strict";
 
 // ---------- Sonido ----------
-// Todo se arma con osciladores de Web Audio: no hay archivos que bajar.
+// Cada efecto puede tener su archivo en assets/sonidos/ (config.js →
+// sonidos). Sin archivo, o si no carga, se arma con osciladores de Web
+// Audio, sin nada que bajar.
 // El navegador solo deja sonar después de un clic o una tecla, y casi
 // todo lo que suena pasa justo después de uno. Si el navegador no tiene
 // Web Audio, el juego sigue en silencio.
@@ -112,7 +114,40 @@ const EFECTOS = {
 	],
 };
 
+// Archivos propios: se cargan al abrir la página y se usan solo si cargaron
+const ARCHIVOS_SONIDO = {};
+for (const [nombre, ruta] of Object.entries(CFG.sonidos || {})) {
+	if (!ruta) continue;
+	try {
+		const a = new Audio();
+		const archivo = { audio: a, listo: false };
+		a.preload = "auto";
+		a.addEventListener("canplaythrough", () => (archivo.listo = true), { once: true });
+		a.addEventListener("error", () => (archivo.listo = false), { once: true });
+		a.src = ruta;
+		ARCHIVOS_SONIDO[nombre] = archivo;
+	} catch (e) {
+		/* sin <audio>: queda el sintetizado */
+	}
+}
+
+function sonarArchivo(nombre) {
+	const archivo = ARCHIVOS_SONIDO[nombre];
+	if (!archivo || !archivo.listo) return false;
+	try {
+		const copia = archivo.audio.cloneNode(); // así puede sonar dos veces seguidas
+		copia.volume = Math.min(1, Math.max(0, Number(CFG.volumenSonidos ?? 0.6)));
+		const p = copia.play();
+		if (p && p.catch) p.catch(() => {});
+		return true;
+	} catch (e) {
+		return false;
+	}
+}
+
 function sonar(nombre) {
+	if (!ajustes.sonido) return;
+	if (sonarArchivo(nombre)) return;
 	const ac = contextoAudio();
 	const efecto = EFECTOS[nombre];
 	if (!ac || !efecto) return;

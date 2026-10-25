@@ -25,10 +25,11 @@ window.MODULOS.push({
       "¿Tu área necesita uno? Se pide en Wrike: signo + arriba a la derecha, «Solicitud», y el formulario «S - Nuevo Proyecto».",
     ],
   },
-  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar)
+  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar).
+  // imagen: un archivo de assets/trofeos/ (vacío = la medalla dibujada).
   coleccionables: [
-    { nombre: "Cronograma dorado", sobre: "mueble", n: 4, altura: 260 },
-    { nombre: "Maqueta secreta", sobre: "mueble", n: 2, altura: 260 },
+    { nombre: "Cronograma dorado", sobre: "mueble", n: 4, altura: 260, imagen: "" },
+    { nombre: "Maqueta secreta", sobre: "mueble", n: 2, altura: 260, imagen: "" },
   ],
   intro: ["Bienvenido al módulo de Proyectos.", "Aquí aprendes cómo se solicita un proyecto en Wrike y cómo lo llevamos de inicio a cierre."],
   comentarios: [

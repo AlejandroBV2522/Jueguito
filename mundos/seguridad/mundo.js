@@ -28,10 +28,11 @@ window.MODULOS.push({
       "En el camino, el equipo te va a dar unos consejos: al hablar con alguien los virus se detienen. Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
     ],
   },
-  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar)
+  // Coleccionables ocultos en el aire (✏️ Borrador: nombres por validar).
+  // imagen: un archivo de assets/trofeos/ (vacío = la medalla dibujada).
   coleccionables: [
-    { nombre: "Llave maestra", sobre: "mueble", n: 4, altura: 260 },
-    { nombre: "Escudo dorado", sobre: "mueble", n: 1, altura: 260 },
+    { nombre: "Llave maestra", sobre: "mueble", n: 4, altura: 260, imagen: "" },
+    { nombre: "Escudo dorado", sobre: "mueble", n: 1, altura: 260, imagen: "" },
   ],
   intro: ["Este es el módulo de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
   // ✏️ Borrador: revisar con Sergio Aguiriano

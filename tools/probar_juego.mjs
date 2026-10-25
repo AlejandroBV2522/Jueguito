@@ -11,6 +11,8 @@
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina, el repaso final (una equivocada a
 //             propósito), la tarjeta final, la constancia impresa y las estadísticas
+//   recursos  una imagen propia en una medalla (juego y colección) y un sonido
+//             propio (crea un .wav de prueba en assets/sonidos/ y lo borra)
 //   facil     modo fácil: el mapa con el interruptor y Seguridad sin perder corazones
 //   coleccion  cada medalla oculta: se sube al objeto de donde sale, salta y la
 //             recoge; revisa que desde el piso no se alcance y abre la colección
@@ -25,7 +27,7 @@
 // (densidad, por defecto 1), MOVIL=1 (pantalla táctil) y ARCHIVO=1 (abre
 // index.html como archivo, igual que con doble clic, en vez de con servidor). Las capturas quedan
 // en la carpeta indicada (por defecto ./capturas, que no se sube a git).
-// Sale con código 1 si hubo errores de JavaScript (los 404 de logos que
+// Sale con código 1 si hubo errores de JavaScript (los 404 de logos, trofeos o sonidos que
 // todavía no existen se ignoran).
 //
 // Reloj fijo (por defecto): el juego no corre solo, avanza cuadro por cuadro
@@ -186,7 +188,7 @@ async function conectar() {
 		}
 		if (m.method === "Runtime.exceptionThrown") errores.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
 		if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") errores.push(m.params.args.map((a) => a.value || a.description).join(" "));
-		if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/assets\/logos\/|favicon/.test(m.params.entry.url || "")) errores.push(m.params.entry.text + " " + (m.params.entry.url || ""));
+		if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/assets\/(logos|trofeos|sonidos)\/|favicon/.test(m.params.entry.url || "")) errores.push(m.params.entry.text + " " + (m.params.entry.url || ""));
 	};
 }
 const cmd = (method, params = {}) =>
@@ -708,6 +710,54 @@ try {
 		await evalua(`document.querySelector("#btn-coleccion").click()`);
 		await paso(400);
 		await foto("coleccion-vacia");
+	} else if (escenario === "recursos") {
+		// Un .wav de 0,1 s (tono de 440 Hz) solo para la prueba
+		const muestras = 4410, datos = Buffer.alloc(44 + muestras * 2);
+		datos.write("RIFF", 0); datos.writeUInt32LE(36 + muestras * 2, 4); datos.write("WAVEfmt ", 8);
+		datos.writeUInt32LE(16, 16); datos.writeUInt16LE(1, 20); datos.writeUInt16LE(1, 22); datos.writeUInt32LE(44100, 24);
+		datos.writeUInt32LE(88200, 28); datos.writeUInt16LE(2, 32); datos.writeUInt16LE(16, 34); datos.write("data", 36); datos.writeUInt32LE(muestras * 2, 40);
+		for (let k = 0; k < muestras; k++) datos.writeInt16LE(Math.round(Math.sin((k / 44100) * 2 * Math.PI * 440) * 8000), 44 + k * 2);
+		const wav = join(RAIZ, "assets", "sonidos", "_prueba.wav");
+		writeFileSync(wav, datos);
+		try {
+			await conProgreso({ completos: [], nivel: 0, personaje: "chica", nombre: "Prueba" });
+			// Sonido propio: se carga como lo haría config.js → sonidos
+			await evalua(`(() => {
+				const a = new Audio();
+				ARCHIVOS_SONIDO.salto = { audio: a, listo: false };
+				a.addEventListener("canplaythrough", () => (ARCHIVOS_SONIDO.salto.listo = true), { once: true });
+				a.src = "assets/sonidos/_prueba.wav";
+			})()`);
+			let listo = false;
+			for (let k = 0; k < 30 && !listo; k++) {
+				await espera(100);
+				listo = await evalua("ARCHIVOS_SONIDO.salto.listo");
+			}
+			console.log("sonido propio cargó (la CSP lo deja):", listo);
+			console.log("sonar('salto') usa el archivo:", await evalua("sonarArchivo('salto')"));
+			console.log("un efecto sin archivo usa el sintetizado:", !(await evalua("sonarArchivo('acierto')")));
+			// Imagen propia en la primera medalla (se usa un isotipo que ya existe)
+			await evalua(`COLECCIONABLES[0].img = cargarImagen("assets/logos/celaque-isotipo-verde-profundo.png"); COLECCIONABLES[1].img = null;`);
+			await espera(500);
+			console.log("imagen propia cargó:", await evalua("!!COLECCIONABLES[0].img.elemento"));
+			await evalua(`(() => {
+				const c = COLECCIONABLES[0];
+				ocultarMapaUI();
+				iniciarTalento();
+				npcs.forEach((n) => (n.hablado = true));
+				heroe.x = c.base.x - 60;
+				camara = Math.max(0, c.base.x - W * 0.5);
+			})()`);
+			await paso(400);
+			await foto("medalla-con-imagen");
+			await evalua(`marcarColeccionado(COLECCIONABLES[0].id); marcarColeccionado(COLECCIONABLES[1].id); volverAlMapa(0, -1)`);
+			await paso(2500);
+			await evalua(`document.querySelector("#btn-coleccion").click()`);
+			await paso(400);
+			await foto("coleccion-con-imagen");
+		} finally {
+			rmSync(wav, { force: true });
+		}
 	} else if (escenario === "facil") {
 		// Modo fácil: el interruptor del mapa y Seguridad sin perder corazones
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
