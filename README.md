@@ -140,7 +140,8 @@ sus sonidos propios.
 
 **Para probar:** con el nombre **Kojima** se abren todos los mundos de una
 vez (se cambia o apaga en `config.js` → `nombrePruebas`). Con ese nombre
-aparece también el botón **"Estadísticas"**: qué preguntas se fallan más,
+aparecen también el botón **"★ Ver bienvenida"** (la tarjeta final, sin
+terminar nada) y el botón **"Estadísticas"**: qué preguntas se fallan más,
 con lo que se jugó en ese navegador (lo de Kojima no se cuenta).
 
 ## Personalizar

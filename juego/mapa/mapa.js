@@ -93,7 +93,7 @@ function reiniciarProgreso(todo) {
 	});
 	nivel = 0;
 	vidas = VIDAS_BASE;
-	borrarConstancia();
+	if (!modoPruebas()) borrarConstancia(); // la de pruebas no toca la de nadie
 	if (todo) borrarColeccion(); // otra persona: empieza su propia colección
 	mapa.sel = mapa.heroeMundo = 0;
 	mapa.abriendo = -1;
@@ -167,6 +167,7 @@ function ocultarMapaUI() {
 	ui.carta.hidden = true;
 	uiEstadisticas.boton.hidden = true;
 	uiEstadisticas.ventana.hidden = true;
+	$("btn-ver-bienvenida").hidden = true;
 	uiColeccion.boton.hidden = true;
 	uiColeccion.ventana.hidden = true;
 }
@@ -181,6 +182,7 @@ function actualizarPanelMapa() {
 	ui.btnAyuda.hidden = !general;
 	ui.reiniciarProgreso.hidden = !general || !(modulos.some((m) => m.completo) || nombreJugador);
 	uiEstadisticas.boton.hidden = !general || !modoPruebas();
+	$("btn-ver-bienvenida").hidden = !general || !modoPruebas();
 	uiColeccion.boton.hidden = !general;
 	actualizarBotonColeccion();
 	const btnConstancia = $("btn-constancia-mapa");

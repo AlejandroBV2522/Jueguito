@@ -474,6 +474,10 @@ body {
 	#btn-estadisticas {
 		top: 208px !important;
 	}
+
+	#btn-ver-bienvenida {
+		top: 266px !important;
+	}
 }
 
 /* Colección: debajo de "Cómo se juega" */
@@ -488,6 +492,14 @@ body {
 #btn-estadisticas {
 	position: fixed;
 	top: 130px;
+	left: 16px;
+	z-index: 9;
+}
+
+/* Ver bienvenida: debajo de estadísticas (solo con el nombre de pruebas) */
+#btn-ver-bienvenida {
+	position: fixed;
+	top: 188px;
 	left: 16px;
 	z-index: 9;
 }

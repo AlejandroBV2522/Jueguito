@@ -151,6 +151,13 @@ uiColeccion.ventana.addEventListener("click", (e) => {
 	if (e.target === uiColeccion.ventana) cerrarColeccion();
 });
 
+// Ver la tarjeta de bienvenida (solo con el nombre de pruebas): la misma
+// del final, sin completar nada ni guardar; "Ver el mapa" vuelve
+$("btn-ver-bienvenida").addEventListener("click", (e) => {
+	e.currentTarget.blur();
+	if (modoPruebas()) ganar();
+});
+
 // Estadísticas: solo con el nombre de pruebas (estadisticas.js)
 uiEstadisticas.boton.addEventListener("click", abrirEstadisticas);
 uiEstadisticas.cerrar.addEventListener("click", cerrarEstadisticas);

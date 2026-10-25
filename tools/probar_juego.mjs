@@ -11,6 +11,7 @@
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina, el repaso final (una equivocada a
 //             propósito), la tarjeta final, la constancia impresa y las estadísticas
+//   kojima    con el nombre de pruebas: todo abierto y el botón "Ver bienvenida"
 //   recursos  una imagen propia en una medalla (juego y colección) y un sonido
 //             propio (crea un .wav de prueba en assets/sonidos/ y lo borra)
 //   facil     modo fácil: el mapa con el interruptor y Seguridad sin perder corazones
@@ -710,6 +711,24 @@ try {
 		await evalua(`document.querySelector("#btn-coleccion").click()`);
 		await paso(400);
 		await foto("coleccion-vacia");
+	} else if (escenario === "kojima") {
+		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
+		await conProgreso({ completos: ["Talento"], nivel: 1, personaje: "chico", nombre: "Prueba" });
+		await paso(300);
+		console.log("con nombre normal, botón visible:", await visible("#btn-ver-bienvenida"));
+		await evalua(`(() => { const i = document.querySelector("#nombre-jugador"); i.value = ${JSON.stringify(pruebas)}; i.dispatchEvent(new Event("input")); })()`);
+		await paso(400);
+		console.log("con el nombre de pruebas, todos abiertos:", await evalua("modulos.every((m, i) => desbloqueado(i))"));
+		console.log("botón visible:", await visible("#btn-ver-bienvenida"));
+		await foto("mapa");
+		await evalua(`document.querySelector("#btn-ver-bienvenida").click()`);
+		await paso(2500);
+		await foto("bienvenida");
+		console.log("tarjeta final visible:", await visible("#pantalla-victoria"), "·", await texto("#victoria-nombre"));
+		await evalua(`document.querySelector("#btn-cambiar").click()`);
+		await paso(400);
+		console.log("de vuelta en el mapa:", await evalua("estado"));
+		console.log("lo guardado no cambió:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
 	} else if (escenario === "recursos") {
 		// Un .wav de 0,1 s (tono de 440 Hz) solo para la prueba
 		const muestras = 4410, datos = Buffer.alloc(44 + muestras * 2);

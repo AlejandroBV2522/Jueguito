@@ -18,7 +18,7 @@ window.CONFIG_JUEGO = {
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
-  nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos (para probar); "" lo apaga
+  nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos y aparecen "Estadísticas" y "Ver bienvenida" (para probar); "" lo apaga
 
   /* Sonidos propios: cada efecto puede usar un archivo de assets/sonidos/
      (mp3, ogg o wav; ver assets/sonidos/LEEME.md). Vacío ("") = el sonido
