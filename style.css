@@ -99,17 +99,419 @@ body {
 	background: var(--cel-blanco);
 }
 
-#pantalla-inicio {
+/* ---------- Final: bienvenida con el nombre del jugador ---------- */
+/* Encima del mapa (se ven los pétalos detrás). La tarjeta es blanca y lisa
+   porque lleva el logo. */
+#pantalla-victoria {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
 	overflow-y: auto;
-	justify-content: safe center; /* si no cabe, se desplaza en vez de cortarse arriba */
+	background: rgba(4, 37, 35, 0.4);
+	animation: aparecer 0.6s ease-out;
 }
 
-#pantalla-victoria {
-	animation: aparecer 0.8s ease-out;
+.tarjeta-final {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	width: min(660px, 100%);
+	margin: auto;
+	padding: 40px 28px 26px;
+	overflow: hidden;
+	border: 3px solid var(--cel-verde-institucional);
+	border-radius: 26px;
+	background: var(--cel-blanco);
+	box-shadow: 0 12px 0 var(--cel-verde-profundo), 0 30px 60px rgba(0, 0, 0, 0.35);
+	text-align: center;
+	color: var(--cel-verde-profundo);
+	animation: entrada-final 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+/* Franja de arriba con los colores de la marca */
+.cinta-final {
+	position: absolute;
+	inset: 0 0 auto;
+	height: 14px;
+	background: linear-gradient(90deg, var(--cel-verde-profundo) 0 34%, var(--cel-verde-institucional) 34% 67%, var(--cel-beige) 67%);
+}
+
+.tarjeta-final .logo-celaque {
+	width: 210px;
+}
+
+.final-pre {
+	margin: 6px 0 0;
+	font-size: 0.95rem;
+	font-weight: 700;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	color: var(--cel-beige);
+}
+
+#victoria-bienvenida {
+	margin: 0;
+	font-size: clamp(2rem, 6vw, 3.2rem);
+	font-weight: 700;
+	line-height: 1.1;
+}
+
+.final-nombre {
+	margin: 4px 0 2px;
+	padding: 0 18px 8px;
+	border-bottom: 4px solid var(--cel-beige);
+	font-size: clamp(1.8rem, 6vw, 2.8rem);
+	font-weight: 700;
+	color: var(--cel-verde-institucional);
+	animation: brillo-nombre 2.4s ease-in-out 0.9s infinite;
+}
+
+#victoria-texto {
+	margin: 0;
+	max-width: 480px;
+	font-size: 1.1rem;
+	font-weight: 400;
+}
+
+.final-modulos {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+	margin: 6px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.final-modulos li {
+	padding: 6px 14px;
+	border-radius: 999px;
+	background: var(--cel-fondo-verde-claro);
+	color: var(--cel-verde-profundo);
+	font-weight: 700;
+	font-size: 0.95rem;
+	opacity: 0;
+	animation: aparecer 0.4s ease-out forwards;
+}
+
+.final-modulos li::before {
+	content: "✓ ";
+	color: var(--cel-verde-institucional);
+}
+
+.final-fecha {
+	margin: 0 0 6px;
+	font-size: 0.85rem;
+	color: var(--cel-beige);
+}
+
+@keyframes entrada-final {
+	from {
+		opacity: 0;
+		transform: translateY(40px) scale(0.92);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes brillo-nombre {
+	0%,
+	100% {
+		text-shadow: none;
+	}
+	50% {
+		text-shadow: 0 0 18px rgba(72, 132, 120, 0.45);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tarjeta-final,
+	.final-nombre,
+	.final-modulos li {
+		animation: none;
+		opacity: 1;
+	}
+}
+
+/* Pantallas bajas: la tarjeta final entra completa sin desplazarse */
+@media (max-height: 860px) {
+	.tarjeta-final {
+		gap: 6px;
+		padding: 30px 24px 20px;
+	}
+
+	.tarjeta-final .logo-celaque {
+		width: 170px;
+	}
+
+	#victoria-bienvenida {
+		font-size: clamp(1.8rem, 5vw, 2.4rem);
+	}
+
+	.final-nombre {
+		font-size: clamp(1.6rem, 5vw, 2.2rem);
+	}
+
+	.tarjeta-final .boton-grande {
+		min-height: 60px;
+		padding: 10px 40px;
+		font-size: 1.4rem;
+	}
+}
+
+/* Campo del nombre (en el rectángulo del mapa) */
+.campo-nombre {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--cel-verde-profundo);
+}
+
+.campo-nombre input {
+	width: 100%;
+	min-height: 40px;
+	padding: 6px 14px;
+	border: 2px solid var(--cel-gris-claro);
+	border-radius: 12px;
+	font: inherit;
+	font-size: 1rem;
+	font-weight: 400;
+	text-align: center;
+	color: var(--cel-verde-profundo);
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.campo-nombre input:focus {
+	outline: none;
+	border-color: var(--cel-verde-institucional);
+	box-shadow: 0 0 0 4px var(--cel-verde-suave);
+}
+
+/* Sin nombre al querer entrar: el campo se sacude */
+.campo-nombre.falta input {
+	border-color: var(--cel-beige);
+	animation: sacudir 0.4s;
+}
+
+@keyframes sacudir {
+	25% {
+		transform: translateX(-6px);
+	}
+	75% {
+		transform: translateX(6px);
+	}
+}
+
+/* ---------- Cómo se juega ---------- */
+#btn-ayuda {
+	position: fixed;
+	top: 14px;
+	left: 16px;
+	z-index: 9;
+}
+
+#ayuda {
+	position: fixed;
+	inset: 0;
+	z-index: 21;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.5);
+	animation: aparecer 0.3s ease-out;
+}
+
+.ayuda-carta {
+	position: relative;
+	align-items: center;
+	overflow: hidden;
+	padding-top: 34px;
+	text-align: center;
+	animation: entrada-final 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.ayuda-carta .logo-celaque {
+	width: 170px;
+}
+
+#ayuda-titulo {
+	margin: 0;
+	font-size: clamp(1.6rem, 4vw, 2.1rem);
+	font-weight: 700;
+}
+
+.ayuda-objetivo {
+	margin: 0;
+	padding: 10px 16px;
+	border-radius: 14px;
+	background: var(--cel-fondo-verde-claro);
+	font-size: 1.05rem;
+	font-weight: 400;
+}
+
+.ayuda-pasos {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	text-align: left;
+}
+
+.ayuda-pasos li {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-weight: 400;
+	line-height: 1.35;
+}
+
+.ayuda-num {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border: 3px solid var(--cel-beige);
+	border-radius: 50%;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	font-weight: 700;
+}
+
+.ayuda-controles {
+	margin: 0;
+	font-size: 0.95rem;
+	color: var(--cel-verde-institucional);
+}
+
+.ayuda-controles kbd {
+	min-width: 1.6em;
+	padding: 1px 6px;
+	border-radius: 6px;
+	box-shadow: 0 2px 0 var(--cel-verde-institucional);
+}
+
+.solo-tactil {
+	display: none;
+}
+
+@media (pointer: coarse) {
+	.solo-tactil {
+		display: block;
+	}
+
+	.solo-teclado {
+		display: none;
+	}
+}
+
+@media (max-height: 560px) {
+	.ayuda-carta .logo-celaque {
+		display: none;
+	}
+
+	.ayuda-pasos {
+		gap: 4px;
+	}
+}
+
+/* Empezar de cero, arriba a la derecha del mapa */
+#btn-reiniciar-progreso {
+	position: fixed;
+	top: 72px; /* debajo del botón de sonido: así no tapa los avisos del mapa */
+	right: 16px;
+	z-index: 9;
+}
+
+@media (max-width: 1000px) {
+	#btn-reiniciar-progreso {
+		top: 14px; /* el sonido baja a la fila de la barrita del jugador */
+	}
+}
+
+/* Sonido: arriba a la derecha, siempre a mano (también en los niveles) */
+#btn-sonido {
+	position: fixed;
+	top: 14px;
+	right: 16px;
+	z-index: 14; /* debajo del diálogo (15), la computadora y las ventanas: no las tapa */
+	min-width: 140px;
+	padding: 6px 14px;
+}
+
+#btn-sonido.apagado {
+	color: var(--cel-verde-institucional);
+	background: var(--cel-fondo-verde-claro);
+}
+
+/* Pantallas angostas: en la fila de la barrita del jugador, debajo del HUD */
+@media (max-width: 1000px) {
+	#btn-sonido {
+		top: 92px;
+	}
+
+	/* Colección y estadísticas bajan una fila para no tocar el botón de sonido */
+	#btn-coleccion {
+		top: 150px !important;
+	}
+
+	#btn-estadisticas {
+		top: 208px !important;
+	}
+
+	#btn-ver-bienvenida {
+		top: 266px !important;
+	}
+}
+
+/* Colección: debajo de "Cómo se juega" */
+#btn-coleccion {
+	position: fixed;
+	top: 72px;
+	left: 16px;
+	z-index: 9;
+}
+
+/* Estadísticas: debajo de la colección (solo con el nombre de pruebas) */
+#btn-estadisticas {
+	position: fixed;
+	top: 130px;
+	left: 16px;
+	z-index: 9;
+}
+
+/* Ver bienvenida: debajo de estadísticas (solo con el nombre de pruebas) */
+#btn-ver-bienvenida {
+	position: fixed;
+	top: 188px;
+	left: 16px;
+	z-index: 9;
+}
+
+#btn-reiniciar-progreso.confirmar {
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	border-color: var(--cel-beige);
 }
 
 /* Espacio para un logo oficial: recuadro punteado que dice LOGO hasta que
-   el archivo exista en assets/logos/ (main.js lo cambia por la imagen). El
+   el archivo exista en assets/logos/ (ponerLogo, en juego/interfaz/interfaz.js, lo cambia por la imagen). El
    logo se muestra tal cual: sin sombras, filtros ni transparencias. */
 .espacio-logo {
 	display: flex;
@@ -337,6 +739,252 @@ kbd {
 	box-shadow: 0 0 0 4px var(--cel-verde-suave);
 }
 
+/* ---------- Mapa ---------- */
+/* Rectángulo del centro del mapa: fondo blanco liso (lleva el logo). El juego
+   lo pone sobre la meseta central (--mapa-x, --mapa-y) y lo escala con el
+   mapa (--mapa-k). */
+#mapa-panel {
+	position: fixed;
+	left: var(--mapa-x, 50%);
+	top: var(--mapa-y, 50%);
+	z-index: 8;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	width: 380px;
+	padding: 18px 20px 14px;
+	border: 3px solid var(--cel-verde-institucional);
+	border-radius: 22px;
+	background: var(--cel-blanco);
+	box-shadow: 0 8px 0 var(--cel-verde-profundo), 0 18px 40px rgba(4, 37, 35, 0.35);
+	text-align: center;
+	transform: translate(-50%, -50%) scale(var(--mapa-k, 1));
+	transition: opacity 0.25s;
+}
+
+#mapa-panel.oculto {
+	opacity: 0;
+	pointer-events: none;
+}
+
+#mapa-panel .logo-celaque {
+	width: 190px;
+}
+
+#mapa-panel h1 {
+	margin: 0;
+	font-size: 1.75rem;
+	font-weight: 700;
+	line-height: 1.1;
+}
+
+#mapa-panel p {
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+#mapa-panel .opcion {
+	padding: 6px 12px 8px;
+	font-size: 1rem;
+}
+
+#mapa-panel .opcion canvas {
+	width: 100px;
+	height: 120px;
+}
+
+.boton-chico {
+	min-height: 44px;
+	padding: 6px 20px;
+	font-size: 1.05rem;
+}
+
+/* Barra de arriba con el mapa acercado a un mundo */
+#mapa-barra {
+	position: fixed;
+	top: 14px;
+	left: 16px;
+	right: 16px;
+	z-index: 9;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	pointer-events: none;
+}
+
+#mapa-barra button {
+	pointer-events: auto;
+}
+
+#mapa-barra-texto {
+	margin: 0 auto;
+	padding: 10px 18px;
+	border-radius: 14px;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	font-weight: 700;
+	text-align: center;
+}
+
+#mapa-ayuda {
+	position: fixed;
+	left: 16px;
+	bottom: 14px;
+	z-index: 8;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+	max-width: calc(100vw - 32px);
+	padding: 8px 14px;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.92);
+	font-size: 0.85rem;
+	font-weight: 400;
+}
+
+#mapa-ayuda .separador {
+	font-weight: 700;
+	color: var(--cel-verde-institucional);
+}
+
+#mapa-ayuda kbd {
+	min-width: 1.6em;
+	padding: 1px 6px;
+	border-radius: 6px;
+	box-shadow: 0 2px 0 var(--cel-verde-institucional);
+}
+
+@media (pointer: coarse) {
+	#mapa-ayuda {
+		display: none;
+	}
+}
+
+/* Carta de un mundo: qué sistema es, y el botón para entrar al nivel */
+#carta {
+	position: fixed;
+	inset: 0;
+	z-index: 19;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.45);
+	animation: aparecer 0.25s ease-out;
+}
+
+.carta {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	width: min(560px, 100%);
+	max-height: calc(100dvh - 32px);
+	overflow-y: auto;
+	padding: 24px 26px;
+	border: 3px solid var(--cel-verde-institucional);
+	border-radius: 22px;
+	background: var(--cel-blanco);
+	box-shadow: 0 10px 0 var(--cel-verde-profundo), 0 24px 50px rgba(0, 0, 0, 0.35);
+}
+
+.carta-cabeza {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.logo-carta {
+	width: 84px;
+	height: 84px;
+	font-size: 0.8rem;
+}
+
+#carta-mundo {
+	margin: 0;
+	font-size: 0.85rem;
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	color: var(--cel-beige);
+}
+
+#carta-titulo {
+	margin: 2px 0;
+	font-size: clamp(1.5rem, 4vw, 2rem);
+	font-weight: 700;
+	line-height: 1.15;
+}
+
+#carta-modulo {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+#carta-descripcion {
+	margin: 0;
+	font-size: 1.1rem;
+	line-height: 1.5;
+	color: var(--cel-negro);
+}
+
+#carta-lista {
+	margin: 0;
+	padding: 12px 16px 12px 34px;
+	border-radius: 14px;
+	background: var(--cel-fondo-verde-claro);
+	font-weight: 400;
+	line-height: 1.6;
+}
+
+/* Pantallas bajas (celular acostado): la carta más compacta para que quepa */
+@media (max-height: 500px) {
+	.carta {
+		gap: 8px;
+		padding: 14px 18px;
+	}
+
+	.logo-carta {
+		width: 56px;
+		height: 56px;
+	}
+
+	#carta-titulo {
+		font-size: 1.35rem;
+	}
+
+	#carta-descripcion {
+		font-size: 0.95rem;
+		line-height: 1.4;
+	}
+
+	#carta-lista {
+		padding: 6px 12px 6px 28px;
+		font-size: 0.9rem;
+		line-height: 1.4;
+	}
+
+	.carta .boton-grande {
+		min-height: 52px;
+		padding: 8px 28px;
+		font-size: 1.2rem;
+	}
+}
+
+/* Celular vertical: el rectángulo va abajo, sin tapar las mesetas */
+@media (orientation: portrait) and (max-width: 700px) {
+	#mapa-panel {
+		top: auto;
+		bottom: 12px;
+		left: 50%;
+		width: min(380px, calc(100vw - 32px));
+		transform: translateX(-50%);
+	}
+}
+
 @keyframes aparecer {
 	from {
 		opacity: 0;
@@ -385,12 +1033,60 @@ kbd {
 	font-weight: 400;
 }
 
+/* ---------- Barrita del jugador (arriba a la izquierda) ---------- */
+#barra-jugador {
+	position: fixed;
+	top: 14px;
+	left: 16px;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 14px 6px 6px;
+	border: 2px solid var(--cel-verde-institucional);
+	border-radius: 16px;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	pointer-events: none;
+}
+
+#cara-jugador {
+	width: 56px;
+	height: 56px;
+	border-radius: 12px;
+	background: var(--cel-fondo-verde-claro);
+	box-shadow: 0 0 0 2px var(--cel-beige);
+}
+
+#barra-nombre {
+	margin: 0 0 4px;
+	max-width: 180px;
+	overflow: hidden;
+	font-size: 1rem;
+	font-weight: 700;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+#corazones-jugador {
+	display: block;
+	height: 20px;
+	image-rendering: pixelated;
+}
+
+/* Pantallas angostas: debajo de la barra de progreso para no encimarse */
+@media (max-width: 1000px) {
+	#barra-jugador {
+		top: 92px;
+	}
+}
+
 /* ---------- Caja de diálogo ---------- */
 #dialogo {
 	position: fixed;
 	left: 50%;
 	bottom: 24px;
-	transform: translateX(-50%);
+	translate: -50% 0; /* aparte de transform: la animación "aparecer" no lo pisa */
 	z-index: 15;
 	display: flex;
 	gap: 16px;
@@ -626,6 +1322,45 @@ kbd {
 	font-weight: 700;
 }
 
+/* Estaciones que no son computadora: la figurita que se arma va arriba */
+#terminal-figura {
+	align-self: center;
+	width: 240px;
+	height: 150px;
+}
+
+#terminal.estacion-robot .monitor,
+#terminal.estacion-antivirus .monitor {
+	border-radius: 26px;
+	background: var(--cel-verde-institucional);
+	box-shadow: 0 0 0 3px var(--cel-beige), 0 24px 50px rgba(0, 0, 0, 0.5);
+}
+
+#terminal.estacion-robot .pie-monitor,
+#terminal.estacion-antivirus .pie-monitor {
+	display: none;
+}
+
+/* Taller con varios robots: los tres en fila */
+#terminal.robots-varios #terminal-figura {
+	width: 360px;
+	max-width: 100%;
+	height: auto;
+	aspect-ratio: 12 / 5;
+}
+
+@media (max-height: 640px) {
+	#terminal-figura {
+		width: 160px;
+		height: 100px;
+	}
+
+	#terminal.robots-varios #terminal-figura {
+		width: 240px;
+		height: auto;
+	}
+}
+
 #terminal-salir {
 	align-self: center;
 	border-color: var(--cel-blanco);
@@ -646,13 +1381,13 @@ kbd {
 
 .tactil {
 	pointer-events: auto;
-	min-width: 84px;
-	height: 84px;
-	padding: 0 18px;
+	min-width: 96px;
+	height: 96px;
+	padding: 0 20px;
 	border: 3px solid var(--cel-verde-institucional);
-	border-radius: 24px;
+	border-radius: 26px;
 	font: inherit;
-	font-size: 1.9rem;
+	font-size: 2.1rem;
 	font-weight: 700;
 	color: var(--cel-blanco);
 	background: var(--cel-verde-profundo);
@@ -661,7 +1396,7 @@ kbd {
 }
 
 #btn-saltar {
-	min-width: 104px;
+	min-width: 124px;
 	background: var(--cel-verde-institucional);
 	border-color: var(--cel-blanco);
 }
@@ -672,7 +1407,19 @@ kbd {
 }
 
 .tactil.texto {
-	font-size: 1.05rem;
+	font-size: 1.2rem;
+}
+
+/* Celulares acostados (poca altura): un poco más chicos para no tapar el juego */
+@media (max-height: 460px) {
+	.tactil {
+		min-width: 80px;
+		height: 80px;
+	}
+
+	#btn-saltar {
+		min-width: 104px;
+	}
 }
 
 .tactil:active {
@@ -743,4 +1490,477 @@ body.con-dialogo #controles-tactiles {
 	#dialogo-texto {
 		font-size: 1rem;
 	}
+}
+
+/* ---------- Modo fácil (interruptor del centro del mapa) ---------- */
+.interruptor {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 8px 12px;
+	border: 2px solid var(--cel-gris-claro);
+	border-radius: 14px;
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.interruptor:hover,
+.interruptor:focus-visible {
+	border-color: var(--cel-verde-institucional);
+	outline: none;
+}
+
+.interruptor[aria-checked="true"] {
+	border-color: var(--cel-verde-institucional);
+	background: var(--cel-fondo-verde-claro);
+}
+
+.interruptor-riel {
+	position: relative;
+	flex: 0 0 auto;
+	width: 46px;
+	height: 26px;
+	border-radius: 999px;
+	background: var(--cel-gris-claro);
+	transition: background 0.15s;
+}
+
+.interruptor[aria-checked="true"] .interruptor-riel {
+	background: var(--cel-verde-institucional);
+}
+
+.interruptor-bola {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--cel-blanco);
+	box-shadow: 0 1px 3px rgba(4, 37, 35, 0.35);
+	transition: transform 0.15s;
+}
+
+.interruptor[aria-checked="true"] .interruptor-bola {
+	transform: translateX(20px);
+}
+
+.interruptor-texto {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.2;
+}
+
+.interruptor-texto strong {
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.interruptor-texto small {
+	font-size: 0.82rem;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+.ayuda-facil {
+	margin: 0;
+	font-weight: 400;
+}
+
+/* ---------- Final: resultado del repaso y ayuda para el PDF ---------- */
+.final-repaso {
+	margin: 0;
+	padding: 8px 16px;
+	border-radius: 12px;
+	background: var(--cel-fondo-verde-claro);
+	font-weight: 700;
+}
+
+.final-ayuda {
+	margin: 0;
+	font-size: 0.85rem;
+	color: var(--cel-verde-institucional);
+}
+
+/* ---------- Repaso final ---------- */
+#repaso,
+#estadisticas,
+#coleccion {
+	position: fixed;
+	inset: 0;
+	z-index: 21;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.5);
+	animation: aparecer 0.3s ease-out;
+}
+
+.repaso-carta {
+	position: relative;
+	align-items: center;
+	overflow-x: hidden;
+	padding-top: 34px;
+	text-align: center;
+	animation: entrada-final 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.repaso-carta .logo-celaque {
+	width: 160px;
+}
+
+.repaso-pre {
+	margin: 0;
+	font-size: 0.9rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--cel-beige);
+}
+
+#repaso-titulo {
+	margin: -8px 0 0;
+	font-size: clamp(1.6rem, 4vw, 2.1rem);
+	font-weight: 700;
+}
+
+.repaso-datos {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+#repaso-pregunta {
+	margin: 0;
+	font-size: 1.2rem;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+#repaso-opciones {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+
+.opcion-repaso {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	min-height: 56px;
+	padding: 10px 16px;
+	border: 2px solid var(--cel-verde-institucional);
+	border-radius: 14px;
+	background: var(--cel-blanco);
+	color: var(--cel-verde-profundo);
+	font: inherit;
+	font-size: 1.05rem;
+	font-weight: 400;
+	text-align: left;
+	cursor: pointer;
+	transition: transform 0.1s, background 0.1s;
+}
+
+.opcion-repaso .num-pc {
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+}
+
+.opcion-repaso:hover:not(:disabled),
+.opcion-repaso:focus-visible {
+	transform: translateX(4px);
+	background: var(--cel-fondo-verde-claro);
+	outline: none;
+}
+
+.opcion-repaso.correcta {
+	background: var(--cel-verde-institucional);
+	color: var(--cel-blanco);
+}
+
+.opcion-repaso.incorrecta {
+	border-color: var(--cel-gris-claro);
+	color: var(--cel-gris-claro);
+	text-decoration: line-through;
+	cursor: default;
+}
+
+#repaso-pista {
+	margin: 0;
+	min-height: 1.4em;
+	font-weight: 700;
+	color: var(--cel-verde-institucional);
+}
+
+@media (max-height: 640px) {
+	.repaso-carta .logo-celaque {
+		display: none;
+	}
+}
+
+/* ---------- Estadísticas ---------- */
+.estadisticas-carta {
+	width: min(860px, 100%);
+}
+
+#estadisticas-titulo {
+	margin: 0;
+	font-size: 1.6rem;
+	font-weight: 700;
+}
+
+#estadisticas-resumen {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+.estadisticas-marco:has(table[hidden]) {
+	display: none;
+}
+
+.estadisticas-marco {
+	max-height: 50dvh;
+	overflow: auto;
+	border: 2px solid var(--cel-gris-claro);
+	border-radius: 12px;
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.estadisticas-marco table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+}
+
+.estadisticas-marco th,
+.estadisticas-marco td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--cel-gris-claro);
+	text-align: left;
+	vertical-align: top;
+}
+
+.estadisticas-marco th {
+	position: sticky;
+	top: 0;
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+	font-weight: 700;
+}
+
+.estadisticas-marco td:nth-child(3),
+.estadisticas-marco td:nth-child(4) {
+	text-align: center;
+	font-weight: 700;
+}
+
+.estadisticas-marco tr.cuesta td {
+	background: var(--cel-fondo-verde-claro);
+}
+
+#estadisticas-borrar.confirmar {
+	background: var(--cel-verde-profundo);
+	color: var(--cel-blanco);
+}
+
+/* ---------- Constancia (solo al imprimir) ---------- */
+#constancia {
+	display: none;
+}
+
+@page {
+	size: A4 landscape;
+	margin: 12mm;
+}
+
+@media print {
+	html,
+	body {
+		height: auto;
+		overflow: visible;
+		background: var(--cel-blanco);
+	}
+
+	body > *:not(#constancia) {
+		display: none !important;
+	}
+
+	#constancia {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		min-height: 180mm;
+		padding: 18mm 20mm 12mm;
+		overflow: hidden;
+		border: 3px solid var(--cel-verde-institucional);
+		border-radius: 18px;
+		background: var(--cel-blanco);
+		color: var(--cel-verde-profundo);
+		text-align: center;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		break-inside: avoid;
+	}
+
+	.logo-constancia {
+		width: 230px;
+		height: 60px;
+		margin-bottom: 6px;
+	}
+
+	.constancia-pre {
+		margin: 0;
+		font-size: 13pt;
+		font-weight: 700;
+		letter-spacing: 3px;
+		text-transform: uppercase;
+		color: var(--cel-beige);
+	}
+
+	.constancia-se,
+	.constancia-texto {
+		margin: 0;
+		font-size: 13pt;
+		font-weight: 400;
+	}
+
+	#constancia-nombre {
+		margin: 0;
+		padding: 0 24px 4px;
+		border-bottom: 2px solid var(--cel-verde-institucional);
+		font-size: 30pt;
+		font-weight: 700;
+	}
+
+	#constancia-modulos {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 6px 10px;
+		max-width: 220mm;
+		margin: 4px 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	#constancia-modulos li {
+		padding: 4px 12px;
+		border: 1.5px solid var(--cel-verde-institucional);
+		border-radius: 999px;
+		font-size: 11pt;
+		font-weight: 400;
+	}
+
+	#constancia-repaso {
+		margin: 0;
+		font-size: 12pt;
+		font-weight: 700;
+	}
+
+	.constancia-lema {
+		margin: 6px 0 0;
+		font-style: italic;
+		color: var(--cel-verde-institucional);
+	}
+
+	#constancia-fecha {
+		margin: 0;
+		font-size: 10pt;
+		color: var(--cel-beige);
+	}
+}
+
+/* ---------- Colección de medallas ocultas ---------- */
+.coleccion-carta {
+	position: relative;
+	width: min(720px, 100%);
+	padding-top: 34px;
+	text-align: center;
+	animation: entrada-final 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+#coleccion-titulo {
+	margin: 0;
+	font-size: 1.7rem;
+	font-weight: 700;
+}
+
+#coleccion-resumen {
+	margin: 0;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
+}
+
+.coleccion-barra {
+	height: 10px;
+	border-radius: 999px;
+	background: var(--cel-fondo-verde-claro);
+	overflow: hidden;
+}
+
+#coleccion-relleno {
+	height: 100%;
+	border-radius: 999px;
+	background: var(--cel-verde-institucional);
+}
+
+#coleccion-grilla {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ficha {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 8px 6px;
+	border: 2px dashed var(--cel-gris-claro);
+	border-radius: 14px;
+}
+
+.ficha.encontrada {
+	border: 2px solid var(--cel-beige);
+	background: var(--cel-fondo-verde-claro);
+}
+
+.ficha canvas {
+	width: 56px;
+	height: 56px;
+}
+
+.ficha-pista {
+	font-style: italic;
+}
+
+.ficha strong {
+	font-size: 0.92rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.ficha:not(.encontrada) strong {
+	color: var(--cel-verde-institucional);
+}
+
+.ficha small {
+	font-size: 0.75rem;
+	font-weight: 400;
+	color: var(--cel-verde-institucional);
 }

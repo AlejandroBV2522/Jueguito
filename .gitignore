@@ -5,3 +5,6 @@
 
 # Fuentes de la marca (manual PDF y logo editable .ai): solo locales, pesan mucho
 assets/marca/
+
+# Capturas de tools/probar_juego.mjs
+capturas/

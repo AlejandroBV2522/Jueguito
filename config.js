@@ -1,25 +1,56 @@
 /* =====================================================================
-   CAMINO A CELAQUE — CONFIGURACIÓN Y DIÁLOGOS
+   CAMINO A CELAQUE — CONFIGURACIÓN GENERAL
    ---------------------------------------------------------------------
-   Este es el archivo para personalizar el juego: velocidad, largo del
-   camino, textos de pantalla y los personajes (NPC) con sus diálogos.
-   No necesitas tocar main.js para agregar o cambiar NPCs.
+   Lo que vale para todo el juego: velocidad, largo del camino, textos de
+   pantalla, colores y los personajes que se pueden elegir.
+   Lo de cada mundo (su gente, sus diálogos y sus preguntas) está en su
+   carpeta: mundos/<mundo>/ (ver mundos/LEEME.md).
+   No necesitas tocar el motor (juego/) para agregar o cambiar NPCs.
    ===================================================================== */
+
+"use strict";
 
 window.CONFIG_JUEGO = {
   velocidadPersonaje: 120,   // píxeles por segundo (súbelo o bájalo a gusto)
   velocidadCorriendo: 320,   // velocidad mientras se mantiene presionada la Q
-  largoDelCamino: 7000,      // distancia total desde el inicio hasta Celaque
+  largoDelCamino: 6000,      // distancia desde el inicio hasta la entrada de la Cueva
   nombreMeta: "CELAQUE",     // texto del letrero de llegada
   distanciaParaHablar: 70,   // qué tan cerca debe estar el protagonista de un NPC
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
+  nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos y aparecen "Estadísticas" y "Ver bienvenida" (para probar); "" lo apaga
+
+  /* Sonidos propios: cada efecto puede usar un archivo de assets/sonidos/
+     (mp3, ogg o wav; ver assets/sonidos/LEEME.md). Vacío ("") = el sonido
+     que arma el juego solo. Si el archivo no carga, también usa el suyo. */
+  sonidos: {
+    salto: "",         // al saltar
+    acierto: "",       // respuesta correcta
+    error: "",         // respuesta equivocada
+    golpe: "",         // te toca un virus
+    caida: "",         // caer en un hueco de la Cueva
+    dialogo: "",       // empieza a hablar alguien
+    candado: "",       // mundo con candado en el mapa
+    tubo: "",          // entrar o salir por un tubo
+    nivel: "",         // subir de nivel
+    abrir: "",         // se abre un mundo nuevo en el mapa
+    coleccionable: "", // recoger una guacamaya oculta
+    pista: "",         // acercarse a una guacamaya oculta
+    recoger: "",       // tomar lo del punto A (misión)
+    entregar: "",      // entregar en el punto B (misión)
+    derrota: "",       // vencer a un antivalor
+    pieza: "",         // encaja una pieza del robot o del escudo
+    victoria: "",      // terminar todo / colección completa
+  },
+  volumenSonidos: 0.6, // volumen de los archivos propios (0 a 1)
 
   textos: {
     titulo: "Camino a Celaque",
-    subtitulo: "Camina, conoce a quienes encuentres y completa los módulos de tu capacitación.",
+    subtitulo: "Elige tu personaje y luego un mundo del mapa.",
     victoriaTitulo: "¿Estás listo?",
-    victoriaTexto: "¡Bienvenido a Celaque! Completaste todos los módulos de tu capacitación.",
+    bienvenida: "¡Bienvenido a Celaque!", // título del final, sobre el nombre del jugador
+    pideNombre: "¿Cómo te llamas?",
+    victoriaTexto: "Completaste todos los módulos de tu capacitación.",
     contadorNpcs: "Personas conocidas",
     letreroFinal: "¿Estás listo?", // letrero al final de la calle de Celaque
   },
@@ -57,393 +88,130 @@ window.CONFIG_JUEGO = {
   },
 };
 
-/* ---------------------------------------------------------------------
-   NPCs
-   ---------------------------------------------------------------------
-   Cada NPC es un objeto dentro de esta lista. Para agregar más, copia un
-   bloque { ... } completo y cambia sus datos. No hay límite de NPCs.
-
-   - nombre:     aparece en la caja de diálogo.
-   - posicion:   dónde aparece en el camino. 0 = inicio, 1 = Celaque.
-                 (usa valores entre 0.34 y 0.9, sin repetir: antes de
-                 0.32 está la zona de planos del inicio)
-   - apariencia: colores en formato "#RRGGBB". Todos van vestidos de
-                 obra, con la misma ilustración del protagonista teñida
-                 con estos colores (casco, chaleco, pantalon y pelo):
-                   cuerpo:      "chico" o "chica" (qué ilustración usar).
-                   casco:       color del casco (blanco = ingeniero,
-                                amarillo = constructor, azul = técnico).
-                   chaleco:     color del chaleco reflectivo.
-                   botas / herramienta / ropa: solo se usan en el dibujo de
-                                respaldo mientras cargan las imágenes.
-   - dialogo:    lista de frases. Cada frase es una "página" del diálogo;
-                 el jugador avanza con E / Enter / Espacio o tocando la caja.
-   --------------------------------------------------------------------- */
-
-window.NPCS = [
-  {
-    nombre: "Don Javi",
-    posicion: 0.36, // justo después de la puerta de luz (zona de planos)
-    apariencia: {
-      piel: "#c99468", ropa: "#5a7bb5", pantalon: "#3c5a99", pelo: "#dcdcdc", cuerpo: "chico",
-      casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "martillo",
-    },
-    dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 1
-      "Todo se ve tan gris por aquí... hace tiempo que las fábricas no tienen color.",
-      "Dicen que si caminas hacia Celaque, el color vuelve poco a poco.",
-      "Anda, yo te espero aquí. ¡Y nunca te quites el casco!",
-    ],
-  },
-  {
-    nombre: "Keidy",
-    posicion: 0.50,
-    apariencia: {
-      piel: "#ddbfac", ropa: "#6592fd", pantalon: "#5a4a7a", pelo: "#2b1a12", cuerpo: "chica",
-      casco: "#ffffff", chaleco: "#c6f432", botas: "#4a3020", herramienta: "plano",
-    },
-    dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 2
-      "¡Hola! ¿Viste? La lluvia ya casi se fue.",
-      "Mira las bodegas: ya empiezan a pintarse de colores otra vez.",
-    ],
-  },
-  {
-    nombre: "Mario",
-    posicion: 0.63,
-    apariencia: {
-      piel: "#d8a47f", ropa: "#e0664f", pantalon: "#2f5fa8", pelo: "#6e6e6e", cuerpo: "chico",
-      casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "llave",
-    },
-    dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 3
-      "Ya vas a mitad de camino.",
-      "Aquí construimos desde hace años. ¿Podemos arreglarlo? ¡Sí, podemos!",
-    ],
-  },
-  {
-    nombre: "Ingeniero Allan",
-    posicion: 0.76,
-    apariencia: {
-      piel: "#b98458", ropa: "#3f8f4f", pantalon: "#5b4a2e", pelo: "#3a2616", cuerpo: "chico",
-      casco: "#2f80ed", chaleco: "#c6f432", botas: "#3a2616", herramienta: "portapapeles",
-    },
-    dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 4
-      "Esta zona industrial le da trabajo a muchísima gente.",
-      "Respeta las señales mientras caminas. Celaque ya está cerca.",
-    ],
-  },
-  {
-    nombre: "Carlos",
-    posicion: 0.88,
-    apariencia: {
-      piel: "#e2b08a", ropa: "#2fa3d6", pantalon: "#2d4f7c", pelo: "#a0522d", cuerpo: "chico",
-      casco: "#ffffff", chaleco: "#ff7a1a", botas: "#4a3020", herramienta: "plano",
-    },
-    dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 5
-      "¡Lo lograste! Solo un poco más.",
-      "Pero antes de llegar, hay una cueva por cruzar. Ten cuidado.",
-    ],
-  },
-];
+/* Listas que completan los archivos de mundos/ (cargados en index.html, en
+   orden, después de este archivo):
+   - NPCS: la gente del camino de Talento (la define entera mundos/talento/npcs.js).
+   - PREGUNTAS_CUEVA: los antivalores de la Cueva (los define entera mundos/talento/cueva.js).
+   - MODULOS: un mundo del mapa por archivo (mundos/<mundo>/mundo.js).
+   - TEMAS_OFICINA: cómo se ve cada oficina por dentro (mundos/<mundo>/tema.js). */
+window.NPCS = [];
+window.PREGUNTAS_CUEVA = [];
+window.MODULOS = [];
+window.TEMAS_OFICINA = {};
 
 /* ---------------------------------------------------------------------
-   La Cueva
+   Módulos de capacitación = mundos del mapa
    ---------------------------------------------------------------------
-   Después del camino, el jugador entra a una cueva con 5 enemigos. Cada
-   uno hace una pregunta de opción múltiple: acertar lo derrota y deja
-   seguir avanzando; fallar resta una vida (hay 3) y repite la misma
-   pregunta. El último es el "jefe final".
+   Son 6 módulos y cada uno es un MUNDO (una meseta) del mapa general. Solo
+   el primero está abierto; los demás tienen candado hasta completar el
+   anterior. Al elegir un mundo el mapa se acerca a él; al tocar su
+   edificio aparece su carta (qué sistema es) y desde ahí se entra.
 
-   - nombre:    aparece en la caja de diálogo, igual que los NPCs.
-   - posicion:  dónde aparece (0 a 1 = dentro de la cueva, sin repetir).
-                El primer enemigo puede llevar un valor negativo (ej. -0.05)
-                para quedar afuera, justo antes de la entrada — bloquea el
-                paso desde el camino normal, antes de cruzar a la cueva.
-   - apariencia: mismos campos que los NPCs (colores en "#RRGGBB").
-   - pregunta:  el texto de la pregunta.
-   - opciones:  lista de respuestas posibles.
-   - correcta:  índice (0, 1, 2...) de la respuesta correcta en "opciones".
-
-   Las preguntas del enemigo 4 y el jefe final son genéricas — reemplázalas
-   con el contenido real de la capacitación cuando lo tengas listo.
-   --------------------------------------------------------------------- */
-
-window.PREGUNTAS_CUEVA = [
-  {
-    nombre: "Guardián de la Entrada",
-    posicion: -0.05, // afuera, justo antes de la boca de la cueva (negativo = antes de LARGO)
-    escala: 1.4, // centinela de piedra: grande e imponente, el primer reto
-    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
-    // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
-    apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
-    pregunta: "¿Cuál es la misión de Celaque?",
-    opciones: [
-      "Vender productos sin calidad.",
-      "Brindar productos y servicios con calidad.",
-      "Competir con los clientes.",
-    ],
-    correcta: 1,
-  },
-  {
-    nombre: "Murciélago de la Cueva",
-    posicion: 0.22,
-    escala: 0.6, // el más débil: el más chico
-    apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
-    pregunta: "¿Cuál es uno de los valores de Celaque?",
-    opciones: ["Trabajo en equipo.", "Desorden.", "Irresponsabilidad."],
-    correcta: 0,
-  },
-  {
-    nombre: "Guerrero Esqueleto",
-    posicion: 0.39,
-    escala: 1.05,
-    apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
-    pregunta: "¿Qué debes usar para protegerte en el trabajo?",
-    opciones: [
-      "Equipo de protección personal.",
-      "Nada.",
-      "Solo un casco de juguete.",
-    ],
-    correcta: 0,
-  },
-  {
-    // ✏️ Marcador de posición: reemplazar con contenido real de la capacitación
-    nombre: "Golem de Piedra",
-    posicion: 0.645,
-    escala: 1.3,
-    factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
-    apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
-    pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
-    opciones: [
-      "Preguntar y seguir el proceso establecido.",
-      "Improvisar sin avisar a nadie.",
-      "Ignorarlo si nadie se da cuenta.",
-    ],
-    correcta: 0,
-  },
-  {
-    // ✏️ Marcador de posición: jefe final, combina temas anteriores.
-    // Trae 2 preguntas ("preguntas" en vez de "pregunta") — hay que
-    // responder las 2 en orden para vencerlo, una tras otra.
-    nombre: "Guardián de Celaque",
-    posicion: 0.865,
-    escala: 2.2, // jefe final: el gigante de la Cueva
-    factorFrente: 0.5, // se acerca más al pelear (ver anchoFrenteEnemigo en main.js)
-    apariencia: { piel: "#c9a876", ropa: "#7a2f3f", pantalon: "#2e2e2e", pelo: "#1a1a1a", sombrero: null },
-    preguntas: [
-      {
-        pregunta: "¿Cuál es uno de los valores de Celaque?",
-        opciones: ["Trabajo en equipo.", "Individualismo.", "Competencia interna."],
-        correcta: 0,
-      },
-      {
-        pregunta: "¿Qué debes usar para protegerte en el trabajo?",
-        opciones: ["Equipo de protección personal.", "Nada, no hace falta.", "Solo si alguien te ve."],
-        correcta: 0,
-      },
-    ],
-  },
-];
-
-/* ---------------------------------------------------------------------
-   Módulos de capacitación (la calle de Celaque, al salir de la Cueva)
-   ---------------------------------------------------------------------
-   Son 6 módulos. El primero (Talento) es todo lo anterior: el camino y la
-   Cueva, y ya está completo al salir de ella. Cada uno de los demás es un
-   EDIFICIO: al llegar a su puerta se entra a su OFICINA. Adentro te recibe
-   un compañero (dice la "intro"), hay muebles que saltar, y al fondo una
-   computadora (Terminal Celaque) donde se contestan las preguntas. Al
-   terminar vuelves a la calle con el módulo completo, subes de nivel y se
-   abre la reja para seguir. Fallar no quita vidas: la opción equivocada se
-   tacha y se vuelve a intentar. La computadora hace solo las primeras
+   El primero (Talento) es el camino y la Cueva: se completa al salir de
+   ella. Cada uno de los demás es una OFICINA en lo alto de un edificio:
+   te reciben compañeros (la "intro" y los "comentarios"), hay muebles que
+   saltar, y al fondo una computadora (Terminal Celaque) donde se contestan
+   las preguntas. Al terminar vuelves al mapa, subes de nivel y se abre el
+   siguiente mundo. Fallar no quita vidas: la opción equivocada se tacha y
+   se vuelve a intentar. La computadora hace solo las primeras
    "preguntasPorModulo" (arriba, en CONFIG_JUEGO) de cada módulo.
 
-   - nombre:      nombre del módulo (se ve en el letrero del edificio).
+   Cada módulo está en su archivo mundos/<mundo>/mundo.js, que hace
+   window.MODULOS.push({ ... }) con estos campos. El orden del mapa es el
+   orden de esos archivos en index.html.
+
+   - nombre:      nombre del módulo (se ve en el mapa y en la oficina).
+                  No lo cambies en un mundo ya publicado: el progreso
+                  guardado de cada jugador usa este nombre.
    - subtitulo:   texto chico debajo del nombre.
-   - color:       color del edificio y del letrero ("#RRGGBB").
+   - sistema:     el sistema o plataforma del módulo (título de su carta).
+   - descripcion: qué es ese sistema (texto de la carta en el mapa).
+   - icono:       dibujo en la fachada del edificio del mapa: "montana",
+                  "tablero", "engranes", "nube", "escudo" o "chispa".
+   - color:       color del edificio ("#RRGGBB").
+   - foto:        (opcional) foto real de su edificio en el mapa, ya sin
+                  cielo (PNG transparente y recortado), ej.
+                  "assets/edificios/Agalta.png". Sin foto se dibuja un
+                  edificio genérico del color del módulo.
+   - fotoBordes:  (opcional) desvanece los bordes de la foto para que no se
+                  vea cortada en línea recta: { arriba, abajo, izquierda,
+                  derecha }, cada uno la fracción que se desvanece (ej.
+                  abajo: 0.2 la funde con el pasto). Sin esto, la foto
+                  se dibuja tal cual (Atlas, Lirios).
    - logo:        (opcional) ruta a un PNG/SVG con el logo del módulo, ej.
                   "assets/logos/Proyectos.png". Se dibuja SIN deformar
-                  (respeta su proporción). Sin logo se usa la inicial.
+                  (respeta su proporción). Sin logo se ve el recuadro "LOGO".
    - completoAlSalirDeLaCueva: solo para Talento.
    - intro:       lo que dice el compañero que te recibe en la oficina.
    - companero:   (opcional) { nombre: "Ana", cuerpo: "chica" } para el
-                  compañero de la oficina. Sin esto: "Equipo de <módulo>".
+                  compañero que te recibe. Sin esto: "Equipo de <módulo>".
+   - anfitrion:   (opcional) el personaje fijo e importante del mundo: se ve
+                  en el mapa y en la carta, y es quien te recibe. Lleva
+                  { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
+                  En Talento espera al inicio del camino ("posicion", igual
+                  que los NPCs); en las oficinas reemplaza al que da la intro.
+   - oficina:     cómo es el interior de su edificio:
+                  vista: lo que se ve por el ventanal: "construccion",
+                         "industria", "nubes" (tan alto que solo hay nubes),
+                         "montana" o "ciudad" (puntas de edificios).
+                  tema:  lo que flota en la oficina, la pizarra y su objeto
+                         propio: "planos", "procesos", "documentos",
+                         "seguridad" o "ia". Cada tema está dibujado en el
+                         tema.js de la carpeta de su mundo (window.TEMAS_OFICINA).
+                  edificio / piso: (opcionales) letrero junto a la salida.
+                  estacion: dónde se contestan las preguntas: "computadora"
+                         (por defecto), "robot" (cada acierto arma piezas de
+                         los robots de IA) o "antivirus" (cada acierto arma
+                         una parte del escudo).
+                  virus: (opcional) true para que crucen virus por la
+                         oficina: se esquivan agachándose (los que vuelan) o
+                         saltando (los que ruedan). Salen después de hablar
+                         con el anfitrión; mientras hablas con alguien se
+                         detienen.
+                  largo: (opcional) largo de la oficina en px (normal:
+                         2600, máximo 3400). Muebles y compañeros se
+                         estiran con ella. Seguridad usa 3200.
+                  robots: (solo con estacion "robot") cuáles se arman y en
+                         qué orden: "tierra", "aereo" y/o "humanoide", ej.
+                         ["tierra", "aereo", "humanoide"]. Cada robot hace
+                         "preguntasPorModulo" preguntas (con 2: 6 en total).
+                         Sin esto, solo el de tierra.
+   - comentarios: más compañeros dentro de la oficina, cada uno con
+                  { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
+                  Caben 3 (el resto no se muestra).
+   - mision:      (opcional) llevar algo del punto A al punto B antes de
+                  la estación del fondo: { objeto: "los permisos",
+                  a: { letrero, nube }, b: { letrero, nombre, cuerpo,
+                  pide: [frases], explica: [frases] } }. En B espera quien
+                  lo pide y, al entregárselo, explica para qué sirve. Con
+                  a.nube: true, A está arriba, en una nube, y se sube
+                  saltando por una escalera de nubes. Ese
+                  mundo no lleva "comentarios" (A y B usan sus lugares).
+   - coleccionables: (opcional) guacamayas escondidas en el aire. Solo
+                  se alcanzan saltando DESDE algo (desde el piso no llegas).
+                  Se ven en el apartado "Colección" del mapa. Cada una:
+                  { nombre, sobre, n, altura }:
+                  sobre: desde qué se salta: "mueble" (oficinas, del 1 al
+                         7 desde la entrada), "nube" (escalera de nubes de
+                         la misión, de 1 a 3), "andamio" (Talento: escalones
+                         del camino en orden, contando el de cada NPC) o
+                         "roca" (Talento: obstáculos de la Cueva, de 1 a 4).
+                  n:     cuál (empezando en 1).
+                  altura: cuánto arriba de ese objeto flota. Un salto
+                         alcanza hasta ~280 arriba de donde saltas: con
+                         más ya no se llega, y si el objeto más la altura
+                         suman menos de ~290, se alcanza desde el piso.
+                         Las de oficina usan 260 (la prueba "coleccion"
+                         de tools/probar_juego.mjs lo revisa).
+   - preguntasPorModulo: (opcional) cuántas preguntas hace este mundo, si
+                  no son las de CONFIG_JUEGO (arriba). Con robots: por robot.
    - preguntas:   { pregunta, opciones, correcta (índice desde 0),
                     explicacion (opcional, se muestra al acertar) }.
 
-   ✏️ Las preguntas de SharePoint salen de la capacitación "Suite de
-   Microsoft". Las demás son un BORRADOR: cada departamento debe
-   reemplazarlas con su contenido real.
+   ✏️ Las preguntas de Proyectos, Procesos, SharePoint e IA salen de las
+   capacitaciones de cada área. Las de Seguridad todavía son un BORRADOR:
+   el departamento debe reemplazarlas con su contenido real.
    --------------------------------------------------------------------- */
-
-window.MODULOS = [
-  {
-    nombre: "Talento",
-    subtitulo: "Celaque: quiénes somos",
-    color: "#488478", // verde institucional
-    completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
-    intro: [],
-    preguntas: [],
-  },
-  {
-    nombre: "Proyectos",
-    subtitulo: "Nuestro trabajo en Wrike",
-    color: "#042523", // verde profundo
-    intro: [
-      "Bienvenido al edificio de Proyectos.",
-      "Aquí organizamos el trabajo del día a día en Wrike: proyectos, tareas, responsables y fechas.",
-    ],
-    preguntas: [
-      {
-        // ✏️ Borrador: revisar con el área de Proyectos
-        pregunta: "¿Qué es Wrike?",
-        opciones: [
-          "Una plataforma para planear y dar seguimiento a proyectos y tareas en equipo.",
-          "Un programa para editar fotos.",
-          "Una red social personal.",
-        ],
-        correcta: 0,
-      },
-      {
-        // ✏️ Borrador
-        pregunta: "Si te asignan una tarea en Wrike, ¿qué es lo correcto?",
-        opciones: [
-          "Ignorarla hasta que alguien pregunte.",
-          "Actualizar su estado y avances para que el equipo sepa cómo va.",
-          "Borrarla si no te gusta.",
-        ],
-        correcta: 1,
-      },
-    ],
-  },
-  {
-    nombre: "Procesos",
-    subtitulo: "Cómo hacemos las cosas",
-    color: "#A99886", // beige
-    intro: ["Este es el edificio de Procesos.", "Los procesos nos ayudan a trabajar igual de bien, todos los días."],
-    preguntas: [
-      {
-        // ✏️ Borrador: revisar con el área de Procesos
-        pregunta: "¿Qué debes hacer si no entiendes un proceso de la empresa?",
-        opciones: [
-          "Improvisar sin avisar a nadie.",
-          "Preguntar a tu líder o al área responsable y seguir el proceso establecido.",
-          "Saltarte los pasos que no entiendas.",
-        ],
-        correcta: 1,
-      },
-      {
-        // ✏️ Borrador
-        pregunta: "¿Dónde se guardan los documentos de cada proceso?",
-        opciones: [
-          "En la carpeta del departamento en SharePoint.",
-          "En una memoria USB personal.",
-          "En el escritorio de tu computadora.",
-        ],
-        correcta: 0,
-      },
-    ],
-  },
-  {
-    nombre: "SharePoint",
-    subtitulo: "SharePoint, Outlook y Teams",
-    color: "#488478", // verde institucional
-    intro: [
-      "Bienvenido al edificio de Plataformas.",
-      "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
-    ],
-    preguntas: [
-      {
-        pregunta: "¿Qué es SharePoint?",
-        opciones: [
-          "Un juego de Microsoft.",
-          "Una plataforma de Microsoft para almacenar, organizar, compartir y acceder a información desde cualquier dispositivo.",
-          "Un antivirus.",
-        ],
-        correcta: 1,
-      },
-      {
-        pregunta: "¿Cómo se organiza la información en el SharePoint de Celaque?",
-        opciones: [
-          "Cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
-          "Todos los archivos van sueltos en una sola carpeta.",
-          "Cada persona guarda todo en su correo.",
-        ],
-        correcta: 0,
-      },
-      {
-        pregunta: "¿Para qué sirve el historial de versiones de un documento?",
-        opciones: [
-          "Para borrar el documento.",
-          "Para cambiarle el nombre.",
-          "Para rastrear cambios y recuperar versiones anteriores.",
-        ],
-        correcta: 2,
-      },
-      {
-        pregunta: "¿Qué herramienta usas para chatear y tener reuniones con otros colaboradores?",
-        opciones: ["Microsoft Teams.", "El historial de versiones.", "La papelera de reciclaje."],
-        correcta: 0,
-        explicacion: "Y en Outlook gestionas tu correo, calendario, contactos y grupos.",
-      },
-    ],
-  },
-  {
-    nombre: "Seguridad",
-    subtitulo: "Cuidamos la información",
-    color: "#042523", // verde profundo
-    intro: ["Este es el edificio de Seguridad.", "La información de Celaque es valiosa: cuidarla es trabajo de todos."],
-    preguntas: [
-      {
-        // ✏️ Borrador: revisar con el área de Seguridad
-        pregunta: "Te llega un correo urgente pidiendo tu contraseña. ¿Qué haces?",
-        opciones: [
-          "La envío rápido para no tener problemas.",
-          "No la comparto y lo reporto al área de Sistemas.",
-          "Se la reenvío a un compañero.",
-        ],
-        correcta: 1,
-      },
-      {
-        // ✏️ Borrador
-        pregunta: "¿Qué debes usar para protegerte en la obra?",
-        opciones: ["Nada.", "Equipo de protección personal.", "Solo un casco de juguete."],
-        correcta: 1,
-      },
-    ],
-  },
-  {
-    nombre: "IA",
-    subtitulo: "Inteligencia artificial",
-    color: "#A99886", // beige
-    intro: ["Bienvenido al edificio de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
-    preguntas: [
-      {
-        // ✏️ Borrador: revisar con el área responsable
-        pregunta: "¿Qué debes hacer con una respuesta generada por IA antes de usarla?",
-        opciones: [
-          "Copiarla sin leerla.",
-          "Revisarla y verificar que sea correcta.",
-          "Enviarla a todos los clientes.",
-        ],
-        correcta: 1,
-      },
-      {
-        // ✏️ Borrador
-        pregunta: "¿Se puede pegar información confidencial de la empresa en cualquier herramienta de IA?",
-        opciones: [
-          "Sí, siempre.",
-          "Solo en las herramientas aprobadas por la empresa.",
-          "Sí, si nadie se entera.",
-        ],
-        correcta: 1,
-      },
-    ],
-  },
-];
 
 /* Proyectos de Celaque que se ven como edificios de fondo en la calle
    (solo decoración, con su nombre en el letrero). */
