@@ -132,7 +132,8 @@ btnFacil.addEventListener("click", () => {
 	guardarAjustes();
 	mostrarAjustes();
 	btnFacil.blur(); // Enter vuelve a ser del mapa
-	avisoMapa(ajustes.facil ? "Modo fácil: saltos más altos y sin perder corazones" : "Modo fácil apagado");
+	avisoMapa(ajustes.facil ? "¡Modo fácil activado! Brillas: saltas más alto y no pierdes corazones" : "Modo fácil apagado");
+	if (ajustes.facil) mapa.powerUpT = 1.2; // destello de "power up" sobre el héroe
 	sonar(ajustes.facil ? "acierto" : "dialogo");
 });
 

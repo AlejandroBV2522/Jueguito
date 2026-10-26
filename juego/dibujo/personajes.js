@@ -559,6 +559,13 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 	const altoContenidoRef = (refMeta.abajo - refMeta.arriba) * hRef;
 	const k = altoDeseado / altoContenidoRef;
 
+	// Modo fácil: un halo dorado alrededor de la silueta que late suave,
+	// como un "power up" (o.brillo > 1 en el destello al activarlo, ver
+	// dibujarHeroeMapa). La sombra del canvas sigue el contorno de la foto.
+	if (o.brillo) {
+		ctx.shadowColor = `rgba(255,214,90,${Math.min(1, 0.6 * o.brillo).toFixed(2)})`;
+		ctx.shadowBlur = (8 + 3 * Math.sin(tiempo * 4)) * s * Math.min(o.brillo, 2.5);
+	}
 	const pintar = (img, m, factor, alfa) => {
 		const dw = (img.naturalWidth || img.width) * k * factor;
 		const dh = (img.naturalHeight || img.height) * k * factor;
@@ -598,8 +605,8 @@ function dibujarPolvoPasos() {
 	}
 }
 
-// Estela al correr: "sombras" del héroe donde estuvo hace 70, 140 y 210 ms
-// (con la pose de ese momento), cada vez más transparentes, y unas líneas
+// Estela al correr: 2 "sombras" leves del héroe donde estuvo hace 70 y 175
+// ms (con la pose de ese momento), cada vez más transparentes, y unas líneas
 // de velocidad detrás. Entra y sale con la marcha suavizada, así que solo
 // aparece corriendo, no caminando.
 function dibujarEstela(x, pie, o, sprites, t) {
@@ -621,10 +628,10 @@ function dibujarEstela(x, pie, o, sprites, t) {
 	}
 	ctx.restore();
 	if (!sprites) return;
-	for (const [k, alfa] of [[6, 0.1], [4, 0.2], [2, 0.32]]) {
+	for (const [k, alfa] of [[5, 0.06], [2, 0.13]]) {
 		const e = estelaHeroe[k];
 		if (!e) continue;
-		const sombra = { ...o, fase: e.fase, dir: e.dir, alfa: alfa * fuerza, sinSombra: true };
+		const sombra = { ...o, fase: e.fase, dir: e.dir, alfa: alfa * fuerza, sinSombra: true, brillo: 0 };
 		dibujarHeroeSprite(e.x - camara, SUELO + 38 * S - e.y * S, sombra, sprites, t);
 	}
 }
@@ -635,6 +642,7 @@ function dibujarHeroe(t) {
 		agachado: heroe.agachado,
 		atacando: heroe.atacando,
 		golpeado: heroe.golpeado,
+		brillo: modoFacil() ? 1 : 0,
 	};
 	const x = heroe.x - camara;
 	const pie = SUELO + 38 * S - heroe.y * S;

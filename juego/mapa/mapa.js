@@ -19,6 +19,7 @@ const mapa = {
 	abrirT: 0,
 	mensaje: "",
 	mensajeT: 0,
+	powerUpT: 0, // destello del héroe al activar el modo fácil (ver dibujarHeroeMapa)
 	victoriaPendiente: false,
 	// Ficha del héroe: camina por el mapa hasta el mundo abierto elegido
 	heroeMundo: 0,
@@ -346,6 +347,7 @@ function actualizarMapa(dt) {
 	} else if (antes < 1 && mapa.z === 1) actualizarPanelMapa();
 	for (let i = 0; i < mapa.sacudir.length; i++) if (mapa.sacudir[i] > 0) mapa.sacudir[i] = Math.max(0, mapa.sacudir[i] - dt);
 	mapa.mensajeT = Math.max(0, mapa.mensajeT - dt);
+	mapa.powerUpT = Math.max(0, mapa.powerUpT - dt);
 
 	// Candado que se abre (con la vista general ya alejada)
 	if (mapa.abriendo >= 0 && mapa.foco < 0) {

@@ -769,7 +769,19 @@ function dibujarHeroeMapa() {
 		...aparienciaHeroe(personaje, 1, { dir: mapa.dir, fase: mapa.fase, moviendo: mapa.moviendo, marcha: mapa.moviendo ? 0.45 : 0 }),
 		agachado: false,
 		atacando: false,
+		// Modo fácil: brilla; al activarlo, un destello más fuerte que se apaga
+		brillo: modoFacil() ? 1 + 1.5 * mapa.powerUpT : 0,
 	};
+	// Destello al activar el modo fácil: 2 anillos dorados que se abren
+	for (let i = 0; i < 2; i++) {
+		const avance = 1 - mapa.powerUpT / 1.2 - i * 0.25;
+		if (mapa.powerUpT <= 0 || avance <= 0 || avance >= 1) continue;
+		ctx.strokeStyle = `rgba(255,214,90,${(0.8 * (1 - avance)).toFixed(3)})`;
+		ctx.lineWidth = 4 * S * (1 - avance) + 1;
+		ctx.beginPath();
+		ctx.arc(mapa.heroeX, mapa.heroeY - 55 * S, (30 + 90 * avance) * S, 0, Math.PI * 2);
+		ctx.stroke();
+	}
 	const sprites = SPRITES_POR_PERSONAJE[personaje];
 	if (!(sprites && dibujarHeroeSprite(mapa.heroeX, mapa.heroeY, o, sprites, 1))) dibujarPersona(mapa.heroeX, mapa.heroeY, o);
 	S = sAntes;
