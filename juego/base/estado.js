@@ -29,7 +29,8 @@ const heroe = {
 	ultimoSuelo: -1, // último instante parado en suelo (salto "coyote", ver saltarAccion)
 	saltoPedido: -1, // salto presionado en el aire, sale al aterrizar
 };
-const polvoPasos = []; // nubecitas al correr (ver actualizar/dibujarPolvoPasos)
+const polvoPasos = []; // humo del suelo al correr (ver actualizar/dibujarPolvoPasos)
+const estelaHeroe = []; // dónde estuvo el héroe hace un momento: su estela al correr (ver dibujarEstela)
 const CLAVES_PERSONAJE = Object.keys(CFG.personajes);
 let personaje = CLAVES_PERSONAJE[0];
 let camara = 0;

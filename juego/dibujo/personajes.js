@@ -527,12 +527,14 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 
 	ctx.save();
 	ctx.translate(x, pie);
-	// La sombra se achica cuando el cuerpo sube.
-	const sombra = 1 - (rebote / (8 * s)) * 0.25;
-	ctx.fillStyle = "rgba(40,40,40,0.18)";
-	ctx.beginPath();
-	ctx.ellipse(0, 0, 14 * s * sombra, 4 * s * sombra, 0, 0, Math.PI * 2);
-	ctx.fill();
+	// La sombra se achica cuando el cuerpo sube (las de la estela no llevan).
+	if (!o.sinSombra) {
+		const sombra = 1 - (rebote / (8 * s)) * 0.25;
+		ctx.fillStyle = "rgba(40,40,40,0.18)";
+		ctx.beginPath();
+		ctx.ellipse(0, 0, 14 * s * sombra, 4 * s * sombra, 0, 0, Math.PI * 2);
+		ctx.fill();
+	}
 	ctx.translate(0, -rebote);
 	ctx.scale(o.dir, 1);
 	if (pose === "agachado" && sinFotoPropia) ctx.scale(1, 0.55);
@@ -560,7 +562,7 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 	const pintar = (img, m, factor, alfa) => {
 		const dw = (img.naturalWidth || img.width) * k * factor;
 		const dh = (img.naturalHeight || img.height) * k * factor;
-		ctx.globalAlpha = alfa;
+		ctx.globalAlpha = alfa * (o.alfa ?? 1); // o.alfa: las sombras de la estela
 		ctx.drawImage(img, -m.anclaX * dw, -m.abajo * dh, dw, dh);
 	};
 	if (el2) {
@@ -577,15 +579,53 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 	return true;
 }
 
+// Humo del suelo: cada nube aparece rápido, crece y se desvanece.
 function dibujarPolvoPasos() {
 	for (const p of polvoPasos) {
 		const avance = p.vida / p.dura;
 		const sx = p.x - camara;
 		const sy = SUELO + 38 * S - p.y * S;
-		ctx.fillStyle = `rgba(150,135,110,${(0.35 * (1 - avance)).toFixed(3)})`;
+		const alfa = 0.55 * (1 - avance) * Math.min(1, avance / 0.12);
+		const r = p.r * S * (0.6 + avance * 1.8);
+		// Borde difuso: un degradado del centro hacia afuera
+		const g = ctx.createRadialGradient(sx, sy - 2 * S, 0, sx, sy - 2 * S, r);
+		g.addColorStop(0, `rgba(200,192,178,${alfa.toFixed(3)})`);
+		g.addColorStop(1, "rgba(200,192,178,0)");
+		ctx.fillStyle = g;
 		ctx.beginPath();
-		ctx.arc(sx, sy - 2 * S, p.r * S * (0.6 + avance), 0, Math.PI * 2);
+		ctx.arc(sx, sy - 2 * S, r, 0, Math.PI * 2);
 		ctx.fill();
+	}
+}
+
+// Estela al correr: "sombras" del héroe donde estuvo hace 70, 140 y 210 ms
+// (con la pose de ese momento), cada vez más transparentes, y unas líneas
+// de velocidad detrás. Entra y sale con la marcha suavizada, así que solo
+// aparece corriendo, no caminando.
+function dibujarEstela(x, pie, o, sprites, t) {
+	const fuerza = heroe.corriendo ? clamp((heroe.marcha - 0.55) / 0.45, 0, 1) : 0;
+	if (!fuerza) return;
+	ctx.save();
+	ctx.lineCap = "round";
+	ctx.lineWidth = 2.5 * S;
+	for (let i = 0; i < 4; i++) {
+		const avance = (tiempo * 5 + i * 0.37) % 1;
+		const y = pie - (22 + i * 21 + (i % 2) * 6) * S;
+		const x0 = x - o.dir * (24 + avance * 40) * S;
+		const largo = (26 + ((i * 7) % 3) * 14) * S;
+		ctx.strokeStyle = `rgba(255,255,255,${(0.45 * fuerza * (1 - avance)).toFixed(3)})`;
+		ctx.beginPath();
+		ctx.moveTo(x0, y);
+		ctx.lineTo(x0 - o.dir * largo, y);
+		ctx.stroke();
+	}
+	ctx.restore();
+	if (!sprites) return;
+	for (const [k, alfa] of [[6, 0.1], [4, 0.2], [2, 0.32]]) {
+		const e = estelaHeroe[k];
+		if (!e) continue;
+		const sombra = { ...o, fase: e.fase, dir: e.dir, alfa: alfa * fuerza, sinSombra: true };
+		dibujarHeroeSprite(e.x - camara, SUELO + 38 * S - e.y * S, sombra, sprites, t);
 	}
 }
 
@@ -599,6 +639,7 @@ function dibujarHeroe(t) {
 	const x = heroe.x - camara;
 	const pie = SUELO + 38 * S - heroe.y * S;
 	const sprites = SPRITES_POR_PERSONAJE[personaje];
+	dibujarEstela(x, pie, o, sprites, t);
 	dibujarPolvoPasos();
 	const yaDibujado = sprites && dibujarHeroeSprite(x, pie, o, sprites, t);
 	if (!yaDibujado) dibujarPersona(x, pie, o);

@@ -197,29 +197,47 @@ function actualizar(dt) {
 	const objetivoMarcha = heroe.moviendo ? (heroe.corriendo ? 1 : 0.45) : 0;
 	heroe.marcha += (objetivoMarcha - heroe.marcha) * Math.min(1, dt * 8);
 
-	// Polvo al pisar corriendo: una nubecita cada vez que el pie toca el
-	// suelo (cada vuelta completa de la fase = una zancada).
-	const zancada = Math.floor(heroe.fase / (Math.PI * 2));
-	if (heroe.corriendo && heroeEnSuelo() && zancada !== heroe.ultimaZancada) {
-		for (let i = 0; i < 3; i++) {
+	// Humo al correr por el suelo: un rastro continuo que sale de los pies
+	// y una nube más grande cada vez que un pie pisa (el ciclo de correr
+	// apoya un pie cada media vuelta de la fase, ver dibujarHeroeSprite).
+	const pisando = heroe.corriendo && heroeEnSuelo();
+	const humo = (n, tam, dura) => {
+		for (let i = 0; i < n; i++) {
 			polvoPasos.push({
-				x: heroe.x - heroe.dir * (6 + Math.random() * 8),
-				y: heroe.y,
-				vx: -heroe.dir * (10 + Math.random() * 25),
-				vy: 8 + Math.random() * 14,
-				r: 3 + Math.random() * 3,
+				x: heroe.x - heroe.dir * (4 + Math.random() * 14),
+				y: heroe.y + Math.random() * 3,
+				vx: -heroe.dir * (25 + Math.random() * 45),
+				vy: 14 + Math.random() * 30,
+				r: tam * (0.5 + Math.random()),
 				vida: 0,
-				dura: 0.35 + Math.random() * 0.2,
+				dura: dura * (0.8 + Math.random() * 0.4),
 			});
 		}
-	}
+	};
+	const zancada = Math.floor(heroe.fase / Math.PI);
+	if (pisando && zancada !== heroe.ultimaZancada) humo(6, 7, 0.7);
 	heroe.ultimaZancada = zancada;
+	heroe.relojHumo = (heroe.relojHumo || 0) + dt;
+	if (heroe.relojHumo >= 0.06) {
+		heroe.relojHumo = 0;
+		if (pisando) humo(1, 5, 0.55);
+	}
 	for (const p of polvoPasos) {
 		p.vida += dt;
 		p.x += p.vx * dt;
 		p.y += p.vy * dt;
+		p.vx *= 1 - Math.min(1, dt * 3); // el humo se frena en el aire
 	}
-	while (polvoPasos.length && polvoPasos[0].vida >= polvoPasos[0].dura) polvoPasos.shift();
+	for (let i = polvoPasos.length - 1; i >= 0; i--) if (polvoPasos[i].vida >= polvoPasos[i].dura) polvoPasos.splice(i, 1);
+
+	// Estela: cada ~35 ms se anota dónde estaba el héroe (y su pose), y
+	// dibujarEstela pinta ahí sus "sombras" mientras corre.
+	heroe.relojEstela = (heroe.relojEstela || 0) + dt;
+	if (heroe.relojEstela >= 0.035) {
+		heroe.relojEstela = 0;
+		estelaHeroe.unshift({ x: heroe.x, y: heroe.y, fase: heroe.fase, dir: heroe.dir });
+		if (estelaHeroe.length > 7) estelaHeroe.pop();
+	}
 
 	if (estado === "dialogo") {
 		const linea = lineaActual();
