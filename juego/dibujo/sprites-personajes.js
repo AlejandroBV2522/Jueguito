@@ -21,10 +21,13 @@ const SPRITES_HEROE_CHICO = {
 	golpe: { archivo: "PersonajeHGolpe.png", anclaX: 0.4845, arriba: 0.042, abajo: 0.9665 },
 	agachado: { archivo: "PersonajeHAgachado.png", anclaX: 0.4878, arriba: 0.0977, abajo: 0.9212 },
 	golpeado: { archivo: "PersonajeHGolpeado.png", anclaX: 0.457, arriba: 0.0345, abajo: 0.9811 },
-	// Correr (Q): se alternan estas 2, que vienen de la misma hoja (mismo
-	// tamaño y estilo). escalaExtra las iguala al tamaño de las demás.
+	// Correr (Q): se alternan estas 2. "corre" es la zancada abierta;
+	// "correSalto" es la misma foto con las piernas del salto (rodilla de
+	// adelante arriba, la de atrás estirada), así se ve que las piernas se
+	// turnan. Mismo lienzo y escala que "corre": escalaExtra las iguala al
+	// tamaño de las demás.
 	corre: { archivo: "PersonajeHCorre.png", anclaX: 0.5466, arriba: 0.0235, abajo: 0.9765, escalaExtra: 2.889 },
-	correPaso: { archivo: "PersonajeHCorrePaso.png", anclaX: 0.4656, arriba: 0.0231, abajo: 0.9769, escalaExtra: 2.889 },
+	correSalto: { archivo: "PersonajeHCorreSalto.png", anclaX: 0.5156, arriba: 0.0271, abajo: 0.9922, escalaExtra: 2.889 },
 };
 for (const clave in SPRITES_HEROE_CHICO) {
 	SPRITES_HEROE_CHICO[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICO[clave].archivo);
@@ -40,7 +43,7 @@ const SPRITES_HEROE_CHICA = {
 	agachado: { archivo: "PersonajeMAgachado.png", anclaX: 0.4706, arriba: 0.0278, abajo: 0.9737 },
 	golpeado: { archivo: "PersonajeMGolpeado.png", anclaX: 0.4731, arriba: 0.0482, abajo: 0.9785 },
 	corre: { archivo: "PersonajeMCorre.png", anclaX: 0.5351, arriba: 0.0232, abajo: 0.9768, escalaExtra: 2.937 },
-	correPaso: { archivo: "PersonajeMCorrePaso.png", anclaX: 0.5092, arriba: 0.0232, abajo: 0.9768, escalaExtra: 2.937 },
+	correSalto: { archivo: "PersonajeMCorreSalto.png", anclaX: 0.5235, arriba: 0.027, abajo: 0.9917, escalaExtra: 2.937 },
 };
 for (const clave in SPRITES_HEROE_CHICA) {
 	SPRITES_HEROE_CHICA[clave].cargando = cargarImagen(RUTA_PERSONAJE + SPRITES_HEROE_CHICA[clave].archivo);
@@ -52,6 +55,33 @@ const SPRITES_POR_PERSONAJE = {
 	chico: SPRITES_HEROE_CHICO,
 	chica: SPRITES_HEROE_CHICA,
 };
+
+// ---------- Ciclo de correr con más cuadros ----------
+// Las fotos PersonajeXCorre1..N.png de una hoja de correr, en orden (una
+// vuelta completa: zancada, pierna pasando doblada, en el aire, y lo mismo
+// con la otra pierna). Lo de entre las marcas lo escribe
+// tools/cuadros_correr.py, que también mide cada foto: no editar a mano.
+// Mientras una lista esté vacía, ese personaje corre con corre/correSalto.
+// <cuadros-correr>
+const CUADROS_CORRER = {
+	chico: [
+		{ archivo: "PersonajeHCorre1.png", anclaX: 0.5314, arriba: 0.0294, abajo: 0.9725, escalaExtra: 2.889 },
+		{ archivo: "PersonajeHCorre2.png", anclaX: 0.5013, arriba: 0.0291, abajo: 0.9922, escalaExtra: 2.889 },
+		{ archivo: "PersonajeHCorre3.png", anclaX: 0.5314, arriba: 0.0294, abajo: 0.9725, escalaExtra: 2.889 },
+		{ archivo: "PersonajeHCorre4.png", anclaX: 0.5013, arriba: 0.0291, abajo: 0.9922, escalaExtra: 2.889 },
+	],
+	chica: [
+		{ archivo: "PersonajeMCorre1.png", anclaX: 0.5251, arriba: 0.0251, abajo: 0.973, escalaExtra: 2.937 },
+		{ archivo: "PersonajeMCorre2.png", anclaX: 0.5137, arriba: 0.027, abajo: 0.9938, escalaExtra: 2.937 },
+		{ archivo: "PersonajeMCorre3.png", anclaX: 0.5251, arriba: 0.0251, abajo: 0.973, escalaExtra: 2.937 },
+		{ archivo: "PersonajeMCorre4.png", anclaX: 0.5137, arriba: 0.027, abajo: 0.9938, escalaExtra: 2.937 },
+	],
+};
+// </cuadros-correr>
+for (const clave in CUADROS_CORRER) {
+	for (const m of CUADROS_CORRER[clave]) m.cargando = cargarImagen(RUTA_PERSONAJE + m.archivo);
+	SPRITES_POR_PERSONAJE[clave].cicloCorrer = CUADROS_CORRER[clave];
+}
 
 // ---------- NPCs con la misma ilustración del héroe ----------
 // Cada NPC usa la foto "de pie" del Chico o la Chica, recoloreando casco,

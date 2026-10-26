@@ -23,6 +23,7 @@
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
 //   edificios  todos los mundos abiertos: mapa general y cada edificio acercado
+//   correr    8 cuadros de caminar y 8 de correr de cada personaje (recortados al héroe)
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
 // (densidad, por defecto 1), MOVIL=1 (pantalla táctil) y ARCHIVO=1 (abre
@@ -797,6 +798,31 @@ try {
 		await foto("guias");
 		console.log(`mundo ${i + 1} completado:`, await jugarOficina(90000));
 		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"));
+	} else if (escenario === "correr") {
+		// Un ciclo de correr (y uno de caminar) de cada personaje, cuadro por cuadro
+		for (const personaje of ["chico", "chica"]) {
+			await conProgreso({ completos: [], nivel: 0, personaje, nombre: "Prueba" });
+			await entrarAlMundo(0);
+			await evalua("npcs.forEach((n) => (n.hablado = true))"); // que nadie lo detenga a hablar
+			for (const [modo, correr] of [["camina", false], ["corre", true]]) {
+				await tecla("ArrowRight", "down");
+				if (correr) await tecla("q", "down");
+				await paso(700);
+				for (let k = 0; k < 8; k++) {
+					await paso(50);
+					const r = await cmd("Page.captureScreenshot", {
+						format: "png",
+						clip: await evalua(`({ x: heroe.x - camara - 110 * S, y: SUELO + 38 * S - 150 * S, width: 220 * S, height: 160 * S, scale: 1 })`),
+					});
+					const ruta = join(salida, `${escenario}-${personaje}-${modo}-${k}.png`);
+					writeFileSync(ruta, Buffer.from(r.result.data, "base64"));
+				}
+				await tecla("ArrowRight", "up");
+				if (correr) await tecla("q", "up");
+				await paso(500);
+			}
+		}
+		console.log("capturas en:", salida);
 	} else {
 		console.error("Escenario desconocido:", escenario);
 		terminar(2);

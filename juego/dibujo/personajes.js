@@ -442,26 +442,38 @@ function dibujarNpcs() {
 	}
 }
 
+// Fotos de la marcha, en orden. Corriendo (Q): la hoja de correr
+// (cicloCorrer) o, si no hay, corre / correSalto; caminando: caminando /
+// caminando2. Se usa una lista solo si ya cargaron todas sus fotos.
+function cuadrosDeMarcha(sprites, corriendo) {
+	const listas = corriendo ? [sprites.cicloCorrer, [sprites.corre, sprites.correSalto]] : [];
+	listas.push([sprites.caminando, sprites.caminando2]);
+	for (const lista of listas) {
+		const unicas = [...new Set((lista || []).filter(Boolean))];
+		if (unicas.length && unicas.every((m) => m.cargando.elemento)) return unicas;
+	}
+	return [sprites.caminando].filter((m) => m && m.cargando.elemento);
+}
+
 // Dibuja al héroe con fotos (constructor) en vez de vector, eligiendo la
 // pose según su estado actual. Si la foto todavía no cargó, devuelve
 // false y dibujarHeroe cae al vectorial como respaldo (igual que los
 // enemigos con dibujarEnemigoSprite).
 function dibujarHeroeSprite(x, pie, o, sprites, t) {
-	// Caminando/corriendo: si hay 2da zancada (caminando2, distinta de la
-	// primera), se alterna con la fase de pasos -Math.cos(o.fase)-:
-	// cos = 1 pie apoyado (zancada abierta), cos = -1 pierna de paso.
-	// Cerca del cambio (|cos| < ANCHO_FUNDIDO) las 2 fotos se funden, así
-	// no hay un corte seco entre zancadas.
-	// Corriendo (Q) se alternan las fotos de correr (corre / correPaso);
-	// caminando, las fotos de zancada (caminando / caminando2).
+	// Caminando/corriendo se recorre una lista de fotos (cuadros) con la
+	// fase de pasos: una vuelta de o.fase (2π) pasa por toda la lista, con
+	// el 1er cuadro centrado en fase 0 (pie apoyado). Al final de cada
+	// cuadro (ANCHO_FUNDIDO de su tramo) se funde con el siguiente, así no
+	// hay un corte seco.
 	const recibeGolpe = o.golpeado && sprites.golpeado;
 	const enMarcha = o.moviendo && !recibeGolpe && !o.agachado && !o.atacando && heroeEnSuelo();
-	const fotosCorrer = enMarcha && o.corriendo && sprites.corre && sprites.correPaso && sprites.corre.cargando.elemento && sprites.correPaso.cargando.elemento;
-	const [zancada1, zancada2] = fotosCorrer ? ["corre", "correPaso"] : ["caminando", "caminando2"];
-	const hayZancada2 = sprites[zancada2] && sprites[zancada2] !== sprites[zancada1];
-	const ciclo = Math.cos(o.fase);
-	const ANCHO_FUNDIDO = 0.35;
-	const peso2 = enMarcha && hayZancada2 ? clamp(0.5 - ciclo / (2 * ANCHO_FUNDIDO), 0, 1) : 0;
+	const cuadros = enMarcha ? cuadrosDeMarcha(sprites, o.corriendo) : [];
+	const N = cuadros.length;
+	const ANCHO_FUNDIDO = 0.25;
+	const pos = (((o.fase / (Math.PI * 2)) * N + 0.5 + ANCHO_FUNDIDO / 2) % N + N) % N;
+	const cuadro = cuadros[Math.floor(pos)];
+	const siguiente = cuadros[(Math.floor(pos) + 1) % N];
+	const peso2 = N > 1 ? clamp((pos - Math.floor(pos) - (1 - ANCHO_FUNDIDO)) / ANCHO_FUNDIDO, 0, 1) : 0;
 	const pose = recibeGolpe
 		? "golpeado"
 		: o.agachado
@@ -471,14 +483,12 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 		: !heroeEnSuelo()
 		? "saltando"
 		: o.moviendo
-		? peso2 >= 1
-			? zancada2
-			: zancada1
+		? "marcha"
 		: "quieto";
-	const meta = sprites[pose];
+	const meta = pose === "marcha" ? cuadro || sprites.caminando : sprites[pose];
 	const el = meta.cargando.elemento;
 	if (!el) return false;
-	const el2 = peso2 > 0 && peso2 < 1 && sprites[zancada2].cargando.elemento;
+	const el2 = peso2 > 0 && siguiente.cargando.elemento;
 
 	// Si el personaje todavía no tiene foto propia para esta pose (p.ej.
 	// la Chica, que por ahora solo tiene "de pie"), se reusa la de
@@ -500,11 +510,12 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 
 	const s = S * 1.15;
 	// Marcha (0 quieto .. 1 corriendo, ya suavizada): cuánto se inclina,
-	// rebota y se estira el cuerpo. Con 2 zancadas, el cuerpo sube en la
-	// pierna de paso (cos = -1) y baja al apoyar (cos = 1): un rebote por
-	// zancada. Sin 2da zancada se mantiene el golpeteo de 2 por ciclo.
+	// rebota y se estira el cuerpo. Con 2 cuadros, el cuerpo sube en el
+	// 2do (pierna de paso) y baja al apoyar: un rebote por cuadro. Con un
+	// ciclo completo de más cuadros (las 2 piernas), baja al apoyar cada
+	// pie y sube entre medio. Con 1 solo cuadro, 2 golpecitos por ciclo.
 	const marcha = enMarcha ? Math.max(o.marcha, 0.3) : 0;
-	const subida = hayZancada2 ? (1 - ciclo) / 2 : Math.abs(Math.sin(o.fase));
+	const subida = N > 1 ? (1 - Math.cos(o.fase * (N > 2 ? 2 : 1))) / 2 : Math.abs(Math.sin(o.fase));
 	// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
 	// tiemble con la cámara al moverse — ver nota en dibujarEnemigoSprite).
 	const rebote = enMarcha
@@ -557,7 +568,7 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 		// hasta la mitad y la que entra se pinta encima; pasada la mitad,
 		// la que entra ya está opaca y la de abajo se desvanece.
 		pintar(el, meta, 1, Math.min(1, 2 * (1 - peso2)));
-		pintar(el2, sprites[zancada2], (sprites[zancada2].escalaExtra ?? 1) / factorEscalaPropio, Math.min(1, 2 * peso2));
+		pintar(el2, siguiente, (siguiente.escalaExtra ?? 1) / factorEscalaPropio, Math.min(1, 2 * peso2));
 	} else {
 		pintar(el, meta, 1, 1);
 	}
