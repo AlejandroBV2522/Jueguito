@@ -1,7 +1,7 @@
 # Trofeos (mayitas ocultas)
 
 En cada mundo hay mayitas escondidas en lo alto: la guacamaya de Celaque.
-Cada una lleva el nombre de un valor o de algo de la cultura de Celaque.
+Cada una lleva el nombre de un valor de Celaque o de una emoción alegre.
 Todas usan `mayita.png`; si alguna tiene imagen propia, va en esta carpeta.
 Sin imagen (`imagen: ""`), el juego dibuja una guacamaya roja o azul y
 amarilla, como las que cruzan el cielo del camino.
@@ -38,17 +38,17 @@ del mapa.
 |---|---|---|---|
 | Talento | Mayita Buena Vibra | valor Buenas Vibras | andamio 5 del camino |
 | Talento | Mayita Logradora | valor Logrador | andamio 10 del camino |
-| Talento | Mayita Soñadora | el sueño: ser la fuente que desarrolla Honduras | roca 4 de la Cueva |
-| Proyectos | Mayita Cumplida | cumplir lo que se planifica | mueble 4 |
-| Proyectos | Mayita Constructora | construimos el desarrollo de Honduras | mueble 2 |
-| Procesos | Mayita Ordenada | cada cosa en su proceso | mueble 4 |
-| Procesos | Mayita Mejora Continua | mejorar cada proceso | mueble 7 |
+| Talento | Mayita Soñadora | emoción alegre (y el sueño: ser la fuente que desarrolla Honduras) | roca 4 de la Cueva |
+| Proyectos | Mayita Alegre | emoción alegre | mueble 4 |
+| Proyectos | Mayita Entusiasta | emoción alegre | mueble 2 |
+| Procesos | Mayita Feliz | emoción alegre | mueble 4 |
+| Procesos | Mayita Orgullosa | emoción alegre | mueble 7 |
 | SharePoint | Mayita Directa | valor Comunicación Directa | nube 2 |
-| SharePoint | Mayita En Equipo | compartir y trabajar juntos | mueble 6 |
-| Seguridad | Mayita Guardiana | cuidamos la información | mueble 4 |
+| SharePoint | Mayita Contenta | emoción alegre | mueble 6 |
+| Seguridad | Mayita Agradecida | emoción alegre | mueble 4 |
 | Seguridad | Mayita Confiable | la información está segura | mueble 1 |
 | IA | Mayita Creativa | valor Creatividad | mueble 4 |
-| IA | Mayita Curiosa | aprender cosas nuevas | mueble 5 |
+| IA | Mayita Inspirada | emoción alegre | mueble 5 |
 
 Los nombres son borrador. Se pueden cambiar sin que nadie pierda las que ya
 encontró: el progreso se guarda por el lugar (`sobre` y `n`), no por el

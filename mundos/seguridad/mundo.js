@@ -31,11 +31,11 @@ window.MODULOS.push({
       "El equipo te va a dar las buenas prácticas en tres niveles: lo personal, tu equipo y la red. Al hablar con alguien los virus se detienen. Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
     ],
   },
-  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Mayita Guardiana", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // cuidamos la información
-    { nombre: "Mayita Confiable", sobre: "mueble", n: 1, altura: 260, imagen: "assets/trofeos/mayita.png" }, // confianza: la información está segura
+    { nombre: "Mayita Agradecida", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
+    { nombre: "Mayita Divertida", sobre: "mueble", n: 1, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Este es el módulo de Seguridad.", "Aplicamos la norma ISO 27001: cuidar la información es trabajo de todos."],
   // ✏️ Borrador: revisar con Sergio Aguiriano. Un nivel de buenas prácticas por compañero.
@@ -45,8 +45,8 @@ window.MODULOS.push({
       nombre: "Mario Flores",
       cuerpo: "chico",
       dialogo: [
-        "Nivel 1, lo personal: tus contraseñas van en la bóveda de contraseñas, nunca en un papel ni en un archivo.",
-        "Activa la verificación en dos pasos (2FA) y cambia tus contraseñas cada vez que toque la rotación.",
+        "Nivel 1, lo personal: tus contraseñas van en Bitwarden, nuestra bóveda de contraseñas, nunca en un papel ni en un archivo.",
+        "No repitas contraseñas, rótalas cuando toque y activa la verificación en dos pasos (2FA).",
         "Y fíjate en dónde guardas tus archivos: lo que dejas en una carpeta pública lo puede ver cualquiera.",
       ],
     },
@@ -66,13 +66,13 @@ window.MODULOS.push({
       cuerpo: "chico",
       dialogo: [
         "Nivel 3, la red: antes de escribir tus datos en una página, revisa que tenga el candado (SSL).",
-        "Sophos revisa los correos para detectar phishing, y cada mes hacemos pruebas sorpresa de ataque. ¡Si algo se ve raro, repórtalo!",
+        "Sophos revisa los correos para detectar phishing, y cada mes hacemos pruebas de phishing a personas al azar. ¡Si algo se ve raro, repórtalo!",
         "Ya casi llegas al antivirus. ¡Sigue esquivando!",
       ],
     },
   ],
-  // Una pregunta por nivel y una de phishing (las 4 se hacen en el antivirus)
-  preguntasPorModulo: 4,
+  // Una pregunta por nivel, una de phishing y una de contraseñas (las 5 se hacen en el antivirus)
+  preguntasPorModulo: 5,
   preguntas: [
     {
       // ✏️ Borrador: revisar con Sergio Aguiriano · Nivel 1, personal
@@ -80,10 +80,10 @@ window.MODULOS.push({
       opciones: [
         "En una nota pegada en el monitor.",
         "En un archivo de Excel en el escritorio.",
-        "En la bóveda de contraseñas, con verificación en dos pasos (2FA).",
+        "En Bitwarden, con verificación en dos pasos (2FA).",
       ],
       correcta: 2,
-      explicacion: "La bóveda las guarda seguras y el 2FA te protege aunque alguien llegue a saber tu contraseña.",
+      explicacion: "Bitwarden las guarda seguras y el 2FA te protege aunque alguien llegue a saber tu contraseña.",
     },
     {
       // ✏️ Borrador · Nivel 2, local
@@ -116,7 +116,18 @@ window.MODULOS.push({
         "Se la reenvío a un compañero.",
       ],
       correcta: 1,
-      explicacion: "Nadie de Celaque te pide tu contraseña por correo. Puede ser phishing… o una de las pruebas mensuales.",
+      explicacion: "Nadie de Celaque te pide tu contraseña por correo. Puede ser phishing… o una de las pruebas mensuales de phishing.",
+    },
+    {
+      // ✏️ Borrador · Nivel 1, personal (contraseñas)
+      pregunta: "¿Puedes usar la misma contraseña para el correo, Wrike y tu banco?",
+      opciones: [
+        "Sí, así no se me olvida.",
+        "Solo si es larga.",
+        "No: cada cuenta lleva su contraseña, guardada en Bitwarden, y se rota cuando toca.",
+      ],
+      correcta: 2,
+      explicacion: "Si una contraseña repetida se filtra, abre todas tus cuentas. Bitwarden te ayuda a tener una distinta para cada una.",
     },
   ],
 });

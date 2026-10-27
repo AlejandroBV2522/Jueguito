@@ -22,13 +22,14 @@ window.MODULOS.push({
       "¡Hola! Soy Astrid Coello y te doy la bienvenida al módulo de Procesos.",
       "Los procesos nos dan organización, eficiencia y responsabilidad para el trabajo del día a día, y todos viven en Wrike.",
       "Los encuentras en tus paneles de control, en los espacios «Personal» y «Compartido conmigo», y en Proyectos y carpetas.",
+      "Nuestros principios: OHIO (hazlo solo una vez), niveles de revisión, consistencia, recurrencias y eficiencias. Y recuerda: los procesos no son independientes.",
     ],
   },
-  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Mayita Ordenada", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // cada cosa en su proceso
-    { nombre: "Mayita Mejora Continua", sobre: "mueble", n: 7, altura: 260, imagen: "assets/trofeos/mayita.png" }, // mejorar cada proceso
+    { nombre: "Mayita Feliz", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
+    { nombre: "Mayita Orgullosa", sobre: "mueble", n: 7, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Este es el módulo de Procesos.", "Los procesos nos dan organización, eficiencia y responsabilidad, y todos viven en Wrike."],
   comentarios: [
@@ -38,6 +39,7 @@ window.MODULOS.push({
       dialogo: [
         "Hay procesos recurrentes, que se repiten: diario, semanal, mensual...",
         "Y secuenciales, que se activan por un evento: las plantillas y las solicitudes.",
+        "Al duplicar una plantilla revisa el nombre, la carpeta de archivo, a quién está asignada y la fecha. Las plantillas activadas se trabajan en su carpeta de archivo.",
         "Para pedir algo: signo + arriba a la derecha de Wrike, «Solicitud», buscas la que necesitas y llenas el formulario.",
       ],
     },
@@ -53,12 +55,13 @@ window.MODULOS.push({
       cuerpo: "chico",
       dialogo: [
         "Una buena práctica: no completes un proceso que todavía tiene subtareas activas, y deja la evidencia de lo que hiciste.",
+        "Cada proceso se corre en un día específico (1 día, no 2). Y al documentarlo no uses nombres propios: escribe «notificar al siguiente nivel».",
         "La computadora del fondo te va a preguntar sobre esto. ¡Suerte!",
       ],
     },
   ],
   // ✏️ Revisar con Astrid Coello
-  preguntasPorModulo: 4,
+  preguntasPorModulo: 6,
   preguntas: [
     {
       pregunta: "¿En qué se dividen los procesos de Celaque?",
@@ -98,6 +101,26 @@ window.MODULOS.push({
       ],
       correcta: 1,
       explicacion: "Documentar la evidencia de cumplimiento también es una buena práctica.",
+    },
+    {
+      pregunta: "Duplicaste una plantilla y ya está activada. ¿Dónde se guarda y se trabaja?",
+      opciones: [
+        "En la carpeta de archivo de esa plantilla.",
+        "En la misma carpeta de plantillas, junto a la original.",
+        "En tu bandeja de entrada.",
+      ],
+      correcta: 0,
+      explicacion: "Al duplicarla revisa nombre, carpeta de archivo, asignado y fecha.",
+    },
+    {
+      pregunta: "Estás escribiendo los pasos de un proceso. ¿Cuál está bien escrito?",
+      opciones: [
+        "«Avisarle a Pamela cuando termine».",
+        "«Notificar al siguiente nivel».",
+        "«Mandarle un mensaje a quien sepa».",
+      ],
+      correcta: 1,
+      explicacion: "En los procesos no se usan nombres propios: se notifica o se etiqueta al siguiente nivel.",
     },
   ],
 });

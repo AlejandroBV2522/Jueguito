@@ -25,11 +25,11 @@ window.MODULOS.push({
       "¿Tu área necesita uno? Se pide en Wrike: signo + arriba a la derecha, «Solicitud», y el formulario «S - Nuevo Proyecto».",
     ],
   },
-  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Mayita Cumplida", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // cumplir lo que se planifica
-    { nombre: "Mayita Constructora", sobre: "mueble", n: 2, altura: 260, imagen: "assets/trofeos/mayita.png" }, // construimos el desarrollo de Honduras
+    { nombre: "Mayita Alegre", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
+    { nombre: "Mayita Entusiasta", sobre: "mueble", n: 2, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Bienvenido al módulo de Proyectos.", "Aquí aprendes cómo se solicita un proyecto en Wrike y cómo lo llevamos de inicio a cierre."],
   comentarios: [

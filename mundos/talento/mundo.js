@@ -26,12 +26,12 @@ window.MODULOS.push({
       "Recorre el camino, conoce a la gente de la obra y cruza la Cueva. ¡Te espero del otro lado!",
     ],
   },
-  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
     { nombre: "Mayita Buena Vibra", sobre: "andamio", n: 5, altura: 190, imagen: "assets/trofeos/mayita.png" }, // valor: Buenas Vibras
     { nombre: "Mayita Logradora", sobre: "andamio", n: 10, altura: 190, imagen: "assets/trofeos/mayita.png" }, // valor: Logrador
-    { nombre: "Mayita Soñadora", sobre: "roca", n: 4, altura: 210, imagen: "assets/trofeos/mayita.png" }, // sueño: ser la fuente que desarrolla Honduras
+    { nombre: "Mayita Soñadora", sobre: "roca", n: 4, altura: 210, imagen: "assets/trofeos/mayita.png" }, // emoción alegre (y el sueño: ser la fuente que desarrolla Honduras)
   ],
   intro: [],
   preguntas: [],

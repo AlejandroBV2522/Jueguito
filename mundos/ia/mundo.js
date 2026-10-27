@@ -22,31 +22,44 @@ window.MODULOS.push({
     // ✏️ Revisar con Gracia
     dialogo: [
       "¡Hola! Soy Gracia Hidalgo y te doy la bienvenida al módulo de IA.",
+      "El único límite para la IA es la imaginación humana. Aquí te inspiras con ella y aprendes a usarla en Celaque.",
       "Al fondo, en el taller, vas a armar tres robots: uno de tierra, uno aéreo y uno humanoide.",
     ],
   },
-  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
     { nombre: "Mayita Creativa", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // valor: Creatividad
-    { nombre: "Mayita Curiosa", sobre: "mueble", n: 5, altura: 260, imagen: "assets/trofeos/mayita.png" }, // aprender cosas nuevas
+    { nombre: "Mayita Inspirada", sobre: "mueble", n: 5, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Bienvenido al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [
     {
       nombre: "Keidy Duron",
       cuerpo: "chica",
-      dialogo: ["La calidad del prompt determina la calidad del resultado.", "Dale a la IA un rol, instrucciones, contexto y un objetivo."],
+      dialogo: [
+        "La calidad del prompt determina la calidad del resultado.",
+        "Dale a la IA un rol, instrucciones, contexto y un objetivo. Asignarle un personaje la hace usar las palabras de ese personaje.",
+        "Un prompt corto da respuestas distintas cada vez; uno largo y con contexto da resultados estables y predecibles.",
+      ],
     },
     {
       nombre: "James Velasquez",
       cuerpo: "chico",
-      dialogo: ["La IA no sustituye el criterio humano: revisa siempre lo que genera."],
+      dialogo: [
+        "La IA no sustituye el criterio humano ni los datos actuales: revisa siempre lo que genera.",
+        "Celaque tiene su Master Prompt: la IA escribe con nuestra voz, moderna, accesible y profesional, con claridad, empatía y buena energía.",
+        "Y un bot, como un Custom GPT, es un master prompt que dice quién es, qué hace y qué no, los pasos a seguir y qué documentos usar.",
+      ],
     },
     {
       nombre: "Cristian Betancourth",
       cuerpo: "chico",
-      dialogo: ["Antes de pegar información en una IA, cambia los nombres de la empresa, productos o personas.", "Así cuidas la información de Celaque. ¡Suerte con los robots!"],
+      dialogo: [
+        "En Celaque usamos ChatGPT, Gemini, Claude, Copilot, Canva, Power Automate, Enscape y TestFit, entre otras.",
+        "Antes de pegar información en una IA, cambia los nombres de la empresa, productos o personas, y usa las licencias empresariales.",
+        "Así cuidas la información de Celaque. ¡Suerte con los robots!",
+      ],
     },
   ],
   // ✏️ Revisar con Gracia. 2 por robot: tierra (qué es la IA), aéreo
@@ -88,7 +101,7 @@ window.MODULOS.push({
         "Porque solo entiende inglés.",
       ],
       correcta: 0,
-      explicacion: "La calidad del prompt determina la calidad del resultado.",
+      explicacion: "La calidad del prompt determina la calidad del resultado: aporta contexto, refina las instrucciones y experimenta.",
     },
     {
       pregunta: "¿Cómo cuidas la información de Celaque al usar IA?",
