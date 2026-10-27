@@ -25,11 +25,11 @@ window.MODULOS.push({
       "Al fondo, en el taller, vas a armar tres robots: uno de tierra, uno aéreo y uno humanoide.",
     ],
   },
-  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Guacamaya del chip", sobre: "mueble", n: 4, altura: 260, imagen: "" },
-    { nombre: "Guacamaya de la neurona", sobre: "mueble", n: 5, altura: 260, imagen: "" },
+    { nombre: "Mayita Creativa", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // valor: Creatividad
+    { nombre: "Mayita Curiosa", sobre: "mueble", n: 5, altura: 260, imagen: "assets/trofeos/mayita.png" }, // aprender cosas nuevas
   ],
   intro: ["Bienvenido al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [

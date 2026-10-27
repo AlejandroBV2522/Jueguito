@@ -24,11 +24,11 @@ window.MODULOS.push({
       "Te pido un favor: Aldo, un solicitante, todavía no puede trabajar. Sube a la nube, al punto A, por sus permisos y llévaselos al punto B.",
     ],
   },
-  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Guacamaya de las nubes", sobre: "nube", n: 2, altura: 170, imagen: "" },
-    { nombre: "Guacamaya de la carpeta", sobre: "mueble", n: 6, altura: 260, imagen: "" },
+    { nombre: "Mayita Directa", sobre: "nube", n: 2, altura: 170, imagen: "assets/trofeos/mayita.png" }, // valor: Comunicación Directa
+    { nombre: "Mayita En Equipo", sobre: "mueble", n: 6, altura: 260, imagen: "assets/trofeos/mayita.png" }, // compartir y trabajar juntos
   ],
   intro: [
     "Bienvenido al módulo de Plataformas.",

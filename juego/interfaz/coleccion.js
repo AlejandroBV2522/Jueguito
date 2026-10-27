@@ -2,7 +2,7 @@
 "use strict";
 
 // ---------- Colección ----------
-// Las guacamayas encontradas (juego/dibujo/coleccionables.js) se guardan en
+// Las mayitas encontradas (juego/dibujo/coleccionables.js) se guardan en
 // este navegador. "Empezar de cero" las borra; "Jugar de nuevo" no. Con el
 // nombre de pruebas se recogen solo durante la partida (no se guardan) y en
 // la colección se ven todas desbloqueadas.
@@ -61,16 +61,16 @@ function actualizarBotonColeccion() {
 	uiColeccion.boton.textContent = `★ Colección ${cuantasEncontradas()}/${COLECCIONABLES.length}`;
 }
 
-// Una ficha por guacamaya: la guacamaya y su nombre si ya la tienes; si no,
+// Una ficha por mayita: la mayita y su nombre si ya la tienes; si no,
 // su silueta y en qué mundo buscarla
 function abrirColeccion() {
 	const n = cuantasEncontradas();
 	const total = COLECCIONABLES.length;
 	uiColeccion.resumen.textContent = modoPruebas()
-		? `Modo de pruebas: las ${total} guacamayas desbloqueadas para verlas (en los niveles se siguen pudiendo buscar).`
+		? `Modo de pruebas: las ${total} mayitas desbloqueadas para verlas (en los niveles se siguen pudiendo buscar).`
 		: n === total
 		? `¡Las encontraste todas! ${n} de ${total}.`
-		: `Encontraste ${n} de ${total} guacamayas. Están en lo alto: súbete a algo y salta. De lejos casi no se ven, pero brillan al acercarte.`;
+		: `Encontraste ${n} de ${total} mayitas. Están en lo alto: súbete a algo y salta. De lejos casi no se ven, pero brillan al acercarte.`;
 	uiColeccion.relleno.style.width = `${((n / Math.max(1, total)) * 100).toFixed(1)}%`;
 	uiColeccion.grilla.innerHTML = "";
 	const sAntes = S;

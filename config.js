@@ -34,8 +34,8 @@ window.CONFIG_JUEGO = {
     tubo: "",          // entrar o salir por un tubo
     nivel: "",         // subir de nivel
     abrir: "",         // se abre un mundo nuevo en el mapa
-    coleccionable: "", // recoger una guacamaya oculta
-    pista: "",         // acercarse a una guacamaya oculta
+    coleccionable: "", // recoger una mayita oculta
+    pista: "",         // acercarse a una mayita oculta
     recoger: "",       // tomar lo del punto A (misión)
     entregar: "",      // entregar en el punto B (misión)
     derrota: "",       // vencer a un antivalor
@@ -187,7 +187,7 @@ window.TEMAS_OFICINA = {};
                   a.nube: true, A está arriba, en una nube, y se sube
                   saltando por una escalera de nubes. Ese
                   mundo no lleva "comentarios" (A y B usan sus lugares).
-   - coleccionables: (opcional) guacamayas escondidas en el aire. Solo
+   - coleccionables: (opcional) mayitas (trofeos) escondidas en el aire. Solo
                   se alcanzan saltando DESDE algo (desde el piso no llegas).
                   Se ven en el apartado "Colección" del mapa. Cada una:
                   { nombre, sobre, n, altura }:
@@ -209,8 +209,9 @@ window.TEMAS_OFICINA = {};
                     explicacion (opcional, se muestra al acertar) }.
 
    ✏️ Las preguntas de Proyectos, Procesos, SharePoint e IA salen de las
-   capacitaciones de cada área. Las de Seguridad todavía son un BORRADOR:
-   el departamento debe reemplazarlas con su contenido real.
+   capacitaciones de cada área. Las de Seguridad salen de la inducción de
+   seguridad (ISO 27001) del 26/10/2026 y siguen en BORRADOR hasta que el
+   departamento las revise.
    --------------------------------------------------------------------- */
 
 /* Proyectos de Celaque que se ven como edificios de fondo en la calle

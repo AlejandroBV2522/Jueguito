@@ -24,11 +24,11 @@ window.MODULOS.push({
       "Los encuentras en tus paneles de control, en los espacios «Personal» y «Compartido conmigo», y en Proyectos y carpetas.",
     ],
   },
-  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, cada una con un valor o algo de la cultura de Celaque (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Guacamaya del engrane", sobre: "mueble", n: 4, altura: 260, imagen: "" },
-    { nombre: "Guacamaya del flujo", sobre: "mueble", n: 7, altura: 260, imagen: "" },
+    { nombre: "Mayita Ordenada", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // cada cosa en su proceso
+    { nombre: "Mayita Mejora Continua", sobre: "mueble", n: 7, altura: 260, imagen: "assets/trofeos/mayita.png" }, // mejorar cada proceso
   ],
   intro: ["Este es el módulo de Procesos.", "Los procesos nos dan organización, eficiencia y responsabilidad, y todos viven en Wrike."],
   comentarios: [
