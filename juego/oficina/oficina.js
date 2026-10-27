@@ -58,6 +58,15 @@ function actualizarHudOficina() {
 	const of = oficinaActual.oficina;
 	const progreso = clamp((heroe.x - of.x0) / (of.terminalX - of.x0), 0, 1);
 	ui.hudRelleno.style.width = (progreso * 100).toFixed(1) + "%";
+	if (of.exterior) {
+		const z = zonaObraEn(of, heroe.x);
+		const hechos = of.enemigos.filter((e) => e.derrotado).length;
+		ui.hudTexto.textContent =
+			oficinaActual.completo && hechos === of.enemigos.length
+				? `Módulo ${oficinaActual.nombre} ✓  ·  Vuelve a la puerta para salir`
+				: `Zona ${z.indice + 1} de ${of.zonas.length} · ${z.nombre}  ·  Riesgos vencidos: ${hechos} / ${of.enemigos.length}`;
+		return;
+	}
 	ui.hudTexto.textContent = oficinaActual.completo
 		? `Módulo ${oficinaActual.nombre} ✓  ·  Vuelve a la puerta para salir`
 		: !misionLista(oficinaActual) && oficinaActual.oficina.companeros.every((n) => n.hablado)
@@ -75,7 +84,8 @@ const companeroCerca = () =>
 // preguntasPorModulo, por defecto 2; un mundo.js puede pedir otra cantidad
 // con su propio preguntasPorModulo). En el taller de IA son esas por cada
 // robot (mundo.js → oficina.robots).
-const preguntasDe = (m) => (m.preguntas || []).slice(0, (m.preguntasPorModulo || CFG.preguntasPorModulo || 2) * Math.max(1, m.oficina.robots.length));
+// (En la obra de Proyectos las preguntas son de los riesgos de cada zona, no de una computadora.)
+const preguntasDe = (m) => m.oficina.exterior ? [] : (m.preguntas || []).slice(0, (m.preguntasPorModulo || CFG.preguntasPorModulo || 2) * Math.max(1, m.oficina.robots.length));
 
 // Con varios robots, cuál se arma con la pregunta k: cada uno se lleva una
 // parte seguida de las preguntas (desde..hasta, sin incluir hasta).
@@ -102,7 +112,7 @@ function abrirTerminal(m) {
 	ui.terminal.classList.toggle("estacion-robot", est === "robot");
 	ui.terminal.classList.toggle("estacion-antivirus", est === "antivirus");
 	ui.terminal.classList.toggle("robots-varios", m.oficina.robots.length > 1);
-	ui.terminalFigura.hidden = est === "computadora";
+	ui.terminalFigura.hidden = est !== "robot" && est !== "antivirus";
 	ui.terminalTitulo.textContent = est === "computadora" ? `${ESTACIONES[est].titulo} · Módulo ${m.nombre}` : ESTACIONES[est].titulo;
 	ui.terminalSalir.hidden = true;
 	document.body.classList.add("con-dialogo");

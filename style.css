@@ -1186,6 +1186,17 @@ kbd {
 	cursor: default;
 }
 
+/* Preguntas de los riesgos de la obra de Proyectos (la de ordenar lleva 5 pasos: debe caber en pantallas bajas) */
+#dialogo.obra {
+	max-height: calc(100dvh - 32px);
+	overflow-y: auto;
+}
+
+#dialogo.obra .opcion-respuesta:disabled.correcta {
+	opacity: 1;
+	cursor: default;
+}
+
 /* ---------- Terminal Celaque (computadora de la oficina) ---------- */
 #terminal {
 	position: fixed;

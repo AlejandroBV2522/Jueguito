@@ -67,6 +67,8 @@ function actualizar(dt) {
 		}
 	}
 
+	if (oficinaActual && oficinaActual.oficina.exterior) actualizarRiesgosObra(dt); // los riesgos de la obra de Proyectos (obra.js)
+
 	// Agacharse: mostrar la pose de cuclillas mientras se mantiene la flecha
 	// abajo, parado en el piso. (En transición la maneja entrarPorTubo.)
 	if (estado === "jugando" || estado === "cueva" || estado === "urbano" || estado === "oficina") {
@@ -173,15 +175,21 @@ function actualizar(dt) {
 			const velocidad = heroe.corriendo ? CFG.velocidadCorriendo : CFG.velocidadPersonaje;
 			heroe.dir = dir;
 			const viejoX = heroe.x;
-			const tentativo = clamp(viejoX + dir * velocidad * dt, of.x0 + 40, of.terminalX - 50);
+			// En la obra, un riesgo sin vencer cierra el paso (como en la Cueva)
+			const riesgo = riesgoPendiente(of);
+			const tope = riesgo ? limiteFrenteRiesgo(riesgo) : of.terminalX - 50;
+			const tentativo = limitarPorTalanqueras(of, viejoX, clamp(viejoX + dir * velocidad * dt, of.x0 + 40, tope));
 			heroe.x = frenarEnObstaculos(viejoX, tentativo, dir, heroe.y);
 			heroe.fase += dt * (heroe.corriendo ? 16 : 9);
 			actualizarHudOficina();
 		}
+		if (of.exterior) actualizarPeligrosObra(of, dt); // la carga de la grúa (obra.js)
 		// Cada compañero te habla solo la primera vez que llegas a él (en
 		// orden); la computadora se abre sola la primera vez que llegas.
 		const siguiente = of.companeros.find((n) => !n.hablado);
+		const riesgoAdelante = riesgoPendiente(of);
 		if (siguiente && heroe.x >= siguiente.x - 100 && heroeEnSuelo()) abrirDialogo(siguiente);
+		else if (riesgoAdelante && heroe.x >= limiteFrenteRiesgo(riesgoAdelante) - 1 && heroeEnSuelo()) abrirPreguntaObra(riesgoAdelante);
 		else if (!oficinaActual.terminalVisitada && enTerminal()) abrirTerminal(oficinaActual);
 	}
 	actualizarVirus(dt); // virus de la oficina (mundo.js → oficina.virus)

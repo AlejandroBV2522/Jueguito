@@ -943,6 +943,28 @@ function dibujarMueble(o, sx, baseY, topY, w) {
 		ctx.fill();
 		ctx.fillStyle = "#4a7fb0";
 		ctx.fillRect(sx - 3 * S, topY + alto * 0.55, 6 * S, 6 * S);
+	} else if (o.tipo === "pila") {
+		// Pila de ladrillos (solo en la obra al aire libre)
+		const filas = 4;
+		const h = alto / filas;
+		for (let f = 0; f < filas; f++) {
+			const y = topY + f * h;
+			ctx.fillStyle = f % 2 ? "#b5524a" : "#c2635a";
+			ctx.fillRect(sx - w, y, w * 2, h - 2 * S);
+			ctx.fillStyle = "rgba(0,0,0,0.22)";
+			for (let b = 1; b < 3; b++) ctx.fillRect(sx - w + (w * 2 * b) / 3 + (f % 2 ? 6 * S : -4 * S), y, 2 * S, h - 2 * S);
+		}
+	} else if (o.tipo === "tambo") {
+		// Tambo de obra azul con aros y franja amarilla
+		ctx.fillStyle = "#3f6fa0";
+		rectRedondo(sx - w, topY, w * 2, alto, 6 * S);
+		ctx.fill();
+		ctx.fillStyle = "rgba(255,255,255,0.14)";
+		ctx.fillRect(sx - w * 0.55, topY + 3 * S, w * 0.3, alto - 6 * S);
+		ctx.fillStyle = "#2c4f75";
+		for (const f of [0.22, 0.78]) ctx.fillRect(sx - w, topY + alto * f, w * 2, 4 * S);
+		ctx.fillStyle = "#ffc72c";
+		ctx.fillRect(sx - w, topY + alto * 0.42, w * 2, alto * 0.16);
 	}
 }
 

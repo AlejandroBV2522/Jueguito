@@ -77,19 +77,31 @@ function dibujar(dt) {
 	// afuera (camino rural) | cueva (oscura) | urbano (al salir, con edificios)
 	// | oficina (adentro de un módulo)
 	if (oficinaActual) {
-		dibujarFondoOficina(oficinaActual, dt);
-		dibujarSueloOficina(oficinaActual);
-		dibujarDecoracionOficina(oficinaActual);
-		dibujarPuertaSalida(oficinaActual);
-		dibujarComputadora(oficinaActual);
+		const obra = oficinaActual.oficina.exterior;
+		if (obra) {
+			dibujarFondoObra(oficinaActual, dt);
+			dibujarSueloObra(oficinaActual);
+			dibujarEscenasObra(oficinaActual);
+			dibujarZanjasObra(oficinaActual);
+			dibujarPuertaObra(oficinaActual);
+			dibujarInauguracion(oficinaActual);
+		} else {
+			dibujarFondoOficina(oficinaActual, dt);
+			dibujarSueloOficina(oficinaActual);
+			dibujarDecoracionOficina(oficinaActual);
+			dibujarPuertaSalida(oficinaActual);
+			dibujarComputadora(oficinaActual);
+		}
 		dibujarLetrerosObra("oficina", oficinaActual);
 		dibujarGuias();
 		dibujarObstaculos(oficinaActual.oficina.obstaculos);
 		dibujarMision(oficinaActual);
 		dibujarColeccionables();
 		dibujarCompaneros(oficinaActual);
+		if (obra) dibujarRiesgosObra(oficinaActual);
 		dibujarHeroe(t);
 		dibujarVirusOficina();
+		if (obra) dibujarPeligrosObra(oficinaActual);
 		dibujarChispas();
 		dibujarAvisos(dt);
 		return;

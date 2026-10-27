@@ -158,6 +158,38 @@ window.TEMAS_OFICINA = {};
                          propio: "planos", "procesos", "documentos",
                          "seguridad" o "ia". Cada tema está dibujado en el
                          tema.js de la carpeta de su mundo (window.TEMAS_OFICINA).
+                  exterior: (opcional) true para una OBRA AL AIRE LIBRE en vez
+                         de una oficina (la de Proyectos): se recorre por
+                         zonas y al final se corta la cinta. Lleva "zonas",
+                         "estacion": "inauguracion" y su "anfitrion" explica
+                         la zona 1. Cada zona:
+                           { nombre, tema, escena, companero, enemigo }
+                           escena: cómo se ve: "idea", "caseta", "planos",
+                                   "reunion" u "obra" (juego/oficina/dibujo-obra.js)
+                           companero: { nombre, cuerpo, dialogo } quien explica
+                                   la zona (la zona 1 la explica el anfitrión)
+                           enemigo: el riesgo del final de la zona, que cierra
+                                   el paso: { nombre, riesgo, dibujo, escala,
+                                   color, preguntas }. dibujo: "tarea",
+                                   "mensaje", "papel", "blob" o "reloj". Cada
+                                   pregunta es como las de la Cueva (pregunta,
+                                   opciones, correcta, explicacion) o de ORDENAR:
+                                   { pregunta, orden: [pasos en el orden
+                                   correcto], explicacion }. Las preguntas
+                                   se responden con 1, 2, 3, 4 o con clic.
+                           peligro: (opcional) un obstáculo que se mueve:
+                                   { tipo: "zanja" }: una zanja muy ancha para
+                                   saltarla y una plataforma sobre rieles que va y
+                                   viene (hay que subirse, dejarse llevar y bajarse
+                                   al otro lado; quien se sale se cae, pierde un
+                                   corazón y vuelve antes de la zanja), o
+                                   { tipo: "talanquera" }: una compuerta que baja y
+                                   sube (hay que esperar a que se abra). Quita el
+                                   2.º obstáculo de esa zona (su lugar es para el
+                                   peligro).
+                           Cada zona mide 1700 (la de la zanja, más larga) y lleva 2 obstáculos; las
+                           guacamayas "sobre: mueble" cuentan sus obstáculos
+                           (n de 1 a 2 por zona).
                   edificio / piso: (opcionales) letrero junto a la salida.
                   estacion: dónde se contestan las preguntas: "computadora"
                          (por defecto), "robot" (cada acierto arma piezas de

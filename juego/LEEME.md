@@ -48,6 +48,7 @@ Otras reglas:
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
 | `camino/` | `npcs-y-andamios.js` | la gente del camino, sus andamios, los antivalores |
 | `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, SharePoint); va antes de `modulos.js` |
+| `oficina/` | `obra.js` | la obra al aire libre de Proyectos (`oficina.exterior`): zonas, riesgos que cierran el paso, sus preguntas (propias, no usan las de la Cueva), los peligros que se mueven, la zanja con su plataforma y la talanquera (`zonas[].peligro`), avance del edificio |
 | `oficina/` | `modulos.js` | `modulos` (un objeto por mundo), muebles, compañeros, `ESTACIONES` |
 | `camino/` | `letreros.js` | dónde van los letreros de obra |
 | `dibujo/` | `sprites-enemigos.js`, `sprites-personajes.js` | imágenes de enemigos, héroe y NPC |
@@ -68,6 +69,7 @@ Otras reglas:
 | `dibujo/` | `avisos.js` | avisos flotantes, andamios, barreras y suelo |
 | `camino/` | `dibujo-cueva.js` | la Cueva y la calle de Celaque (logos, edificios) |
 | `oficina/` | `dibujo-oficina.js` | ventanal, muebles, computadora; llama al tema de cada oficina (`mundos/<mundo>/tema.js`, registrado en `window.TEMAS_OFICINA`) |
+| `oficina/` | `dibujo-obra.js` | la obra: fondo, suelo, escena de cada zona, puertas, inauguración y los 5 riesgos |
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
 | `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`, Seguridad) |
 | `dibujo/` | `coleccionables.js` | guacamayas ocultas en el aire (`mundo.js → coleccionables`), cómo se ven y se recogen; chispas (`lanzarChispas`) |

@@ -34,8 +34,11 @@ letrero("urbano", [LARGO_TOTAL + 210], "→", "Entra a cada edificio y aprende")
 const primeraOficina = modulos.find((m) => !m.completoAlSalirDeLaCueva);
 if (primeraOficina) {
 	const of = primeraOficina.oficina;
-	letrero("oficina", [of.x0 + 250, ...of.obstaculos.map((o) => o.x - 150)], "↑", "Salta los muebles ↑", "Salta los muebles ↑", primeraOficina);
-	letrero("oficina", [of.terminalX - 230], "→", "Computadora al fondo", null, primeraOficina);
+	// (La obra al aire libre de Proyectos no lleva letreros: la guía es la columna de luz y las flechas)
+	if (!of.exterior) {
+		letrero("oficina", [of.x0 + 250, ...of.obstaculos.map((o) => o.x - 150)], "↑", "Salta los muebles ↑", "Salta los muebles ↑", primeraOficina);
+		letrero("oficina", [of.terminalX - 230], "→", "Computadora al fondo", null, primeraOficina);
+	}
 }
 
 // Lo que un letrero NO puede tapar: [desde, hasta] en x de mundo. Depende
@@ -68,6 +71,8 @@ function zonasOcupadas(l) {
 		...of.companeros.map((n) => tramo(n.x, 40 * S)),
 		tramo(of.terminalX, 100 * S), // computadora
 		...of.obstaculos.map((o) => tramo(o.x, o.medioAncho * S + 12)),
+		...of.zonas.map((z) => tramo(z.x, 120 * S)), // puertas de zona (obra)
+		...(of.enemigos || []).map((e) => tramo(e.x, 90 * S * e.escala)),
 	];
 }
 // Medio ancho real del letrero en pantalla (= mundo: 1:1 en horizontal),

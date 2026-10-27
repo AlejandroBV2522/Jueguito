@@ -90,6 +90,7 @@ function reiniciarProgreso(todo) {
 		m.terminalVisitada = false;
 		m.preguntaActual = 0;
 		m.oficina.companeros.forEach((n) => (n.hablado = false));
+		reiniciarObra(m);
 		if (m.mision) reiniciarMision(m.mision);
 	});
 	nivel = 0;
@@ -286,6 +287,11 @@ function abrirCarta(i) {
 		? [
 				`Recorre el camino y conoce a ${npcs.length} personas de la obra.`,
 				`Cruza la Cueva y vence a ${enemigos.length} antivalores (como ${enemigos.map((e) => e.antivalor).filter(Boolean).slice(0, 2).join(" y ")}) respondiendo bien.`,
+			]
+		: m.oficina.exterior
+		? [
+				`Recorre las ${m.oficina.zonas.length} zonas de la obra, de la idea al cierre, y habla con quienes la explican.`,
+				`Vence a ${m.oficina.enemigos.length} riesgos (como ${m.oficina.enemigos.slice(0, 2).map((e) => e.antivalor).join(" y ")}) respondiendo bien y llega a la inauguración.`,
 			]
 		: [
 				m.oficina.companeros.length > 1

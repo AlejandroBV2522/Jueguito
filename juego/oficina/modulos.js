@@ -22,7 +22,7 @@ const ALTO_MIN_LOGO = 20;
 // aparte (muy lejos de la calle, para que no se mezclen), recorrida de
 // izquierda a derecha: entrada → compañero → muebles → computadora.
 const OFICINA_BASE = LARGO_META + 4000;
-const SEPARACION_OFICINAS = 4000;
+const SEPARACION_OFICINAS = 11000; // más que la obra de Proyectos (la más larga, ~9700): ninguna se pisa con otra
 const LARGO_OFICINA = 2600;
 // Muebles = obstáculos sólidos (como las rocas de la cueva): se saltan o
 // se camina por encima. Todos de 80 o menos de alto, así un salto normal
@@ -35,6 +35,9 @@ const MUEBLES = {
 	impresora: { medioAncho: 30, alto: 60 },
 	planta: { medioAncho: 18, alto: 50 },
 	dispensador: { medioAncho: 18, alto: 74 },
+	// Solo de la obra al aire libre (ver OBRA más abajo)
+	pila: { medioAncho: 34, alto: 56 },
+	tambo: { medioAncho: 22, alto: 64 },
 };
 const ORDEN_MUEBLES = ["planta", "escritorio", "silla", "archivero", "cajas", "escritorio", "impresora", "dispensador"];
 // Distancias desde la entrada. Los compañeros esperan en LUGARES_COMPANEROS
@@ -57,6 +60,31 @@ const DECORACION_OFICINA = [
 	{ d: 2190, tipo: "plantaAlta" },
 	{ d: 2440, tipo: "especial" }, // propio de cada tema (maqueta, robot...)
 ];
+// Obra al aire libre (mundo.js → oficina.exterior, Proyectos): en vez de una
+// oficina, un camino de varias zonas. Cada zona (oficina.zonas) tiene a
+// alguien que explica el tema, 2 obstáculos y, al final, un riesgo (enemigo)
+// que cierra el paso hasta que se le responde bien. Las distancias son desde
+// el inicio de cada zona; las 5 zonas ocupan ANCHO_ZONA_OBRA cada una.
+const OBRA = {
+	entrada: 260, // de la puerta de la obra a la primera zona
+	ancho: 1700, // ancho de cada zona
+	final: 480, // después de la última zona, hasta la inauguración (el jefe final queda lejos de la meta)
+	companero: 420,
+	obstaculos: [800, 1150],
+	enemigo: 1500,
+	peligro: 1130, // la carga de la grúa (zonas[].peligro): su centro, desde el inicio de la zona
+	seguro: 880, // un punto libre justo después del primer obstáculo (para ubicar a alguien o a las pruebas)
+	// La zanja con su plataforma (zonas[].peligro tipo "zanja"): dónde empieza (desde el inicio de la zona), cuánto
+	// mide y cuánto camino queda después hasta el riesgo. La zona se alarga lo que haga falta.
+	zanja: { desde: 900, largo: 840, despues: 180 },
+};
+const OBSTACULOS_OBRA = [
+	["barrera", "pila"],
+	["cajas", "tambo"],
+	["pila", "barrera"],
+	["tambo", "cajas"],
+	["barrera", "pila"],
+];
 const COLORES_PELO = ["#1f1a17", "#3b2414", "#5a2a14", "#2b1a12"];
 // Dónde se contestan las preguntas al fondo de cada oficina (mundo.js →
 // oficina.estacion). Las preguntas son las mismas; cambia la figurita.
@@ -77,6 +105,13 @@ const ESTACIONES = {
 				? `Arma ${m.oficina.robots.length} robots de IA (${m.oficina.robots.map((r) => ROBOTS_IA[r]).join(", ")}): cada una de las ${n} respuestas correctas les pone piezas.`
 				: `Arma al asistente de IA: cada una de las ${n} respuestas correctas le pone piezas.`,
 		fin: "¡El asistente de IA está listo para ayudarte!",
+	},
+	inauguracion: {
+		lugar: "a la inauguración",
+		titulo: "Inauguración de la obra",
+		usar: "Cortar la cinta",
+		carta: (n, m) => `Cruza las ${m.oficina.zonas.length} zonas de la obra y vence a sus riesgos respondiendo bien.`,
+		fin: "¡El edificio está terminado! Cortaste la cinta de la inauguración.",
 	},
 	antivirus: {
 		lugar: "al laboratorio",
@@ -138,12 +173,98 @@ function companeroOficina(d, i, k, x0, lugares) {
 		},
 	};
 }
+// ---------- Obra al aire libre (Proyectos) ----------
+const esObra = (d) => !!(d.oficina && d.oficina.exterior && (d.oficina.zonas || []).length);
+// Dónde está el riesgo de una zona y cuánto mide: la zona de la zanja es más larga, las demás miden OBRA.ancho
+const enemigoXObra = (z) => (z.peligro && z.peligro.tipo === "zanja" ? OBRA.zanja.desde + OBRA.zanja.largo + OBRA.zanja.despues : OBRA.enemigo);
+const anchoZonaObra = (z) => enemigoXObra(z) + (OBRA.ancho - OBRA.enemigo);
+function inicioZonaObra(d, x0, k) {
+	let x = x0 + OBRA.entrada;
+	for (let j = 0; j < k; j++) x += anchoZonaObra(d.oficina.zonas[j]);
+	return x;
+}
+
+// Quien explica cada zona: la primera la da el anfitrión del mundo; las
+// demás, oficina.zonas[].companero
+function companerosObra(d, i, x0) {
+	return d.oficina.zonas.map((z, k) => {
+		const x = inicioZonaObra(d, x0, k) + OBRA.companero;
+		if (k === 0 && d.anfitrion) {
+			return {
+				nombre: d.anfitrion.nombre,
+				x,
+				alto: 0,
+				enOficina: true,
+				importante: true,
+				hablado: false,
+				dialogo: d.anfitrion.dialogo && d.anfitrion.dialogo.length ? d.anfitrion.dialogo : [`¡Hola! Soy ${d.anfitrion.nombre}.`],
+				apariencia: aparienciaAnfitrion(d.anfitrion, i),
+			};
+		}
+		const c = z.companero || {};
+		return {
+			nombre: c.nombre || `Equipo de ${d.nombre}`,
+			x,
+			alto: 0,
+			enOficina: true,
+			hablado: false,
+			dialogo: c.dialogo && c.dialogo.length ? c.dialogo : ["¡Hola!"],
+			apariencia: {
+				cuerpo: c.cuerpo || (k % 2 ? "chica" : "chico"),
+				casco: k % 2 ? "#ffd23f" : "#ffffff",
+				chaleco: k % 2 ? "#ff7a1a" : COLORES.verdeInstitucional,
+				pelo: COLORES_PELO[(i + k) % COLORES_PELO.length],
+				pantalon: "#2d3a4a",
+			},
+		};
+	});
+}
+
+// El riesgo del final de cada zona: se ve como en la Cueva (nombre sobre el
+// enemigo y preguntas en la caja de diálogo), pero se dibuja en obra.js
+function enemigosObra(d, x0) {
+	return d.oficina.zonas
+		.map((z, k) => {
+			const e = z.enemigo;
+			if (!e) return null;
+			return {
+				nombre: e.nombre,
+				antivalor: e.riesgo || e.nombre,
+				dibujo: e.dibujo || "blob",
+				escala: e.escala || 1,
+				apariencia: { ropa: e.color || COLORES.verdeProfundo },
+				x: inicioZonaObra(d, x0, k) + enemigoXObra(z),
+				zona: k,
+				preguntas: e.preguntas || [],
+				preguntaActual: 0,
+				derrotado: false,
+				atacando: false,
+				atacandoT: 0,
+				cayendo: 0,
+			};
+		})
+		.filter(Boolean);
+}
+
+function obstaculosObra(d, x0) {
+	const lista = [];
+	d.oficina.zonas.forEach((z, k) =>
+		OBRA.obstaculos.forEach((dist, j) => {
+			if (z.peligro && j === 1) return; // en las zonas con un peligro, el lugar del 2.º obstáculo es para él
+			const tipo = OBSTACULOS_OBRA[k % OBSTACULOS_OBRA.length][j];
+			lista.push({ x: inicioZonaObra(d, x0, k) + dist, tipo, ...(MUEBLES[tipo] || { medioAncho: 38, alto: 60 }) });
+		})
+	);
+	return lista;
+}
+
 const modulos = MODULOS_DATOS.map((d, i) => {
 	const x0 = OFICINA_BASE + i * SEPARACION_OFICINAS;
 	const rutaLogo = d.logo || RUTA_LOGOS + "modulo-" + nombreArchivo(d.nombre) + ".png";
 	const cuantos = 1 + Math.min((d.comentarios || []).length, LUGARES_CUATRO.length - 1);
 	// Una oficina más larga (mundo.js → oficina.largo) estira todo por igual
-	const largo = (d.oficina && d.oficina.largo) || LARGO_OFICINA;
+	const obra = esObra(d);
+	const largo = obra ? OBRA.entrada + d.oficina.zonas.reduce((suma, z) => suma + anchoZonaObra(z), 0) + OBRA.final : (d.oficina && d.oficina.largo) || LARGO_OFICINA;
 	const estirar = largo / LARGO_OFICINA;
 	const lugares = lugaresCompaneros(cuantos).map((l) => Math.round(l * estirar));
 	return {
@@ -165,11 +286,42 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		oficina: {
 			x0,
 			terminalX: x0 + largo,
-			obstaculos: POSICIONES_MUEBLES.map((dist, k) => {
-				const tipo = ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
-				return { x: x0 + Math.round(dist * estirar), tipo, ...MUEBLES[tipo] };
-			}),
-			decoracion: DECORACION_OFICINA.map((o) => ({ x: x0 + Math.round(o.d * estirar), tipo: o.tipo })),
+			obstaculos: obra
+				? obstaculosObra(d, x0)
+				: POSICIONES_MUEBLES.map((dist, k) => {
+						const tipo = ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
+						return { x: x0 + Math.round(dist * estirar), tipo, ...MUEBLES[tipo] };
+					}),
+			decoracion: obra ? [] : DECORACION_OFICINA.map((o) => ({ x: x0 + Math.round(o.d * estirar), tipo: o.tipo })),
+			// Obra al aire libre (Proyectos): sus zonas y los riesgos que cierran el paso (obra.js)
+			exterior: obra,
+			zonas: obra ? d.oficina.zonas.map((z, k) => ({ ...z, x: inicioZonaObra(d, x0, k), ancho: anchoZonaObra(z), indice: k })) : [],
+			enemigos: obra ? enemigosObra(d, x0) : null,
+			// Peligros en algunas zonas (mundo.js → zonas[].peligro; ver obra.js): la talanquera y la zanja con su plataforma
+			peligros: obra
+				? d.oficina.zonas
+						.map((z, k) => {
+							if (!z.peligro) return null;
+							const inicio = inicioZonaObra(d, x0, k);
+							return {
+								tipo: z.peligro.tipo,
+								x: inicio + OBRA.peligro,
+								zona: k,
+								// talanquera
+								estado: "cerrada",
+								t: 0,
+								h: 0,
+								bloquea: true,
+								// zanja: de dónde a dónde, la plataforma (px = su centro) y la caída del héroe (cae: segundos)
+								desde: inicio + OBRA.zanja.desde,
+								hasta: inicio + OBRA.zanja.desde + OBRA.zanja.largo,
+								px: inicio + OBRA.zanja.desde,
+								cae: 0,
+								caeX: 0,
+							};
+						})
+						.filter(Boolean)
+				: [],
 			// Cómo se ve por dentro (mundo.js → oficina)
 			vista: (d.oficina && d.oficina.vista) || "ciudad",
 			tema: (d.oficina && d.oficina.tema) || "planos",
@@ -179,7 +331,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 			robots: d.oficina && d.oficina.estacion === "robot" ? robotsDe(d.oficina) : [],
 			virus: !!(d.oficina && d.oficina.virus), // virus que cruzan la oficina (virus.js)
 			// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
-			companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0, lugares)),
+			companeros: obra ? companerosObra(d, i, x0) : Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0, lugares)),
 		},
 	};
 });

@@ -109,6 +109,8 @@ function iniciarOficina(m) {
 	petalos = [];
 	oficinaActual = m;
 	virusOficina.oficina = null; // los virus (Seguridad) empiezan de cero
+	// La obra de Proyectos: ya completa o en modo de pruebas, se repite desde el principio
+	if (m.oficina.exterior && (m.completo || modoPruebas())) reiniciarObra(m);
 	vidas = vidasMax();
 	m.visitado = true;
 	m.terminalVisitada = m.completo; // ya completo: la computadora no se abre sola

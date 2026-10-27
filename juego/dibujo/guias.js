@@ -21,6 +21,12 @@ function objetivoActual() {
 	if (estado === "oficina") {
 		const of = oficinaActual.oficina;
 		const siguiente = of.companeros.find((n) => !n.hablado);
+		if (of.exterior) {
+			// Obra: lo más cercano entre quien falta por conocer y el riesgo por vencer
+			const riesgo = riesgoPendiente(of);
+			if (siguiente && riesgo) return Math.min(siguiente.x, riesgo.x);
+			if (siguiente || riesgo) return (siguiente || riesgo).x;
+		}
 		if (siguiente) return siguiente.x;
 		return oficinaActual.completo ? of.x0 + 70 : of.terminalX - 50;
 	}

@@ -7,7 +7,10 @@
 // Escenarios:
 //   mapa      mapa → nombre obligatorio → acercar → carta → entra a Talento
 //   talento   camina hasta el primer personaje y avanza su diálogo
-//   oficina   juega la oficina de Proyectos completa y vuelve al mapa
+//   obra      Proyectos (la obra al aire libre): recorre sus 5 zonas con capturas, vence a
+//             los 5 riesgos (incluidas las preguntas de ordenar) y completa el módulo
+//   peligros  los peligros de la obra (zanja con plataforma en la zona 3, talanquera en la 5): 3 momentos de cada uno
+//   oficina   juega la oficina de Procesos completa y vuelve al mapa
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina, el repaso final (una equivocada a
 //             propósito), la tarjeta final, la constancia impresa y las estadísticas
@@ -193,10 +196,18 @@ async function conectar() {
 		if (m.method === "Log.entryAdded" && m.params.entry.level === "error" && !/assets\/(logos|trofeos|sonidos)\/|favicon/.test(m.params.entry.url || "")) errores.push(m.params.entry.text + " " + (m.params.entry.url || ""));
 	};
 }
+// Si Chrome no contesta en 60 s, la prueba lo dice y termina (en vez de quedarse colgada en silencio)
 const cmd = (method, params = {}) =>
 	new Promise((r) => {
 		const i = ++id;
-		pendientes.set(i, r);
+		const colgado = setTimeout(() => {
+			console.error("COLGADO: Chrome no contestó en 60 s a", method, JSON.stringify(params).slice(0, 200));
+			terminar(3);
+		}, 60000);
+		pendientes.set(i, (m) => {
+			clearTimeout(colgado);
+			r(m);
+		});
 		ws.send(JSON.stringify({ id: i, method, params }));
 	});
 const evalua = async (expr) => (await cmd("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
@@ -243,7 +254,7 @@ async function conProgreso(datos) {
 // Del mapa general a un nivel: flechas hasta el mundo, acercar, carta, entrar.
 // El mapa abre con la selección en el primer mundo pendiente (y las flechas
 // dan la vuelta), así que se cuenta desde ahí.
-async function entrarAlMundo(indice) {
+async function entrarAlMundo(indice, fotoCarta = "") {
 	const inicio = await evalua(`(() => {
 		const c = (JSON.parse(localStorage.getItem(${JSON.stringify(CLAVE)}) || "{}").completos) || [];
 		return Math.max(0, window.MODULOS.findIndex((m) => !c.includes(m.nombre)));
@@ -254,6 +265,7 @@ async function entrarAlMundo(indice) {
 	await paso(1300);
 	await tecla("Enter");
 	await paso(400);
+	if (fotoCarta) await foto(fotoCarta); // la carta del mundo, antes de entrar
 	await tecla("Enter");
 	await paso(1500);
 }
@@ -426,6 +438,74 @@ async function jugarTalento(limite = 400000) {
 	return false;
 }
 
+// La obra de Proyectos (oficina.exterior): camina y salta hasta que un riesgo
+// cierra el paso; ahí contesta bien (leyendo la respuesta del propio juego) y
+// sigue. Con foto, saca una captura de cada riesgo. Termina al volver al mapa.
+const LEER_PREGUNTA = `(() => {
+	if (estado !== "pregunta" || !preguntaObra.enemigo) return null;
+	const p = preguntaObra.enemigo.preguntas[preguntaObra.enemigo.preguntaActual];
+	return { orden: p.orden ? p.orden.length : 0, correcta: p.correcta, explicando: !!preguntaObra.continuar, zona: preguntaObra.enemigo.zona, n: preguntaObra.enemigo.preguntaActual, sinVidas: preguntaObra.sinVidas };
+})()`;
+async function jugarObra(limite = 600000) {
+	const t0 = ahora();
+	let ultimoSalto = -Infinity;
+	let vistas = new Set();
+	let firma = "";
+	let desde = ahora();
+	while (ahora() - t0 < limite) {
+		const estadoJuego = await evalua("estado");
+		if (estadoJuego === "mapa") return true;
+		// Atascado: nada cambia en 30 s de juego (se avisa con los errores de JavaScript que haya)
+		const ahoraFirma = await evalua(`[estado, Math.round(heroe.x), oficinaActual && oficinaActual.oficina.enemigos.filter((e) => e.derrotado).length, typeof preguntaObra !== "undefined" && preguntaObra.enemigo ? preguntaObra.enemigo.preguntaActual : -1].join("|")`);
+		if (ahoraFirma !== firma) {
+			firma = ahoraFirma;
+			desde = ahora();
+		} else if (ahora() - desde > 30000) {
+			console.log("ATASCADO en:", firma, "· errores hasta ahora:", errores.length ? errores.join(" || ") : "ninguno");
+			await foto("atascado");
+			return false;
+		}
+		const q = await evalua(LEER_PREGUNTA);
+		if (q) {
+			await tecla("ArrowRight", "up");
+			const clave = q.zona + ":" + q.n;
+			if (!vistas.has(clave)) {
+				vistas.add(clave);
+				await paso(300);
+				await foto(`riesgo-${q.zona + 1}-pregunta-${q.n + 1}`);
+			}
+			if (q.sinVidas || q.explicando) await tecla("Enter");
+			else if (q.orden) for (let k = 0; k < q.orden; k++) await evalua(`document.querySelector('#dialogo-opciones button[data-paso="${k}"]').click()`);
+			else await evalua(`document.querySelectorAll("#dialogo-opciones button")[${q.correcta}].click()`);
+			await paso(700);
+			continue;
+		}
+		if (await visible("#terminal")) {
+			if (await visible("#terminal-salir")) {
+				await foto("final");
+				await tecla("Enter");
+				await paso(2500);
+				continue;
+			}
+			await paso(300);
+			continue;
+		}
+		if (await visible("#dialogo")) {
+			await tecla("Enter");
+			await paso(120);
+			continue;
+		}
+		await tecla("ArrowRight", "down");
+		if (ahora() - ultimoSalto > 450) {
+			await tecla("ArrowUp");
+			ultimoSalto = ahora();
+		}
+		await paso(60);
+	}
+	await tecla("ArrowRight", "up");
+	return false;
+}
+
 try {
 	await conectar();
 	await cmd("Runtime.enable");
@@ -485,9 +565,107 @@ try {
 		await entrarAlMundo(0);
 		console.log("Talento completado (salió al mapa):", await jugarTalento());
 		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
-	} else if (escenario === "oficina") {
+	} else if (escenario === "obra") {
+		await conProgreso({ completos: ["Talento"], nivel: 3, personaje: "chica", nombre: "Prueba" });
+		await entrarAlMundo(1, "carta");
+		console.log("hud:", await texto("#hud-texto"));
+		await foto("entrada");
+		// Un recorrido por las 5 zonas, de pie en cada una (sin riesgos ni diálogos que estorben)
+		const zonas = await evalua("oficinaActual.oficina.zonas.map((z) => z.x)");
+		for (let k = 0; k < zonas.length; k++) {
+			await evalua(`(() => {
+				const of = oficinaActual.oficina;
+				of.companeros.forEach((n) => (n.hablado = true));
+				of.enemigos.forEach((e, i) => (e.derrotado = i < ${k})); // los de zonas anteriores ya vencidos
+				estado = "oficina"; ui.dialogo.hidden = true; document.body.classList.remove("con-dialogo");
+				heroe.x = ${zonas[k]} + 120; camara = heroe.x - W * 0.3;
+			})()`);
+			await paso(900);
+			await foto(`zona-${k + 1}`);
+			await evalua(`(() => { camara = ${zonas[k]} + 560 - W * 0.5; })()`);
+			await paso(400);
+			await foto(`zona-${k + 1}-final`);
+			if (await evalua(`oficinaActual.oficina.peligros.some((p) => p.zona === ${k})`)) {
+				await evalua(`(() => { const p = oficinaActual.oficina.peligros.find((p) => p.zona === ${k}); camara = p.x - W * 0.5; })()`);
+				await paso(500);
+				await foto(`zona-${k + 1}-peligro`);
+			}
+		}
+		await evalua(`(() => { const of = oficinaActual.oficina; of.enemigos.forEach((e) => (e.derrotado = true)); heroe.x = of.terminalX - 120; heroe.y = 0; camara = of.terminalX - W * 0.6; })()`);
+		await paso(900);
+		await foto("inauguracion");
+		// Y ahora de verdad, desde el principio
+		await cmd("Page.reload");
+		await cargada();
+		await entrarAlMundo(1);
+		// La zanja (zona 3): quien entra sin la plataforma se cae; quien se sube en ella cruza
+		const ZN = `oficinaActual.oficina.peligros.find((p) => p.tipo === "zanja")`;
+		await evalua(`(() => { const of = oficinaActual.oficina; of.companeros.forEach((n) => (n.hablado = true)); of.enemigos.forEach((e, i) => (e.derrotado = i < 2)); estado = "oficina"; const p = ${ZN}; vidas = vidasMax(); p.t = ZANJA.pausa + ZANJA.viaje + 0.1; p.px = centroPlataforma(p); heroe.x = p.desde - 6; heroe.y = 0; heroe.velY = 0; })()`);
+		await tecla("ArrowRight", "down"); // la plataforma está en el otro extremo: entra a la zanja vacía
+		await paso(700);
+		await tecla("ArrowRight", "up");
+		await paso(300);
+		console.log("sin plataforma se cae: un corazón menos:", await evalua("vidas === vidasMax() - 1"), "· y reaparece antes de la zanja:", await evalua(`heroe.x < ${ZN}.desde && heroe.y === 0`));
+		// Ahora sí: la plataforma está en el extremo de entrada, se sube y se deja llevar
+		await evalua(`(() => { const p = ${ZN}; vidas = vidasMax(); p.t = 0; p.px = centroPlataforma(p); heroe.x = p.desde - 20; heroe.y = 0; })()`);
+		await tecla("ArrowRight", "down");
+		await paso(700); // sube a la plataforma
+		await tecla("ArrowRight", "up");
+		const llevado = await evalua(`heroe.x > ${ZN}.desde && Math.abs(heroe.x - ${ZN}.px) < ZANJA.medio * S`);
+		for (let i = 0; i < 120 && !(await evalua(`${ZN}.px >= ${ZN}.hasta - ZANJA.medio * S - 4`)); i++) await paso(100); // se deja llevar
+		console.log("se sube y la plataforma lo lleva:", llevado, "· llega al otro extremo sin caer:", await evalua(`vidas === vidasMax() && ${ZN}.cae === 0 && heroe.x > ${ZN}.hasta - 2 * ZANJA.medio * S`));
+		await tecla("ArrowRight", "down");
+		let cruzo = false;
+		for (let i = 0; i < 40 && !cruzo; i++) {
+			await paso(100);
+			cruzo = await evalua(`heroe.x > ${ZN}.hasta + 10`);
+		}
+		await tecla("ArrowRight", "up");
+		console.log("se baja al otro lado:", cruzo, "· sin perder corazones:", await evalua("vidas === vidasMax()"));
+		await evalua(`reiniciarObra(oficinaActual)`);
+		// La talanquera: cerrada no deja pasar; abierta, sí
+		await evalua(`(() => { const of = oficinaActual.oficina; of.companeros.forEach((n) => (n.hablado = true)); of.enemigos.forEach((e, i) => (e.derrotado = i < 4)); estado = "oficina"; heroe.x = of.zonas[4].x + OBRA.seguro; heroe.y = 0; heroe.velY = 0; })()`);
+		await tecla("ArrowRight", "down");
+		await paso(1500); // la talanquera arranca cerrada (2,6 s)
+		console.log("talanquera cerrada: no deja pasar:", await evalua(`(() => { const p = oficinaActual.oficina.peligros.find((p) => p.tipo === "talanquera"); return p.bloquea && heroe.x <= p.x - TALANQUERA.grosor + 1; })()`));
+		let paso_ = false;
+		for (let i = 0; i < 80 && !paso_; i++) {
+			await paso(100);
+			paso_ = await evalua(`(() => { const p = oficinaActual.oficina.peligros.find((p) => p.tipo === "talanquera"); return heroe.x > p.x + 10; })()`);
+		}
+		await tecla("ArrowRight", "up");
+		console.log("talanquera: al abrirse, pasa:", paso_);
+		await evalua(`reiniciarObra(oficinaActual)`);
+		// Sin vidas: un riesgo te devuelve al inicio de su zona (y vuelve a preguntar desde el principio)
+		await evalua(`(() => { const of = oficinaActual.oficina; of.companeros.forEach((n) => (n.hablado = true)); heroe.x = limiteFrenteRiesgo(of.enemigos[0]) + 1; })()`);
+		await paso(300);
+		console.log("pregunta abierta al llegar al riesgo:", await evalua('estado === "pregunta"'));
+		await evalua(`(() => { vidas = 1; const p = preguntaObra.enemigo.preguntas[0]; const mala = p.opciones.findIndex((_, i) => i !== p.correcta); document.querySelectorAll("#dialogo-opciones button")[mala].click(); })()`);
+		await paso(800);
+		console.log("sin vidas: la caja ofrece reintentar:", await evalua("preguntaObra.sinVidas"), "·", await texto("#dialogo-texto"));
+		await tecla("Enter");
+		await paso(300);
+		console.log("de vuelta al inicio de la zona:", await evalua(`estado === "oficina" && heroe.x === oficinaActual.oficina.zonas[0].x + 40 && vidas === vidasMax() && !preguntaObra.sinVidas`));
+		await evalua(`(() => { oficinaActual.oficina.companeros.forEach((n) => (n.hablado = false)); })()`);
+		// El recorrido automático no sabe usar la plataforma de la zanja (ya se probó arriba): sin la zanja
+		await evalua(`oficinaActual.oficina.peligros = oficinaActual.oficina.peligros.filter((p) => p.tipo !== "zanja")`);
+		console.log("obra completada (salió al mapa):", await jugarObra());
+		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
+	} else if (escenario === "peligros") {
+		// Los peligros de la obra (zanja con plataforma en la zona 3, talanquera en la 5): tres momentos de cada uno
 		await conProgreso({ completos: ["Talento"], nivel: 3, personaje: "chica", nombre: "Prueba" });
 		await entrarAlMundo(1);
+		for (const z of await evalua("oficinaActual.oficina.peligros.map((p) => p.zona)")) {
+			await evalua(`(() => { const of = oficinaActual.oficina; of.companeros.forEach((n) => (n.hablado = true)); of.enemigos.forEach((e, i) => (e.derrotado = i < ${z})); estado = "oficina"; ui.dialogo.hidden = true; document.body.classList.remove("con-dialogo"); heroe.x = of.zonas[${z}].x + OBRA.seguro; heroe.y = 0; camara = heroe.x - W * 0.3; })()`);
+			await paso(1200);
+			for (let k = 0; k < 3; k++) {
+				await paso(1700);
+				await foto(`zona-${z + 1}-momento-${k + 1}`);
+			}
+		}
+	} else if (escenario === "oficina") {
+		await conProgreso({ completos: ["Talento", "Proyectos"], nivel: 4, personaje: "chica", nombre: "Prueba" });
+		await entrarAlMundo(2);
 		await foto("entrada");
 		console.log("terminal completada:", await jugarOficina());
 		await foto("terminal-fin");
@@ -515,6 +693,11 @@ try {
 		for (let i = 1; i < total; i++) {
 			await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
 			await entrarAlMundo(i);
+			if (await evalua("oficinaActual.oficina.exterior")) {
+				// La obra: los riesgos cierran el paso, hay que contestarles (con el nombre de pruebas no queda completa)
+				console.log(`mundo ${i + 1}: obra recorrida y contestada:`, await jugarObra(300000));
+				continue;
+			}
 			const t0 = ahora();
 			let ultimoSalto = -Infinity;
 			let ultimaFoto = t0;
@@ -541,7 +724,7 @@ try {
 		}
 	} else if (escenario === "estaciones") {
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
-		const mundos = await evalua("window.MODULOS.map((m, i) => (m.oficina && m.oficina.estacion && m.oficina.estacion !== 'computadora' ? i : -1)).filter((i) => i >= 0)");
+		const mundos = await evalua("window.MODULOS.map((m, i) => (m.oficina && m.oficina.estacion && ['robot', 'antivirus'].includes(m.oficina.estacion) ? i : -1)).filter((i) => i >= 0)");
 		for (const i of mundos) {
 			await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
 			await entrarAlMundo(i);
@@ -662,6 +845,8 @@ try {
 					iniciarOficina(c.modulo);
 					c.modulo.oficina.companeros.forEach((n) => (n.hablado = true));
 					c.modulo.terminalVisitada = true;
+					// En la obra, un riesgo sin vencer cierra el paso (y abre su pregunta): ya vencidos
+					if (c.modulo.oficina.enemigos) c.modulo.oficina.enemigos.forEach((e) => { e.derrotado = true; e.cayendo = 1; });
 				} else {
 					iniciarTalento();
 					npcs.forEach((n) => (n.hablado = true));
