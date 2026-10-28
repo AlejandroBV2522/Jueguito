@@ -184,6 +184,7 @@ function actualizar(dt) {
 			actualizarHudOficina();
 		}
 		if (of.exterior) actualizarPeligrosObra(of, dt); // la carga de la grúa (obra.js)
+		if (esFabrica(of)) actualizarPeligrosFabrica(of, dt); // la prensa y la cinta de Procesos (fabrica.js)
 		// Cada compañero te habla solo la primera vez que llegas a él (en
 		// orden); la computadora se abre sola la primera vez que llegas.
 		const siguiente = of.companeros.find((n) => !n.hablado);

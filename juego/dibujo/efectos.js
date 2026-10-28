@@ -78,7 +78,15 @@ function dibujar(dt) {
 	// | oficina (adentro de un módulo)
 	if (oficinaActual) {
 		const obra = oficinaActual.oficina.exterior;
-		if (obra) {
+		const fabrica = esFabrica(oficinaActual.oficina); // la fábrica de Procesos: mismas zonas, otro dibujo (dibujo-fabrica.js)
+		if (fabrica) {
+			dibujarFondoFabrica(oficinaActual, dt);
+			dibujarSueloFabrica(oficinaActual);
+			dibujarEscenasObra(oficinaActual);
+			dibujarCintasFabrica(oficinaActual);
+			dibujarPuertaObra(oficinaActual);
+			dibujarGranMaquina(oficinaActual);
+		} else if (obra) {
 			dibujarFondoObra(oficinaActual, dt);
 			dibujarSueloObra(oficinaActual);
 			dibujarEscenasObra(oficinaActual);
@@ -102,6 +110,7 @@ function dibujar(dt) {
 		dibujarHeroe(t);
 		dibujarVirusOficina();
 		if (obra) dibujarPeligrosObra(oficinaActual);
+		if (fabrica) dibujarPrensasFabrica(oficinaActual);
 		dibujarChispas();
 		dibujarAvisos(dt);
 		return;

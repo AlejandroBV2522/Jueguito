@@ -98,17 +98,23 @@ mundos.forEach((m, i) => {
 			const zonas = m.oficina.zonas || [];
 			if (!zonas.length) problemas.push(`${donde}: su oficina es "exterior" pero no tiene "zonas"`);
 			if (!m.anfitrion || !(m.anfitrion.dialogo || []).length) problemas.push(`${donde}: la zona 1 la explica el anfitrión y no tiene diálogo`);
-			if (m.oficina.estacion !== "inauguracion") problemas.push(`${donde}: una obra exterior termina en la estación "inauguracion"`);
+			// La obra de Proyectos y la fábrica de Procesos (oficina.vista "fabrica") comparten zonas y riesgos; cambian sus escenas, obstáculos y dibujos
+			const fabrica = m.oficina.vista === "fabrica";
+			const estacion = fabrica ? "maquina" : "inauguracion";
+			const escenas = fabrica ? ["recepcion", "moldes", "ventanilla", "etiquetado", "calidad"] : ["idea", "caseta", "planos", "reunion", "obra"];
+			const peligros = fabrica ? ["prensa", "cinta"] : ["zanja", "talanquera"];
+			const dibujos = fabrica ? ["gemelo", "copia", "solicitud", "codigo", "subtarea"] : ["tarea", "mensaje", "papel", "blob", "reloj"];
+			if (m.oficina.estacion !== estacion) problemas.push(`${donde}: ${fabrica ? "una fábrica" : "una obra exterior"} termina en la estación "${estacion}"`);
 			zonas.forEach((z, k) => {
 				const dz = `${donde}, zona ${k + 1} (${z.nombre || "sin nombre"})`;
 				if (!z.nombre) problemas.push(`${dz}: falta "nombre"`);
-				if (!["idea", "caseta", "planos", "reunion", "obra"].includes(z.escena)) problemas.push(`${dz}: la escena "${z.escena}" no existe (idea, caseta, planos, reunion u obra)`);
+				if (!escenas.includes(z.escena)) problemas.push(`${dz}: la escena "${z.escena}" no existe (${escenas.join(", ")})`);
 				if (k > 0 && !(z.companero && (z.companero.dialogo || []).length)) problemas.push(`${dz}: falta "companero" con su diálogo`);
-				if (z.peligro && (!["zanja", "talanquera"].includes(z.peligro.tipo))) problemas.push(`${dz}: su "peligro" debe ser { tipo: "zanja" } o { tipo: "talanquera" }`);
+				if (z.peligro && !peligros.includes(z.peligro.tipo)) problemas.push(`${dz}: su "peligro" debe ser { tipo: ${peligros.map((p) => `"${p}"`).join(" o ")} }`);
 				const e = z.enemigo;
 				if (!e) problemas.push(`${dz}: falta su "enemigo"`);
 				else {
-					if (!["tarea", "mensaje", "papel", "blob", "reloj"].includes(e.dibujo)) problemas.push(`${dz}: el dibujo "${e.dibujo}" del enemigo no existe`);
+					if (!dibujos.includes(e.dibujo)) problemas.push(`${dz}: el dibujo "${e.dibujo}" del enemigo no existe (${dibujos.join(", ")})`);
 					if (!(e.preguntas || []).length) problemas.push(`${dz}: su enemigo no tiene preguntas`);
 					(e.preguntas || []).forEach((q, j) => revisarPregunta(q, `${dz}, pregunta ${j + 1}`));
 				}

@@ -113,6 +113,13 @@ const ESTACIONES = {
 		carta: (n, m) => `Cruza las ${m.oficina.zonas.length} zonas de la obra y vence a sus riesgos respondiendo bien.`,
 		fin: "¡El edificio está terminado! Cortaste la cinta de la inauguración.",
 	},
+	maquina: {
+		lugar: "a la gran máquina",
+		titulo: "La gran máquina",
+		usar: "Activar la máquina",
+		carta: (n, m) => `Cruza las ${m.oficina.zonas.length} zonas de la fábrica y vence a sus riesgos respondiendo bien.`,
+		fin: "¡La gran máquina está en marcha! Todos los procesos funcionan.",
+	},
 	antivirus: {
 		lugar: "al laboratorio",
 		titulo: "Laboratorio de Seguridad · Repara el antivirus",

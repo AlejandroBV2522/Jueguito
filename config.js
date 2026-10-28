@@ -177,6 +177,15 @@ window.TEMAS_OFICINA = {};
                                    { pregunta, orden: [pasos en el orden
                                    correcto], explicacion }. Las preguntas
                                    se responden con 1, 2, 3, 4 o con clic.
+                           (La fábrica de Procesos usa lo mismo con "vista":
+                           "fabrica" y "estacion": "maquina". Sus escenas son
+                           "recepcion", "moldes", "ventanilla", "etiquetado" y
+                           "calidad"; sus dibujos de enemigo, "gemelo", "copia",
+                           "solicitud", "codigo" y "subtarea"; y sus peligros,
+                           { tipo: "prensa" } (baja y sube: abajo no deja
+                           pasar, no quita corazones) y { tipo: "cinta" } (un
+                           tramo de piso que te lleva y luego te frena).
+                           Se dibuja en juego/oficina/dibujo-fabrica.js.)
                            peligro: (opcional) un obstáculo que se mueve:
                                    { tipo: "zanja" }: una zanja muy ancha para
                                    saltarla y una plataforma sobre rieles que va y

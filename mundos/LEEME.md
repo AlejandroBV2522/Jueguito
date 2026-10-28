@@ -8,7 +8,7 @@ carpeta. El motor del juego (`juego/`) no se toca.
 |---|---|---|
 | `talento/` | 1 · Talento: el camino y la Cueva (Agalta) | `mundo.js` (anfitriona y carta), `npcs.js` (gente del camino), `cueva.js` (antivalores y sus preguntas) |
 | `proyectos/` | 2 · Proyectos (gestión de proyectos): la obra del Distrito Artemisa, al aire libre, en 5 zonas con un riesgo al final de cada una | `mundo.js` (zonas, gente, riesgos y preguntas), `tema.js` |
-| `procesos/` | 3 · Procesos (Wrike, Edificio Lirios) | `mundo.js`, `tema.js` (engranes, diagrama de flujo, banda transportadora) |
+| `procesos/` | 3 · Procesos (Wrike, Edificio Lirios): la fábrica de procesos, en 5 zonas con un riesgo al final de cada una | `mundo.js` (zonas, gente, riesgos y preguntas), `tema.js` |
 | `sharepoint/` | 4 · SharePoint, Outlook y Teams (Torre Atlas, llevar los permisos de A a B) | `mundo.js`, `tema.js` (documentos a la nube, carpetas, servidor) |
 | `seguridad/` | 5 · Seguridad (Acacias San Ignacio, esquivar virus y reparar el antivirus) | `mundo.js`, `tema.js` (escudos, lista de chequeo, cámaras) |
 | `ia/` | 6 · IA (Zorzales del Merendón, taller con 3 robots) | `mundo.js`, `tema.js` (red de nodos, red neuronal, hologramas) |

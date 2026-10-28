@@ -288,6 +288,11 @@ function abrirCarta(i) {
 				`Recorre el camino y conoce a ${npcs.length} personas de la obra.`,
 				`Cruza la Cueva y vence a ${enemigos.length} antivalores (como ${enemigos.map((e) => e.antivalor).filter(Boolean).slice(0, 2).join(" y ")}) respondiendo bien.`,
 			]
+		: esFabrica(m.oficina)
+		? [
+				`Recorre las ${m.oficina.zonas.length} zonas de la fábrica, de la recepción al control de calidad, y habla con quienes la explican.`,
+				`Vence a ${m.oficina.enemigos.length} riesgos (como ${m.oficina.enemigos.slice(0, 2).map((e) => e.antivalor).join(" y ")}) respondiendo bien y activa la gran máquina.`,
+			]
 		: m.oficina.exterior
 		? [
 				`Recorre las ${m.oficina.zonas.length} zonas de la obra, de la idea al cierre, y habla con quienes la explican.`,
