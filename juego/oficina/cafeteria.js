@@ -284,21 +284,24 @@ function dibujarBarraCafe(m, sx, piso) {
 	if (estado === "oficina" && enTerminal()) dibujarGlobo(sx - 50 * S, topY - 186 * S, texto, COLORES.fondoVerdeClaro);
 }
 
-// El easter egg: el café te da un salto más alto (mientras sigas aquí) y
-// los corazones dorados. También completa la Cafetería (sin subir de nivel).
+// El easter egg: el café te da un salto más alto (mientras sigas aquí) y,
+// solo la primera vez, los corazones dorados: son un plus, y si un golpe te
+// los quita no se recuperan volviendo por otro café. También completa la
+// Cafetería (sin subir de nivel).
 function beberCafe(m) {
 	m.terminalVisitada = true;
 	if (cafeina > 0) {
 		avisos.push({ texto: "Ya tienes tu café: ¡aprovecha el salto!", t: 0 });
 		return;
 	}
+	const primeraVez = !m.completo;
 	cafeina = Infinity; // dura hasta salir de la Cafetería (reiniciarHeroe lo apaga)
-	vidasDoradas = DORADAS_MAX;
+	if (primeraVez) vidasDoradas = DORADAS_MAX;
 	heroe.velY = impulsoSalto() * 0.7; // un saltito de alegría
 	heroe.ultimoSuelo = -1;
 	lanzarChispas(heroe.x, heroe.y + 80, 30, ["#ffd23f", "#fff1c1", COLORES.blanco, COLORES.beige]);
 	sonar("victoria");
-	avisos.push({ texto: `☕ ¡Súper salto y +${DORADAS_MAX} ♥ dorados!`, t: 0 });
+	avisos.push({ texto: primeraVez ? `☕ ¡Súper salto y +${DORADAS_MAX} ♥ dorados!` : "☕ ¡Súper salto!", t: 0 });
 	if (!m.completo) completarModulo(m);
 	guardarProgreso();
 	actualizarHudOficina();
