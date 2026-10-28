@@ -100,8 +100,10 @@ const CUERPOS_NPC = {
 // salen de tools/mascaras_npc.py y la de sentado (armada desde la de pie,
 // sin el muslo) de tools/pose_sentado.py, que también da sus medidas;
 // "costura" es la fila donde se unió (ahí va la mesa que la tapa) y
-// "bajaCara" cuánto bajó la cara (para la barba).
-const POSES_NPC = { quieto: "", caminando: "Caminando", caminando2: "Caminando2", sentado: "Sentado" };
+// "bajaCara" cuánto bajó la cara (para la barba). Las de platicar (el
+// antebrazo doblado, de tools/pose_platica.py) son la foto de pie con
+// otro brazo: usan sus mismas máscaras y medidas.
+const POSES_NPC = { quieto: "", caminando: "Caminando", caminando2: "Caminando2", sentado: "Sentado", platica1: "", platica2: "" };
 const SENTADO_NPC = {
 	chico: { archivo: "PersonajeHSentado.png", anclaX: 0.458, arriba: 0.1406, abajo: 0.9831, costura: 1175 / 1536, bajaCara: 185 / 1536 },
 	chica: { archivo: "PersonajeMSentado.png", anclaX: 0.4399, arriba: 0.153, abajo: 0.9772, costura: 1185 / 1536, bajaCara: 190 / 1536 },
@@ -109,7 +111,9 @@ const SENTADO_NPC = {
 for (const [clave, c] of Object.entries(CUERPOS_NPC)) {
 	c.poses = {};
 	for (const [pose, sufijo] of Object.entries(POSES_NPC)) {
-		const meta = pose === "sentado" ? { ...SENTADO_NPC[clave], cargando: cargarImagen(RUTA_PERSONAJE + SENTADO_NPC[clave].archivo) } : c.sprites[pose];
+		const archivo = pose === "sentado" ? SENTADO_NPC[clave].archivo : pose.startsWith("platica") ? `Personaje${c.letra}Platica${pose.slice(-1)}.png` : "";
+		const base = pose === "sentado" ? SENTADO_NPC[clave] : c.sprites[pose] || c.sprites.quieto;
+		const meta = archivo ? { ...base, archivo, cargando: cargarImagen(RUTA_PERSONAJE + archivo) } : base;
 		const mascaras = {};
 		for (const z in ZONAS_NPC) mascaras[z] = cargarImagen(RUTA_MASCARAS + "Personaje" + c.letra + sufijo + ZONAS_NPC[z] + ".png");
 		c.poses[pose] = { meta, mascaras };
@@ -159,7 +163,7 @@ function fotoNpc(n, pose = "quieto") {
 	}
 	// La barba está medida en la cara de la foto de pie: sentado, la cara
 	// solo bajó; caminando cambia de lugar (son chicos, del fondo: sin barba)
-	if (conBarba(n) && (pose === "quieto" || pose === "sentado")) dibujarBarbaNpc(g, w, h, n.apariencia.pelo, (meta.bajaCara || 0) * h);
+	if (conBarba(n) && !pose.startsWith("caminando")) dibujarBarbaNpc(g, w, h, n.apariencia.pelo, (meta.bajaCara || 0) * h);
 	n.fotos[pose] = { lienzo, meta, escaladas: new Map() };
 	return n.fotos[pose];
 }

@@ -102,6 +102,9 @@ function globoChico(x, y, texto) {
 	ctx.fillText(texto, x, y - h / 2 + 1 * S);
 }
 
+// Cómo se mueve el brazo de quien platica, cuadro por cuadro
+const GESTOS_PLATICA = ["quieto", "platica1", "platica2", "platica2", "platica1"];
+
 // Invitados que caminan de un lado a otro del local, más atrás que los
 // grupos (más chicos y más arriba); dan la vuelta en las orillas
 function dibujarCaminantesCafeteria(m, sAntes) {
@@ -129,8 +132,8 @@ function dibujarCaminantesCafeteria(m, sAntes) {
 // detrás de las columnas y de todo lo demás (dibujo-oficina.js la llama
 // antes que las columnas), y solo en los huecos libres (gruposFondo). Los
 // grupos sentados están en una banca, con una mesa al frente que tapa la
-// costura de la pose sentado (tools/pose_sentado.py). Quien platica mueve
-// el cuerpo y los brazos: alterna su foto de pie con la de un paso corto.
+// costura de la pose sentado (tools/pose_sentado.py). Quien platica de pie
+// dobla el brazo para explicar (fotos de tools/pose_platica.py).
 function dibujarFondoCafeteria(m) {
 	if (!m.oficina.fondo) return;
 	const pie = SUELO - 8 * S;
@@ -173,9 +176,9 @@ function dibujarFondoCafeteria(m) {
 		g.gente.forEach((n, j) => {
 			const habla = hablando && j === quien;
 			const risa = habla ? Math.abs(Math.sin(tiempo * 9 + j)) * 4 * S : Math.abs(Math.sin(tiempo * 2.4 + g.fase + j * 1.3)) * 1.2 * S;
-			// De pie, quien habla gesticula: cambia de postura cada tanto
-			const gesto = habla && !g.sentados && Math.floor(tiempo * 3.2 + j) % 2 === 1;
-			const pose = g.sentados ? "sentado" : gesto ? "caminando2" : "quieto";
+			// De pie, quien habla gesticula: sube y baja el antebrazo
+			const gesto = habla && !g.sentados ? GESTOS_PLATICA[Math.floor(tiempo * 5 + j) % GESTOS_PLATICA.length] : "quieto";
+			const pose = g.sentados ? "sentado" : gesto;
 			ctx.save();
 			ctx.globalAlpha = 0.9;
 			S = sAntes * k;
