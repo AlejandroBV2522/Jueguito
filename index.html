@@ -5,11 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Solo se permite cargar archivos de este mismo proyecto: nada de terceros. -->
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
     <title>Camino a Celaque</title>
     <link rel="stylesheet" href="style.css">
     <script defer src="config.js"></script>
-    <script defer src="main.js"></script>
+    <!-- Un mundo por carpeta, en el orden del mapa (ver mundos/LEEME.md) -->
+    <script defer src="mundos/talento/mundo.js"></script>
+    <script defer src="mundos/talento/npcs.js"></script>
+    <script defer src="mundos/talento/cueva.js"></script>
+    <script defer src="mundos/proyectos/mundo.js"></script>
+    <script defer src="mundos/proyectos/tema.js"></script>
+    <script defer src="mundos/procesos/mundo.js"></script>
+    <script defer src="mundos/procesos/tema.js"></script>
+    <script defer src="mundos/sharepoint/mundo.js"></script>
+    <script defer src="mundos/sharepoint/tema.js"></script>
+    <script defer src="mundos/seguridad/mundo.js"></script>
+    <script defer src="mundos/seguridad/tema.js"></script>
+    <script defer src="mundos/ia/mundo.js"></script>
+    <script defer src="mundos/ia/tema.js"></script>
+    <script defer src="mundos/cafeteria/mundo.js"></script>
+    <script defer src="mundos/cafeteria/tema.js"></script>
+    <!-- El motor del juego, en este orden (ver juego/LEEME.md) -->
+    <script defer src="juego/base/constantes.js"></script>
+    <script defer src="juego/camino/fisica.js"></script>
+    <script defer src="juego/base/utilidades.js"></script>
+    <script defer src="juego/base/ajustes.js"></script>
+    <script defer src="juego/base/sonido.js"></script>
+    <script defer src="juego/base/musica.js"></script>
+    <script defer src="juego/base/paleta.js"></script>
+    <script defer src="juego/base/canvas.js"></script>
+    <script defer src="juego/base/imagenes.js"></script>
+    <script defer src="juego/camino/npcs-y-andamios.js"></script>
+    <script defer src="juego/oficina/mision.js"></script>
+    <script defer src="juego/oficina/modulos.js"></script>
+    <script defer src="juego/camino/letreros.js"></script>
+    <script defer src="juego/dibujo/sprites-enemigos.js"></script>
+    <script defer src="juego/dibujo/sprites-personajes.js"></script>
+    <script defer src="juego/camino/zona-industrial.js"></script>
+    <script defer src="juego/camino/decoracion-cueva.js"></script>
+    <script defer src="juego/base/estado.js"></script>
+    <script defer src="juego/interfaz/interfaz.js"></script>
+    <script defer src="juego/interfaz/dialogos.js"></script>
+    <script defer src="juego/interfaz/estadisticas.js"></script>
+    <script defer src="juego/interfaz/repaso.js"></script>
+    <script defer src="juego/interfaz/coleccion.js"></script>
+    <script defer src="juego/oficina/oficina.js"></script>
+    <script defer src="juego/mapa/mapa.js"></script>
+    <script defer src="juego/camino/cueva.js"></script>
+    <script defer src="juego/actualizar.js"></script>
+    <script defer src="juego/dibujo/formas.js"></script>
+    <script defer src="juego/dibujo/escenario.js"></script>
+    <script defer src="juego/camino/dibujo-zona-industrial.js"></script>
+    <script defer src="juego/camino/dibujo-zona-planos.js"></script>
+    <script defer src="juego/dibujo/avisos.js"></script>
+    <script defer src="juego/camino/dibujo-cueva.js"></script>
+    <script defer src="juego/oficina/dibujo-oficina.js"></script>
+    <script defer src="juego/oficina/estaciones.js"></script>
+    <script defer src="juego/oficina/virus.js"></script>
+    <script defer src="juego/oficina/cafeteria.js"></script>
+    <script defer src="juego/dibujo/coleccionables.js"></script>
+    <script defer src="juego/camino/dibujo-letreros.js"></script>
+    <script defer src="juego/dibujo/aves.js"></script>
+    <script defer src="juego/dibujo/guias.js"></script>
+    <script defer src="juego/dibujo/personajes.js"></script>
+    <script defer src="juego/mapa/dibujo-mapa.js"></script>
+    <script defer src="juego/dibujo/efectos.js"></script>
+    <script defer src="juego/interfaz/barra-jugador.js"></script>
+    <!-- Lo que conecta eventos (clics, teclas) va al final: un evento puede llegar
+         mientras cargan los demás archivos y no debe encontrar nada sin declarar -->
+    <script defer src="juego/interfaz/selector.js"></script>
+    <script defer src="juego/controles.js"></script>
+    <script defer src="juego/bucle.js"></script>
 </head>
 <body>
     <canvas id="juego" aria-label="Juego Camino a Celaque"></canvas>
@@ -18,6 +84,15 @@
     <div id="hud" hidden>
         <div class="hud-barra"><div id="hud-relleno"></div></div>
         <p id="hud-texto"></p>
+    </div>
+
+    <!-- Barrita del jugador: su nombre, su cara y sus corazones -->
+    <div id="barra-jugador" hidden>
+        <canvas id="cara-jugador" aria-hidden="true"></canvas>
+        <div class="barra-jugador-datos">
+            <p id="barra-nombre"></p>
+            <canvas id="corazones-jugador" aria-hidden="true"></canvas>
+        </div>
     </div>
 
     <!-- Caja de diálogo (el texto se llena desde config.js) -->
@@ -31,27 +106,204 @@
         </div>
     </div>
 
-    <!-- Pantalla de inicio -->
-    <div id="pantalla-inicio" class="pantalla">
+    <!-- Terminal Celaque: la computadora del fondo de cada oficina (módulo) -->
+    <div id="terminal" hidden>
+        <div class="monitor">
+            <div class="pantalla-pc">
+                <div class="barra-pc">
+                    <div class="espacio-logo logo-pc" data-logo="assets/logos/celaque-horizontal-blanco.png" role="img" aria-label="Celaque">LOGO</div>
+                    <span id="terminal-titulo"></span>
+                    <span id="terminal-progreso"></span>
+                </div>
+                <div class="cuerpo-pc">
+                    <canvas id="terminal-figura" hidden aria-hidden="true"></canvas>
+                    <p id="terminal-pregunta"></p>
+                    <div id="terminal-opciones"></div>
+                    <p id="terminal-pista"></p>
+                    <button id="terminal-salir" class="boton boton-grande" hidden>Volver al mapa <span class="boton-icono" aria-hidden="true">▶</span></button>
+                </div>
+            </div>
+        </div>
+        <div class="pie-monitor"></div>
+    </div>
+
+    <!-- Mapa: rectángulo del centro, donde se elige el personaje -->
+    <div id="mapa-panel">
+        <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
         <h1 id="titulo"></h1>
         <p id="subtitulo"></p>
         <div id="selector" role="radiogroup" aria-label="Elige tu personaje">
             <button class="opcion" data-personaje="chico" role="radio"><canvas></canvas><span></span></button>
             <button class="opcion" data-personaje="chica" role="radio"><canvas></canvas><span></span></button>
         </div>
-        <button id="btn-comenzar" class="boton">Comenzar</button>
-        <p class="ayuda">Camina con ← → (o A / D, o la rueda del mouse). Mantén Q para correr.<br>Habla y avanza los diálogos con E, Enter o Espacio.<br>Salta con ↑ y agáchate con ↓ (frente a un tubo, para entrar).</p>
+        <label id="nombre-etiqueta" class="campo-nombre" for="nombre-jugador">
+            <span id="nombre-pregunta"></span>
+            <input id="nombre-jugador" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Escribe tu nombre">
+        </label>
+        <!-- Para quien no juega seguido (juego/base/ajustes.js) -->
+        <button id="btn-facil" class="interruptor" role="switch" aria-checked="false">
+            <span class="interruptor-riel" aria-hidden="true"><span class="interruptor-bola"></span></span>
+            <span class="interruptor-texto"><strong>Modo fácil</strong><small>Saltos más altos y sin perder corazones</small></span>
+        </button>
+        <!-- Con todo completo: volver a sacar la constancia -->
+        <button id="btn-constancia-mapa" class="boton boton-secundario boton-chico" hidden>Descargar mi constancia</button>
     </div>
 
-    <!-- Pantalla de victoria -->
-    <div id="pantalla-victoria" class="pantalla" hidden>
-        <h1 id="victoria-titulo"></h1>
-        <p id="victoria-texto"></p>
-        <div class="botones">
-            <button id="btn-reiniciar" class="boton">Jugar de nuevo</button>
-            <button id="btn-cambiar" class="boton boton-secundario">Cambiar personaje</button>
+    <!-- Cómo se juega: se abre sola la primera vez -->
+    <button id="btn-ayuda" class="boton boton-secundario boton-chico" aria-haspopup="dialog">? Cómo se juega</button>
+    <div id="ayuda" hidden role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo">
+        <div class="carta ayuda-carta">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+            <h2 id="ayuda-titulo">¿Cómo se juega?</h2>
+            <p class="ayuda-objetivo"><strong>Tu objetivo:</strong> completar los 6 mundos de tu capacitación y llegar a Celaque.</p>
+            <ol class="ayuda-pasos">
+                <li><span class="ayuda-num">1</span><span><strong>Escribe tu nombre</strong> y elige tu personaje en el centro del mapa.</span></li>
+                <li><span class="ayuda-num">2</span><span><strong>Toca un mundo abierto.</strong> Los que tienen candado se abren al terminar el anterior.</span></li>
+                <li><span class="ayuda-num">3</span><span><strong>Toca su edificio</strong> para ver de qué trata y entra.</span></li>
+                <li><span class="ayuda-num">4</span><span><strong>Habla con el equipo</strong> (★ es quien te recibe) y responde bien al final del nivel.</span></li>
+            </ol>
+            <p class="ayuda-facil">¿No juegas seguido? Activa el <strong>Modo fácil</strong> en el centro del mapa.</p>
+            <p class="ayuda-controles solo-teclado"><kbd>←</kbd><kbd>→</kbd> Caminar · <kbd>Espacio</kbd> Saltar · <kbd>Q</kbd> Correr · <kbd>E</kbd> Hablar</p>
+            <p class="ayuda-controles solo-tactil">Usa los botones de la pantalla para caminar, saltar, correr y hablar.</p>
+            <button id="ayuda-cerrar" class="boton boton-grande">¡A jugar! <span class="boton-icono" aria-hidden="true">▶</span></button>
         </div>
     </div>
+
+    <!-- Sonido encendido o apagado (se ve siempre, también dentro de los niveles) -->
+    <button id="btn-sonido" class="boton boton-secundario boton-chico" aria-pressed="true">♪ Sonido</button>
+    <!-- Solo la música de fondo (los efectos siguen; "Sin sonido" apaga las dos) -->
+    <button id="btn-musica" class="boton boton-secundario boton-chico" aria-pressed="true">♫ Música</button>
+
+    <!-- Colección: las mayitas ocultas que ya encontraste (coleccion.js) -->
+    <button id="btn-coleccion" class="boton boton-secundario boton-chico" aria-haspopup="dialog">★ Colección</button>
+
+    <!-- Solo con el nombre de pruebas: qué preguntas se fallan más -->
+    <button id="btn-estadisticas" class="boton boton-secundario boton-chico" hidden>Estadísticas</button>
+    <!-- Solo con el nombre de pruebas: ver la tarjeta de bienvenida sin terminar todo -->
+    <button id="btn-ver-bienvenida" class="boton boton-secundario boton-chico" hidden>★ Ver bienvenida</button>
+
+    <!-- Empezar de cero: borra el progreso guardado en este navegador -->
+    <button id="btn-reiniciar-progreso" class="boton boton-secundario boton-chico" aria-label="Empezar de cero (borra el progreso)">↻ Empezar de cero</button>
+
+    <!-- Mapa acercado a un mundo -->
+    <div id="mapa-barra" hidden>
+        <button id="btn-mapa-volver" class="boton boton-secundario boton-chico">◀ Mapa</button>
+        <p id="mapa-barra-texto"></p>
+    </div>
+
+    <!-- Teclas del mapa (solo con teclado) -->
+    <div id="mapa-ayuda" class="ayuda" aria-label="Controles">
+        <span class="tecla-ayuda"><kbd>←</kbd><kbd>→</kbd> Elegir mundo</span>
+        <span class="tecla-ayuda"><kbd>Enter</kbd> Acercar / ver carta</span>
+        <span class="tecla-ayuda"><kbd>Esc</kbd> Volver</span>
+        <span class="tecla-ayuda separador">En el nivel:</span>
+        <span class="tecla-ayuda"><kbd>Espacio</kbd> Saltar</span>
+        <span class="tecla-ayuda"><kbd>Q</kbd> Correr</span>
+        <span class="tecla-ayuda"><kbd>E</kbd> Hablar</span>
+    </div>
+
+    <!-- Carta de cada mundo: qué sistema es y entrada al nivel -->
+    <div id="carta" hidden role="dialog" aria-modal="true" aria-labelledby="carta-titulo">
+        <div class="carta">
+            <div class="carta-cabeza">
+                <div id="carta-logo" class="espacio-logo logo-carta" role="img" aria-label="Logo del módulo">LOGO</div>
+                <div>
+                    <p id="carta-mundo"></p>
+                    <h2 id="carta-titulo"></h2>
+                    <p id="carta-modulo"></p>
+                </div>
+            </div>
+            <p id="carta-descripcion"></p>
+            <ul id="carta-lista"></ul>
+            <div class="botones">
+                <button id="carta-entrar" class="boton boton-grande"><span id="carta-entrar-texto">Entrar</span> <span class="boton-icono" aria-hidden="true">▶</span></button>
+                <button id="carta-volver" class="boton boton-secundario">Volver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final: bienvenida con el nombre del jugador -->
+    <div id="pantalla-victoria" hidden>
+        <div class="tarjeta-final" role="dialog" aria-labelledby="victoria-bienvenida">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+            <p id="victoria-titulo" class="final-pre"></p>
+            <h1 id="victoria-bienvenida"></h1>
+            <p id="victoria-nombre" class="final-nombre"></p>
+            <p id="victoria-texto"></p>
+            <ul id="victoria-modulos" class="final-modulos"></ul>
+            <p id="victoria-repaso" class="final-repaso"></p>
+            <p class="lema">Tú lo sueñas, juntos lo construimos.</p>
+            <p id="victoria-fecha" class="final-fecha"></p>
+            <div class="botones">
+                <button id="btn-constancia" class="boton boton-grande">Descargar constancia <span class="boton-icono" aria-hidden="true">▼</span></button>
+                <button id="btn-cambiar" class="boton boton-secundario">Ver el mapa</button>
+                <button id="btn-reiniciar" class="boton boton-secundario">Jugar de nuevo ↻</button>
+            </div>
+            <p class="final-ayuda">En la ventana de imprimir, elige «Guardar como PDF».</p>
+        </div>
+    </div>
+
+    <!-- Repaso final: una pregunta de cada módulo antes de la bienvenida -->
+    <div id="repaso" hidden role="dialog" aria-modal="true" aria-labelledby="repaso-titulo">
+        <div class="carta repaso-carta">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <div class="espacio-logo logo-celaque" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+            <p class="repaso-pre">Repaso final</p>
+            <h2 id="repaso-titulo">¿Estás listo?</h2>
+            <p class="repaso-datos"><span id="repaso-modulo"></span> · <span id="repaso-progreso"></span></p>
+            <p id="repaso-pregunta"></p>
+            <div id="repaso-opciones"></div>
+            <p id="repaso-pista"></p>
+        </div>
+    </div>
+
+    <!-- Estadísticas (botón de arriba, solo con el nombre de pruebas) -->
+    <div id="estadisticas" hidden role="dialog" aria-modal="true" aria-labelledby="estadisticas-titulo">
+        <div class="carta estadisticas-carta">
+            <h2 id="estadisticas-titulo">¿Qué preguntas cuestan más?</h2>
+            <p id="estadisticas-resumen"></p>
+            <div class="estadisticas-marco">
+                <table>
+                    <thead><tr><th>Módulo</th><th>Pregunta</th><th>Veces que salió</th><th>Respuestas equivocadas</th></tr></thead>
+                    <tbody id="estadisticas-tabla"></tbody>
+                </table>
+            </div>
+            <div class="botones">
+                <button id="estadisticas-cerrar" class="boton">Cerrar</button>
+                <button id="estadisticas-borrar" class="boton boton-secundario">Borrar datos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colección de mayitas ocultas -->
+    <div id="coleccion" hidden role="dialog" aria-modal="true" aria-labelledby="coleccion-titulo">
+        <div class="carta coleccion-carta">
+            <div class="cinta-final" aria-hidden="true"></div>
+            <h2 id="coleccion-titulo">★ Colección</h2>
+            <p id="coleccion-resumen"></p>
+            <div class="coleccion-barra" aria-hidden="true"><div id="coleccion-relleno"></div></div>
+            <ul id="coleccion-grilla"></ul>
+            <div class="botones">
+                <button id="coleccion-cerrar" class="boton">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Constancia: solo se ve al imprimir (juego/interfaz/repaso.js) -->
+    <section id="constancia" aria-hidden="true">
+        <div class="cinta-final"></div>
+        <div class="espacio-logo logo-constancia" data-logo="assets/logos/celaque-horizontal-verde-profundo.png" role="img" aria-label="Celaque">LOGO</div>
+        <p class="constancia-pre">Constancia de inducción</p>
+        <p class="constancia-se">Se reconoce a</p>
+        <h1 id="constancia-nombre"></h1>
+        <p class="constancia-texto">por completar los módulos de su capacitación como miembro del equipo de Celaque:</p>
+        <ul id="constancia-modulos"></ul>
+        <p id="constancia-repaso"></p>
+        <p class="constancia-lema">Tú lo sueñas, juntos lo construimos.</p>
+        <p id="constancia-fecha"></p>
+    </section>
 
     <!-- Controles táctiles (solo se ven en celulares y tablets) -->
     <div id="controles-tactiles" hidden>
@@ -61,7 +313,7 @@
         </div>
         <div class="grupo">
             <button id="btn-correr" class="tactil texto" aria-label="Correr">Correr</button>
-            <button id="btn-hablar" class="tactil texto" aria-label="Hablar">Hablar</button>
+            <button id="btn-hablar" class="tactil texto" aria-label="Hablar o entrar">Hablar</button>
             <button id="btn-saltar" class="tactil texto" aria-label="Saltar">Saltar</button>
             <button id="btn-agachar" class="tactil texto" aria-label="Agachar">Agachar</button>
         </div>
