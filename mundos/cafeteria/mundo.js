@@ -2,7 +2,7 @@
    Se abre al completar Proyectos (abreDespues) y no sube de nivel. Al fondo
    está la barra de café: tomarse uno es el easter egg (saltas más alto y
    ganas 2 corazones dorados). Todos los personajes del juego conversan al
-   fondo y Heber pone música en la terraza alta, donde hay una mayita oculta.
+   fondo y Eber pone música en la terraza alta, sentado con su sopa, donde hay una mayita oculta.
    Qué significa cada campo: config.js, sección "Módulos de capacitación".
    Va al final en index.html: los extra no cambian el orden de los demás. */
 
@@ -13,7 +13,7 @@ window.MODULOS.push({
   subtitulo: "Un descanso con el equipo",
   sistema: "Cafetería Celaque",
   descripcion:
-    "Un mundo extra para tomarse un respiro: aquí se junta todo el equipo a conversar. No hay preguntas; tómate un café en la barra y sube a la terraza donde Heber pone la música.",
+    "Un mundo extra para tomarse un respiro: aquí se junta todo el equipo a conversar. No hay preguntas; tómate un café en la barra y sube a la terraza donde Eber pone la música.",
   icono: "cafe",
   color: "#A99886", // beige
   // En la planta baja de Astria (aún no hay foto del edificio en assets/edificios/:
@@ -34,11 +34,11 @@ window.MODULOS.push({
     largo: 4400, // más larga que una oficina: así cabe todo el equipo al fondo
     muebles: ["planta", "mesa", "sacos", "mesa", "silla", "mesa", "planta"],
     terraza: 4, // la terraza alta queda sobre el 4.º mueble (una mesa)
-    // ✏️ Borrador: frases de Heber, por revisar con él
+    // ✏️ Borrador: frases de Eber, por revisar con él
     dj: {
-      nombre: "Heber",
+      nombre: "Eber",
       cuerpo: "chico",
-      frases: ["¡Bienvenido a la terraza! Aquí arriba suena mejor ♪", "¿Te gusta la música? ¡Súbele!", "Llegaste con energía de café, ¡eso!"],
+      frases: ["¡Bienvenido a la terraza! Aquí arriba suena mejor ♪", "¿Gustas sopita? ¡Está buenísima!", "Llegaste con energía de café, ¡eso!"],
     },
   },
   recepcion: false, // nadie te recibe en la entrada: todo el equipo está al fondo

@@ -47,7 +47,7 @@ emociones), para que buscarlas no distraiga de la capacitación.
 | SharePoint | Mayita Directa | valor Comunicación Directa | nube 27 (descanso de la etapa 3) |
 | Seguridad | Mayita Agradecida | emoción alegre | mueble 4 |
 | IA | Mayita Creativa | valor Creatividad | mueble 4 |
-| Cafetería (extra) | Mayita Alegre | emoción alegre | terraza de Heber (hace falta el café) |
+| Cafetería (extra) | Mayita Alegre | emoción alegre | terraza de Eber (hace falta el café) |
 
 Los nombres son borrador. Se pueden cambiar sin que nadie pierda las que ya
 encontró: el progreso se guarda por el lugar (`sobre` y `n`), no por el

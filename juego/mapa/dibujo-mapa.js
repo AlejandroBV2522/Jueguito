@@ -138,7 +138,7 @@ function rutaMapa(desde, hasta) {
 
 const azarMapa = crearAzar(4242);
 const OLAS_MAPA = Array.from({ length: 170 }, () => ({ x: -300 + azarMapa() * (MAPA_ANCHO + 600), y: -150 + azarMapa() * (MAPA_ALTO + 300), fase: azarMapa() * 6 }));
-const NUBES_MAPA = Array.from({ length: 9 }, (_, k) => ({ x: azarMapa() * 2600, y: 60 + k * 140, tam: 0.7 + azarMapa() * 0.6, vel: 8 + azarMapa() * 10 }));
+const NUBES_MAPA = Array.from({ length: 9 }, (_, k) => ({ x: azarMapa() * 2600, y: 60 + k * 140, tam: 0.7 + azarMapa() * 0.6, vel: 8 + azarMapa() * 10, toque: 0, empuje: 0 }));
 
 // Islas de adorno en el mar (no son mundos): con palmeras, un faro, rocas
 // o un muellecito con su bote. Algunas quedan fuera del mapa: se ven en
@@ -158,7 +158,7 @@ const ISLAS_MAPA = [
 	{ x: 2330, y: 420, rx: 70, ry: 36, tipo: "palmeras" },
 	{ x: 2320, y: 960, rx: 50, ry: 26, tipo: "rocas" },
 	{ x: -200, y: 1000, rx: 56, ry: 30, tipo: "muelle" },
-].map((q, k) => ({ ...q, contorno: contornoMeseta(q, 300 + k * 31) }));
+].map((q, k) => ({ ...q, contorno: contornoMeseta(q, 300 + k * 31), toque: 0 }));
 
 // Vista actual: escala k y desplazamiento (ox, oy) de unidades del mapa a
 // pantalla. En la vista general entra todo el mapa; acercado, la meseta
@@ -491,7 +491,7 @@ function dibujarEdificioMapa(bx, by, m, i, apagado, acercado) {
 }
 
 // La Cafetería (mundo extra, sin foto): la torre de Astria con su logo y,
-// arriba, la azotea con pérgola, focos, plantas y Heber con su parlante
+// arriba, la azotea con pérgola, focos, plantas y Eber con su parlante
 function dibujarCafeteriaMapa(bx, by, m, apagado, acercado) {
 	const gris = (c, k = 0.7) => mezclar(c, "#a2a6a5", apagado * k);
 	const w = 120;
@@ -566,7 +566,7 @@ function dibujarCafeteriaMapa(bx, by, m, apagado, acercado) {
 		ctx.fillStyle = gris("#b5532f");
 		circulo(bx + dx + 7, top - 28, 4);
 	}
-	// Heber y su parlante, con notas de música
+	// Eber y su parlante, con notas de música
 	const baile = apagado ? 0 : Math.abs(Math.sin(tiempo * 6)) * 3;
 	ctx.fillStyle = gris("#2d3a4a");
 	ctx.fillRect(bx + 12, top - 26 - baile, 8, 20);
@@ -976,7 +976,7 @@ function dibujarIslaDecorativa(q) {
 			ctx.strokeStyle = mezclar(COLORES.verdeInstitucional, COLORES.verdeProfundo, 0.4);
 			ctx.lineWidth = 3.5;
 			for (let h = 0; h < 5; h++) {
-				const ang = -Math.PI / 2 + (h - 2) * 0.75 + Math.sin(tiempo * 1.5 + k + h) * 0.06;
+				const ang = -Math.PI / 2 + (h - 2) * 0.75 + Math.sin(tiempo * (1.5 + 6 * q.toque) + k + h) * (0.06 + 0.3 * q.toque);
 				ctx.beginPath();
 				ctx.moveTo(x + 3, y - 28);
 				ctx.quadraticCurveTo(x + 3 + Math.cos(ang) * 10, y - 34 + Math.sin(ang) * 6, x + 3 + Math.cos(ang) * 16, y - 26 + Math.sin(ang) * 10 + 6);
@@ -1002,8 +1002,8 @@ function dibujarIslaDecorativa(q) {
 		ctx.fillStyle = "#fff1c1";
 		ctx.fillRect(x - 4, y - 54, 8, 6);
 		// El haz de luz da vueltas
-		const ang = tiempo * 1.2;
-		ctx.fillStyle = "rgba(255,241,193,0.28)";
+		const ang = tiempo * (1.2 + 3 * q.toque);
+		ctx.fillStyle = `rgba(255,241,193,${(0.28 + 0.5 * q.toque).toFixed(3)})`;
 		ctx.beginPath();
 		ctx.moveTo(x, y - 51);
 		ctx.lineTo(x + Math.cos(ang - 0.12) * 90, y - 51 + Math.sin(ang - 0.12) * 30);
@@ -1029,7 +1029,7 @@ function dibujarIslaDecorativa(q) {
 		ctx.fillStyle = "#a07c58";
 		ctx.fillRect(x, y - 3, 46, 6);
 		for (let k = 0; k < 3; k++) ctx.fillRect(x + 6 + k * 16, y + 3, 3, 8);
-		const meneo = Math.sin(tiempo * 2 + q.x) * 2;
+		const meneo = Math.sin(tiempo * (2 + 5 * q.toque) + q.x) * (2 + 6 * q.toque);
 		ctx.fillStyle = COLORES.blanco;
 		ctx.beginPath();
 		ctx.moveTo(x + 22, y + 14 + meneo);
@@ -1077,14 +1077,69 @@ function dibujarOlasMapa() {
 
 function dibujarNubesMapa() {
 	for (const n of NUBES_MAPA) {
-		const x = modulo(n.x + tiempo * n.vel, MAPA_ANCHO + 400) - 200;
-		const r = 26 * n.tam;
+		const x = xNubeMapa(n);
+		const r = 26 * n.tam * (1 + 0.25 * n.toque * Math.abs(Math.sin(n.toque * 9))); // se esponja al tocarla
 		ctx.fillStyle = "rgba(255,255,255,0.9)";
 		circulo(x, n.y, r);
 		circulo(x + r * 0.95, n.y + r * 0.25, r * 0.75);
 		circulo(x - r * 0.95, n.y + r * 0.3, r * 0.65);
 		ctx.fillRect(x - r * 1.5, n.y + r * 0.2, r * 3.1, r * 0.7);
 	}
+}
+
+const xNubeMapa = (n) => modulo(n.x + tiempo * n.vel + n.empuje, MAPA_ANCHO + 400) - 200;
+
+// ---------- Mapa interactivo ----------
+// Al pasar el puntero (o tocar) los animales hacen su sonido y las islas,
+// que flotan solas, rebotan: el faro gira su luz, las palmeras se mecen y
+// el bote se zarandea. Las nubes se esponjan y se hacen a un lado.
+// Las islas flotan; al tocarlas (toque de 1 → 0) rebotan y se aplastan
+function dibujarIslaMovil(q) {
+	const flota = Math.sin(tiempo * 0.9 + q.x * 0.013) * 4 - (mapa.bajoPuntero === q ? 6 : 0);
+	const rebote = q.toque * Math.sin(q.toque * 18);
+	ctx.save();
+	ctx.translate(q.x, q.y + flota - Math.abs(rebote) * 10);
+	ctx.rotate(Math.sin(tiempo * 0.6 + q.y) * 0.015 + rebote * 0.06);
+	ctx.scale(1 + rebote * 0.08, 1 - rebote * 0.08);
+	ctx.translate(-q.x, -q.y);
+	dibujarIslaDecorativa(q);
+	ctx.restore();
+}
+
+// Lo que hay bajo un punto de la pantalla: un ave, el delfín, una nube o
+// una isla (o null). Las aves van en px de pantalla; lo demás, en el mapa.
+function cosaEnMapa(px, py) {
+	for (const a of aves) if (Math.abs(px - a.x) < 30 * a.tam * S && Math.abs(py - a.y) < 22 * a.tam * S) return a;
+	if (delfinEnPantalla(px, py)) return mapa.delfin;
+	const v = vistaMapa();
+	const x = (px - v.ox) / v.k;
+	const y = (py - v.oy) / v.k;
+	for (const n of NUBES_MAPA) if (Math.abs(x - xNubeMapa(n)) < 45 * n.tam && Math.abs(y - n.y) < 26 * n.tam) return n;
+	return ISLAS_MAPA.find((q) => ((x - q.x) / (q.rx * 1.1)) ** 2 + ((y - q.y + 15) / (q.ry * 1.7)) ** 2 < 1) || null;
+}
+
+// Reacción de cada cosa: su sonido y su movimiento (fuerte = clic o toque)
+function tocarCosaMapa(c, fuerte) {
+	if (aves.includes(c)) {
+		c.susto = 1;
+		sonar(c.tipo === TIPOS_AVE[2] ? "loro" : "guacamaya");
+	} else if (c === mapa.delfin) sonar("delfin");
+	else if (NUBES_MAPA.includes(c)) {
+		c.toque = 1;
+		c.empuje += fuerte ? 90 : 40;
+		sonar("nube");
+	} else {
+		c.toque = fuerte ? 1 : 0.6;
+		sonar(c.tipo === "faro" ? "faro" : c.tipo === "muelle" ? "bote" : "isla");
+	}
+}
+
+// El puntero se movió: suena solo al llegar a algo nuevo (no a cada pixel)
+function punteroMapa(px, py) {
+	const c = cosaEnMapa(px, py);
+	if (c !== mapa.bajoPuntero && c) tocarCosaMapa(c, false);
+	mapa.bajoPuntero = c;
+	return !!c;
 }
 
 // El personaje fijo de cada mundo, parado en su meseta con su nombre
@@ -1233,7 +1288,8 @@ function dibujarMapa(dt) {
 	const sAntes = S;
 	S = 1;
 	dibujarOlasMapa();
-	ISLAS_MAPA.forEach(dibujarIslaDecorativa);
+	for (const c of [...ISLAS_MAPA, ...NUBES_MAPA]) c.toque = Math.max(0, c.toque - dt * 0.9);
+	ISLAS_MAPA.forEach(dibujarIslaMovil);
 	dibujarDelfin();
 	dibujarCentroMapa();
 	mesetas.forEach((q, i) => dibujarMesetaBase(q, apagadoMundo(i)));

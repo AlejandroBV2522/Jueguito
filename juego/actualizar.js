@@ -186,7 +186,7 @@ function actualizar(dt) {
 	}
 	actualizarVirus(dt); // virus de la oficina (mundo.js → oficina.virus)
 	actualizarMision(dt); // llevar algo del punto A al B (mundo.js → mision)
-	actualizarCafeteria(); // Heber saluda en su terraza (cafeteria.js)
+	actualizarCafeteria(); // Eber saluda en su terraza (cafeteria.js)
 	actualizarColeccionables(); // guacamayas ocultas (mundo.js → coleccionables)
 	actualizarChispas(dt);
 	for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);

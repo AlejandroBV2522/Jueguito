@@ -35,6 +35,7 @@ const mapa = {
 	dir: 1,
 	// Huevo de pascua: un delfín que salta del mar de vez en cuando
 	delfin: { t: -1, x: 0, y: 0, dir: 1, proxima: 6, cx: 0, cy: 0 },
+	bajoPuntero: null, // ave, delfín, nube o isla bajo el puntero (dibujo-mapa.js → punteroMapa)
 };
 // Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
 // los mundos, pero ninguno queda completado: se pueden jugar una y otra vez.

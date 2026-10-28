@@ -1,4 +1,4 @@
-/* Camino a Celaque — la Cafetería (mundo extra): la barra de café, la gente conversando al fondo y la terraza de Heber. Ver juego/LEEME.md. */
+/* Camino a Celaque — la Cafetería (mundo extra): la barra de café, la gente conversando al fondo y la terraza de Eber. Ver juego/LEEME.md. */
 "use strict";
 
 // ---------- Cafetería ----------
@@ -8,9 +8,12 @@
 // dorados (fisica.js), y el mundo queda completo. Con oficina.fondo, todos
 // los personajes del juego conversan al fondo en sus mesas; con
 // oficina.terraza, arriba de un mueble hay una terraza alta (solo se llega
-// con el café) donde está quien diga oficina.dj (Heber) con su parlante.
+// con el café) donde está quien diga oficina.dj (Eber), sentado con su
+// sopa junto a su parlante. Al fondo, además, hay invitados: unos más en
+// los grupos (un grupo de cada tres, sentado en una banca) y otros que
+// caminan de un lado a otro, más atrás. Quien habla se ríe dando saltitos.
 
-const FRASES_FONDO = ["jaja", "☕", "♪", "¡Qué bien!", "♥", "¿Y tú?", "¡Claro!", "jeje"];
+const FRASES_FONDO = ["jaja", "☕", "♪", "¡Qué bien!", "♥", "¿Y tú?", "¡Claro!", "jeje", "¡Salud!", "¡Ja ja ja!", "¡Qué rico!", "¡Eso!"];
 
 // Toda la gente del juego (los compañeros de las oficinas y la del camino
 // de Talento), menos la de la misma Cafetería. Se arma la primera vez.
@@ -21,6 +24,20 @@ function gentePara(m) {
 	genteCafeteria = [...npcs, ...otros].filter((n) => n.apariencia);
 	return genteCafeteria;
 }
+
+// Invitados sin nombre (más gente en el fondo): ropa de colores distintos
+const ROPA_INVITADOS = [COLORES.verdeInstitucional, COLORES.beige, "#d9776a", "#6a8fd9", "#e0b84a", "#8a6ac9", "#4aa3a0", "#c97a9a"];
+const INVITADOS_CAFETERIA = Array.from({ length: 16 }, (_, k) => ({
+	nombre: "",
+	apariencia: {
+		cuerpo: k % 2 ? "chica" : "chico",
+		casco: "#ffffff",
+		chaleco: ROPA_INVITADOS[(k * 3) % ROPA_INVITADOS.length],
+		pelo: ["#1f1a17", "#3b2414", "#5a2a14", "#2b1a12"][k % 4],
+		pantalon: ["#2d3a4a", "#4a3a2d", "#3a4a3d"][k % 3],
+	},
+}));
+const INVITADOS_EN_GRUPOS = 8; // los primeros van a los grupos; los demás caminan
 
 // Lo que ya ocupa el piso (decoración, columnas, muebles, compañeros, la
 // terraza, la puerta y la barra): ahí no se para nadie del fondo, para que
@@ -43,7 +60,8 @@ function ocupadoEnCafeteria(of) {
 const PASO_GENTE = 44; // entre una persona y la siguiente de un grupo
 function gruposFondo(m) {
 	if (m.oficina.grupos) return m.oficina.grupos;
-	const gente = gentePara(m);
+	const reales = gentePara(m);
+	const gente = [...reales, ...INVITADOS_CAFETERIA.slice(0, INVITADOS_EN_GRUPOS)]; // los invitados, al final: si no caben, no pasa nada
 	const of = m.oficina;
 	const grupos = [];
 	let k = 0;
@@ -55,14 +73,14 @@ function gruposFondo(m) {
 			const cuantos = Math.min(4, gente.length - k, Math.floor((a - x - 20) / PASO_GENTE) + 1);
 			if (cuantos < 2 || a === Infinity) break;
 			const ancho = (cuantos - 1) * PASO_GENTE;
-			grupos.push({ x: x + ancho / 2, gente: gente.slice(k, k + cuantos), fase: grupos.length * 1.7 });
+			grupos.push({ x: x + ancho / 2, gente: gente.slice(k, k + cuantos), fase: grupos.length * 1.7, sentados: grupos.length % 3 === 1 });
 			k += cuantos;
 			x += ancho + 70;
 		}
 		desde = Math.max(desde, b);
 	}
 	of.grupos = grupos;
-	of.genteFuera = gente.length - k; // la prueba "cafeteria" revisa que sea 0
+	of.genteFuera = Math.max(0, reales.length - k); // la prueba "cafeteria" revisa que sea 0 (los invitados no cuentan)
 	return grupos;
 }
 
@@ -84,43 +102,105 @@ function globoChico(x, y, texto) {
 	ctx.fillText(texto, x, y - h / 2 + 1 * S);
 }
 
+// Invitados que caminan de un lado a otro del local, más atrás que los
+// grupos (más chicos y más arriba); dan la vuelta en las orillas
+function dibujarCaminantesCafeteria(m, sAntes) {
+	const of = m.oficina;
+	const pie = SUELO - 30 * S;
+	const largo = of.terminalX - of.x0 - 400;
+	INVITADOS_CAFETERIA.slice(INVITADOS_EN_GRUPOS).forEach((n, i) => {
+		const vel = 38 + (i % 3) * 9;
+		const p = modulo((tiempo * vel) / (2 * largo) + i * 0.137, 1);
+		const x = of.x0 + 200 + (p < 0.5 ? p * 2 : 2 - p * 2) * largo;
+		const sx = x - camara;
+		if (sx < -100 * S || sx > W + 100 * S) return;
+		const paso = tiempo * vel * 0.16 + i;
+		ctx.save();
+		ctx.globalAlpha = 0.8;
+		ctx.translate(sx, pie - Math.abs(Math.sin(paso)) * 2.5 * S);
+		ctx.rotate(Math.sin(paso) * 0.04);
+		S = sAntes * 0.6;
+		dibujarNpcFoto(0, 0, n, p < 0.5 ? 1 : -1);
+		S = sAntes;
+		ctx.restore();
+	});
+}
+
 // La gente conversando al fondo: más chica y más arriba (está más lejos),
 // detrás de las columnas y de todo lo demás (dibujo-oficina.js la llama
-// antes que las columnas), y solo en los huecos libres (gruposFondo)
+// antes que las columnas), y solo en los huecos libres (gruposFondo). Los
+// grupos sentados están en una banca, con una mesa baja al frente.
 function dibujarFondoCafeteria(m) {
 	if (!m.oficina.fondo) return;
 	const pie = SUELO - 8 * S;
 	const k = 0.72; // tamaño, comparado con quien está al frente
 	const sAntes = S;
+	dibujarCaminantesCafeteria(m, sAntes);
 	for (const g of gruposFondo(m)) {
 		const sx = g.x - camara;
 		if (sx < -200 * S || sx > W + 200 * S) continue;
 		const lugares = g.gente.map((_, j) => (j - (g.gente.length - 1) / 2) * PASO_GENTE * S);
-		// Mesa alta con sus tazas, en medio del grupo
-		ctx.fillStyle = "#6f5238";
-		ctx.fillRect(sx - 2.5 * S, pie - 52 * S, 5 * S, 52 * S);
-		ctx.fillRect(sx - 13 * S, pie - 3 * S, 26 * S, 3 * S);
-		ctx.fillStyle = "#c89b6d";
-		ctx.beginPath();
-		ctx.ellipse(sx, pie - 54 * S, 20 * S, 5 * S, 0, 0, Math.PI * 2);
-		ctx.fill();
-		ctx.fillStyle = COLORES.blanco;
-		ctx.fillRect(sx - 10 * S, pie - 63 * S, 6 * S, 7 * S);
-		ctx.fillStyle = COLORES.verdeInstitucional;
-		ctx.fillRect(sx + 4 * S, pie - 63 * S, 6 * S, 7 * S);
-		// Cada uno mira hacia la mesa
-		ctx.save();
-		ctx.globalAlpha = 0.88;
-		S = sAntes * k;
-		g.gente.forEach((n, j) => dibujarNpcFoto(sx + lugares[j], pie, n, lugares[j] > 0 ? -1 : 1));
-		S = sAntes;
-		ctx.restore();
-		// Uno de ellos dice algo (cambia cada 2.5 s)
-		const turno = Math.floor(tiempo / 2.5 + g.fase);
-		if (modulo(tiempo / 2.5 + g.fase, 1) < 0.75) {
-			const j = turno % g.gente.length;
-			globoChico(sx + lugares[j], pie - 92 * S, FRASES_FONDO[(turno * 3 + j) % FRASES_FONDO.length]);
+		const ancho = (g.gente.length - 1) * PASO_GENTE * S + 40 * S;
+		const asiento = pie - 14 * S; // la banca de los que están sentados
+		if (g.sentados) {
+			// Respaldo de la banca (detrás de ellos)
+			ctx.fillStyle = "#8a6748";
+			rectRedondo(sx - ancho / 2, asiento - 30 * S, ancho, 8 * S, 3 * S);
+			ctx.fill();
+		} else {
+			// Mesa alta con sus tazas, en medio del grupo
+			ctx.fillStyle = "#6f5238";
+			ctx.fillRect(sx - 2.5 * S, pie - 52 * S, 5 * S, 52 * S);
+			ctx.fillRect(sx - 13 * S, pie - 3 * S, 26 * S, 3 * S);
+			ctx.fillStyle = "#c89b6d";
+			ctx.beginPath();
+			ctx.ellipse(sx, pie - 54 * S, 20 * S, 5 * S, 0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.fillStyle = COLORES.blanco;
+			ctx.fillRect(sx - 10 * S, pie - 63 * S, 6 * S, 7 * S);
+			ctx.fillStyle = COLORES.verdeInstitucional;
+			ctx.fillRect(sx + 4 * S, pie - 63 * S, 6 * S, 7 * S);
 		}
+		// Quién habla ahora (cambia cada 1.8 s): ese se ríe dando saltitos
+		const turno = Math.floor(tiempo / 1.8 + g.fase);
+		const hablando = modulo(tiempo / 1.8 + g.fase, 1) < 0.8;
+		const quien = turno % g.gente.length;
+		g.gente.forEach((n, j) => {
+			const risa = hablando && j === quien ? Math.abs(Math.sin(tiempo * 9 + j)) * 5 * S : Math.abs(Math.sin(tiempo * 2.4 + g.fase + j * 1.3)) * 1.5 * S;
+			ctx.save();
+			ctx.globalAlpha = 0.9;
+			if (g.sentados) {
+				// Sentados: lo de abajo de la banca no se ve
+				ctx.beginPath();
+				ctx.rect(sx - ancho, 0, ancho * 2, asiento);
+				ctx.clip();
+			}
+			ctx.translate(sx + lugares[j], pie + (g.sentados ? 24 * S : 0) - risa);
+			ctx.rotate(Math.sin(tiempo * 1.8 + j + g.fase) * 0.035);
+			S = sAntes * k;
+			dibujarNpcFoto(0, 0, n, lugares[j] > 0 ? -1 : 1); // cada uno mira hacia el centro
+			S = sAntes;
+			ctx.restore();
+		});
+		if (g.sentados) {
+			// El asiento de la banca y la mesa baja con sus tazas, al frente
+			ctx.fillStyle = "#a07c58";
+			rectRedondo(sx - ancho / 2, asiento - 2 * S, ancho, 7 * S, 3 * S);
+			ctx.fill();
+			ctx.fillStyle = "#6f5238";
+			for (const lado of [-1, 1]) ctx.fillRect(sx + lado * (ancho / 2 - 8 * S) - 2 * S, asiento + 4 * S, 4 * S, pie - asiento - 4 * S);
+			ctx.fillStyle = "#c89b6d";
+			ctx.beginPath();
+			ctx.ellipse(sx, pie - 10 * S, 18 * S, 4.5 * S, 0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.fillStyle = "#6f5238";
+			ctx.fillRect(sx - 2 * S, pie - 9 * S, 4 * S, 9 * S);
+			ctx.fillStyle = COLORES.blanco;
+			ctx.fillRect(sx - 9 * S, pie - 18 * S, 6 * S, 7 * S);
+			ctx.fillStyle = "#e0b84a";
+			ctx.fillRect(sx + 3 * S, pie - 18 * S, 6 * S, 7 * S);
+		}
+		if (hablando) globoChico(sx + lugares[quien], pie - (g.sentados ? 70 : 92) * S, FRASES_FONDO[(turno * 3 + quien) % FRASES_FONDO.length]);
 	}
 }
 
@@ -128,7 +208,7 @@ function dibujarFondoCafeteria(m) {
 const pantallaY = (alto) => SUELO + 38 * S - alto * S;
 
 // La terraza alta: losa con baranda, columnas hasta el piso, plantas,
-// foquitos y Heber con su parlante (y notas de música)
+// foquitos y Eber sentado con su sopa junto a su parlante (y notas de música)
 function dibujarTerraza(m) {
 	const t = m.oficina.terraza;
 	if (!t) return;
@@ -179,18 +259,62 @@ function dibujarTerraza(m) {
 		ctx.fillStyle = COLORES.beige;
 		ctx.fillRect(px - 10 * S, y - 14 * S, 20 * S, 14 * S);
 	}
-	// Heber, bailando junto a su parlante
+	// Eber, sentado en su mesita tomándose una sopa, junto a su parlante
 	const dj = m.djNpc;
 	if (dj) {
-		const hx = sx + w * 0.45;
-		const sAntes = S;
-		const baile = Math.abs(Math.sin(tiempo * 5)) * 4 * S;
+		const hx = sx + w * 0.4;
+		const asiento = y - 30 * S;
+		// Silla (respaldo detrás de él)
+		ctx.fillStyle = "#6f5238";
+		ctx.fillRect(hx - 22 * S, asiento - 34 * S, 5 * S, 34 * S);
+		// Sentado: lo de abajo del asiento no se ve
 		ctx.save();
-		ctx.translate(0, -baile);
-		dibujarNpcFoto(hx, y, dj, heroe.x > t.x + t.medioAncho * 0.45 ? 1 : -1);
+		ctx.beginPath();
+		ctx.rect(hx - 80 * S, 0, 160 * S, asiento);
+		ctx.clip();
+		ctx.translate(0, Math.abs(Math.sin(tiempo * 4)) * -1.5 * S); // sigue el ritmo
+		dibujarNpcFoto(hx, y + 38 * S, dj, 1);
 		ctx.restore();
-		S = sAntes;
-		dibujarPlacaImportante(hx, y - 150 * S, `${dj.nombre} ♪`);
+		ctx.fillStyle = "#a07c58"; // asiento
+		ctx.fillRect(hx - 24 * S, asiento - 2 * S, 30 * S, 6 * S);
+		// Mesita al frente, con el tazón de sopa humeando
+		const mesa = asiento - 8 * S;
+		const tx = hx + 20 * S;
+		ctx.fillStyle = "#6f5238";
+		ctx.fillRect(tx - 2.5 * S, mesa, 5 * S, y - mesa);
+		ctx.fillStyle = "#c89b6d";
+		ctx.beginPath();
+		ctx.ellipse(tx, mesa, 22 * S, 5 * S, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = COLORES.blanco; // tazón
+		ctx.beginPath();
+		ctx.ellipse(tx, mesa - 6 * S, 11 * S, 7 * S, 0, 0, Math.PI);
+		ctx.fill();
+		ctx.fillStyle = "#e0a24a"; // la sopa
+		ctx.beginPath();
+		ctx.ellipse(tx, mesa - 6 * S, 10 * S, 2.5 * S, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.strokeStyle = "rgba(255,255,255,0.7)"; // vapor
+		ctx.lineWidth = 1.5 * S;
+		for (let k = 0; k < 3; k++) {
+			const u = modulo(tiempo * 0.6 + k / 3, 1);
+			const vx = tx - 5 * S + k * 5 * S + Math.sin(u * 6 + k) * 3 * S;
+			ctx.globalAlpha = 1 - u;
+			linea(vx, mesa - 10 * S - u * 22 * S, vx + Math.sin(u * 6 + k + 1) * 3 * S, mesa - 16 * S - u * 22 * S);
+		}
+		ctx.globalAlpha = 1;
+		// La cuchara va del tazón a la boca y vuelve
+		const ida = (1 - Math.cos(tiempo * 2.4)) / 2; // 0 en el tazón, 1 en la boca
+		const cx = lerp(tx - 2 * S, hx + 9 * S, ida);
+		const cy = lerp(mesa - 9 * S, asiento - 50 * S, ida);
+		ctx.strokeStyle = "#9aa3a5";
+		ctx.lineWidth = 2 * S;
+		linea(cx, cy, cx + 9 * S, cy + 4 * S);
+		ctx.fillStyle = "#9aa3a5";
+		ctx.beginPath();
+		ctx.ellipse(cx, cy, 3.5 * S, 2 * S, 0, 0, Math.PI * 2);
+		ctx.fill();
+		dibujarPlacaImportante(hx, y - 130 * S, `${dj.nombre} ♪`);
 		// Parlante
 		const px = sx + w * 0.75;
 		const late = 1 + 0.06 * Math.abs(Math.sin(tiempo * 10));
@@ -307,7 +431,7 @@ function beberCafe(m) {
 	actualizarHudOficina();
 }
 
-// Heber saluda la primera vez que llegas a su terraza
+// Eber saluda la primera vez que llegas a su terraza
 function actualizarCafeteria() {
 	const m = oficinaActual;
 	if (!m || !m.oficina.terraza || estado !== "oficina") return;
