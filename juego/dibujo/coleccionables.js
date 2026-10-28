@@ -15,6 +15,7 @@ function baseColeccionable(m, c) {
 	if (c.sobre === "andamio") return { zona: "camino", base: PLATAFORMAS[k] };
 	if (c.sobre === "roca") return { zona: "cueva", base: OBSTACULOS_CUEVA[k] };
 	if (c.sobre === "nube") return { zona: "oficina", base: m.mision && m.mision.nubes[k] };
+	if (c.sobre === "terraza") return { zona: "oficina", base: m.oficina.terraza };
 	return { zona: "oficina", base: m.oficina.obstaculos[k] };
 }
 
@@ -161,7 +162,7 @@ function dibujarColeccionables() {
 		ctx.restore();
 		dibujarTrofeo(c, sx, sy, r, alfa, tiempo * 10 + p.x); // aletea en su lugar
 		if (cerca > 0.3) {
-			const techo = techoInterfaz(sx);
+			const techo = techoInterfaz(sx) - camaraY * S; // (con la cámara subida, la pantalla empieza más arriba)
 			if (sy < techo + r * 0.5) avisosArriba.push({ sx, techo, alfa: cerca }); // se dibuja después del héroe
 		}
 		// Destellos que titilan alrededor

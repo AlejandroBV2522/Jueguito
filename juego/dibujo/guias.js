@@ -22,6 +22,8 @@ function objetivoActual() {
 		const of = oficinaActual.oficina;
 		const siguiente = of.companeros.find((n) => !n.hablado);
 		if (siguiente) return siguiente.x;
+		const mi = oficinaActual.mision;
+		if (!misionLista(oficinaActual)) return mi.paso === "buscar" ? mi.aX : mi.bX;
 		return oficinaActual.completo ? of.x0 + 70 : of.terminalX - 50;
 	}
 	return null;

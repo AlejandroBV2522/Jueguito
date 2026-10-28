@@ -8,7 +8,7 @@ function dibujarAvisos(dt) {
 	for (const a of avisos) {
 		const x = heroe.x - camara;
 		// Nunca debajo de la barra de arriba (p. ej. con el héroe en una nube)
-		const y = Math.max(105 * S, SUELO + 38 * S - heroe.y * S - 150 * S) - a.t * 35 * S;
+		const y = Math.max(105 * S - camaraY * S, SUELO + 38 * S - heroe.y * S - 150 * S) - a.t * 35 * S;
 		const alfa = Math.min(1, 2.4 - a.t);
 		const zoom = 1 + Math.max(0, 0.3 - a.t) * 1.5;
 		ctx.save();

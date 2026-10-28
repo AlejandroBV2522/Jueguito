@@ -23,12 +23,15 @@
     <script defer src="mundos/seguridad/tema.js"></script>
     <script defer src="mundos/ia/mundo.js"></script>
     <script defer src="mundos/ia/tema.js"></script>
+    <script defer src="mundos/cafeteria/mundo.js"></script>
+    <script defer src="mundos/cafeteria/tema.js"></script>
     <!-- El motor del juego, en este orden (ver juego/LEEME.md) -->
     <script defer src="juego/base/constantes.js"></script>
     <script defer src="juego/camino/fisica.js"></script>
     <script defer src="juego/base/utilidades.js"></script>
     <script defer src="juego/base/ajustes.js"></script>
     <script defer src="juego/base/sonido.js"></script>
+    <script defer src="juego/base/musica.js"></script>
     <script defer src="juego/base/paleta.js"></script>
     <script defer src="juego/base/canvas.js"></script>
     <script defer src="juego/base/imagenes.js"></script>
@@ -59,6 +62,7 @@
     <script defer src="juego/oficina/dibujo-oficina.js"></script>
     <script defer src="juego/oficina/estaciones.js"></script>
     <script defer src="juego/oficina/virus.js"></script>
+    <script defer src="juego/oficina/cafeteria.js"></script>
     <script defer src="juego/dibujo/coleccionables.js"></script>
     <script defer src="juego/camino/dibujo-letreros.js"></script>
     <script defer src="juego/dibujo/aves.js"></script>
@@ -168,6 +172,8 @@
 
     <!-- Sonido encendido o apagado (se ve siempre, también dentro de los niveles) -->
     <button id="btn-sonido" class="boton boton-secundario boton-chico" aria-pressed="true">♪ Sonido</button>
+    <!-- Solo la música de fondo (los efectos siguen; "Sin sonido" apaga las dos) -->
+    <button id="btn-musica" class="boton boton-secundario boton-chico" aria-pressed="true">♫ Música</button>
 
     <!-- Colección: las mayitas ocultas que ya encontraste (coleccion.js) -->
     <button id="btn-coleccion" class="boton boton-secundario boton-chico" aria-haspopup="dialog">★ Colección</button>

@@ -21,8 +21,13 @@ const mapa = {
 	mensajeT: 0,
 	powerUpT: 0, // destello del héroe al activar el modo fácil (ver dibujarHeroeMapa)
 	victoriaPendiente: false,
-	// Ficha del héroe: camina por el mapa hasta el mundo abierto elegido
+	porAbrir: [], // mundos extra que se abren después del que se está abriendo
+	// Ficha del héroe: camina por la calle del mapa hasta el mundo abierto
+	// elegido (ruta: los puntos que le faltan, ver rutaMapa)
 	heroeMundo: 0,
+	heroeEn: 0, // último mundo por el que pasó
+	destinoRuta: -1,
+	ruta: [],
 	heroeX: null,
 	heroeY: null,
 	fase: 0,
@@ -34,9 +39,26 @@ const mapa = {
 // Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
 // los mundos, pero ninguno queda completado: se pueden jugar una y otra vez.
 const modoPruebas = () => !!CFG.nombrePruebas && nombreJugador.toLowerCase() === CFG.nombrePruebas.toLowerCase();
-const desbloqueado = (i) => i === 0 || modoPruebas() || (!!modulos[i - 1] && modulos[i - 1].completo);
-const todosCompletos = () => modulos.length > 0 && modulos.every((m) => m.completo);
-const primerPendiente = () => Math.max(0, modulos.findIndex((m) => !m.completo));
+// Los mundos extra (mundo.js → extra, como la Cafetería) son opcionales:
+// se abren al completar el de "abreDespues", no suben de nivel ni cuentan
+// para terminar la capacitación.
+const modulosPrincipales = () => modulos.filter((m) => !m.extra);
+// El mundo que hay que completar para abrir el i (null = ya está abierto)
+function anteriorDe(i) {
+	const m = modulos[i];
+	if (m.extra) return modulos.find((x) => x.nombre === m.abreDespues) || null;
+	for (let k = i - 1; k >= 0; k--) if (!modulos[k].extra) return modulos[k];
+	return null;
+}
+const desbloqueado = (i) => {
+	const antes = anteriorDe(i);
+	return modoPruebas() || !antes || antes.completo;
+};
+const todosCompletos = () => modulosPrincipales().length > 0 && modulosPrincipales().every((m) => m.completo);
+const primerPendiente = () => Math.max(0, modulos.findIndex((m) => !m.completo && !m.extra));
+// "Mundo 3" (los extra no tienen número)
+const numeroMundo = (i) => modulos.slice(0, i + 1).filter((m) => !m.extra).length;
+const textoMundo = (i) => (modulos[i].extra ? "Mundo extra" : `Mundo ${numeroMundo(i)}`);
 
 // Progreso guardado en este navegador. Si no se puede (modo privado o
 // almacenamiento bloqueado), el juego sigue igual y solo dura la partida.
@@ -56,7 +78,9 @@ function guardarProgreso() {
 		const antes = modoPruebas() ? leerGuardado() || {} : null;
 		const completos = antes ? antes.completos || [] : modulos.filter((m) => m.completo).map((m) => m.nombre);
 		const nivelGuardado = antes ? Number(antes.nivel) || 0 : nivel;
-		localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel: nivelGuardado, personaje, nombre: nombreJugador }));
+		// Los corazones que lleva acumulados (normales y dorados)
+		const corazonesGuardados = antes ? { vidas: antes.vidas, doradas: antes.doradas } : { vidas, doradas: vidasDoradas };
+		localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel: nivelGuardado, ...corazonesGuardados, personaje, nombre: nombreJugador }));
 	} catch (e) {
 		/* sin almacenamiento */
 	}
@@ -67,7 +91,9 @@ function cargarProgreso() {
 	if (d && Array.isArray(d.completos)) {
 		modulos.forEach((m) => (m.completo = d.completos.includes(m.nombre)));
 		nivel = Math.max(0, Number(d.nivel) || 0);
-		vidas = vidasMax();
+		// Sin corazones guardados (partidas de antes), llenos
+		vidas = Number.isFinite(d.vidas) ? clamp(Math.round(d.vidas), 1, vidasMax()) : vidasMax();
+		vidasDoradas = Number.isFinite(d.doradas) ? clamp(Math.round(d.doradas), 0, DORADAS_MAX) : 0;
 		if (CFG.personajes[d.personaje]) elegirPersonaje(d.personaje);
 		nombreJugador = typeof d.nombre === "string" ? d.nombre.slice(0, 24) : "";
 		ui.nombreJugador.value = nombreJugador;
@@ -94,6 +120,8 @@ function reiniciarProgreso(todo) {
 	});
 	nivel = 0;
 	vidas = VIDAS_BASE;
+	vidasDoradas = 0;
+	mapa.porAbrir = [];
 	if (!modoPruebas()) borrarConstancia(); // la de pruebas no toca la de nadie
 	if (todo) borrarColeccion(); // otra persona: empieza su propia colección
 	mapa.sel = mapa.heroeMundo = 0;
@@ -114,13 +142,23 @@ function completarModulo(m) {
 	}
 	m.completo = true;
 	m.brillo = 1;
+	if (m.extra) {
+		// Un mundo extra no sube de nivel (su premio es otro)
+		avisoMapa(`${m.nombre} ✓`);
+		guardarProgreso();
+		return -1;
+	}
 	nivel++;
-	vidas = vidasMax(); // el corazón nuevo llega lleno
+	ganarCorazon(); // el corazón nuevo llega lleno
 	avisoMapa(`¡Nivel ${nivel}! ${m.nombre} ✓`); // se ve al volver al mapa
 	sonar("nivel");
 	if (todosCompletos()) mapa.victoriaPendiente = true;
+	// Los extra que dependen de este se abren después del siguiente
+	modulos.forEach((x, k) => {
+		if (x.extra && x.abreDespues === m.nombre && !mapa.porAbrir.includes(k)) mapa.porAbrir.push(k);
+	});
 	guardarProgreso();
-	return m.indice + 1 < modulos.length ? m.indice + 1 : -1;
+	return modulos.findIndex((x, k) => k > m.indice && !x.extra);
 }
 
 function abrirMapa() {
@@ -143,6 +181,7 @@ function mostrarMapaTras(i, nuevo) {
 	mapa.carta = false;
 	mapa.sel = mapa.heroeMundo = i;
 	mapa.heroeX = null;
+	guardarProgreso(); // los corazones con los que sales del nivel
 	if (nuevo >= 0) {
 		mapa.abriendo = nuevo;
 		mapa.abrirT = 0;
@@ -194,7 +233,7 @@ function actualizarPanelMapa() {
 	if (acercado) {
 		const m = modulos[mapa.foco];
 		const como = esTactil ? "Toca" : "Haz clic en";
-		ui.mapaBarraTexto.textContent = `Mundo ${mapa.foco + 1} · ${m.nombre} — ${como} el edificio para ver su carta`;
+		ui.mapaBarraTexto.textContent = `${textoMundo(mapa.foco)} · ${m.nombre} — ${como} el edificio para ver su carta`;
 	}
 }
 
@@ -205,7 +244,7 @@ function avisoMapa(texto) {
 
 function avisoCandado(i) {
 	mapa.sacudir[i] = 0.5;
-	avisoMapa(`Completa «${modulos[i - 1].nombre}» para abrir este mundo`);
+	avisoMapa(`Completa «${anteriorDe(i).nombre}» para abrir este mundo`);
 	sonar("candado");
 }
 
@@ -260,11 +299,25 @@ function alejarMapa() {
 	cerrarCarta();
 }
 
+// Orden de las flechas: el de la calle (cada extra justo después del
+// mundo que lo abre)
+function ordenMapa() {
+	const orden = [];
+	modulos.forEach((m, i) => {
+		if (m.extra) return;
+		orden.push(i);
+		modulos.forEach((x, k) => x.extra && x.abreDespues === m.nombre && orden.push(k));
+	});
+	modulos.forEach((m, i) => !orden.includes(i) && orden.push(i));
+	return orden;
+}
+
 // Flechas: en la vista general mueven la selección; acercado, pasan
 // directo al mundo de al lado (si está abierto).
 function moverSeleccionMapa(paso) {
 	if (mapa.carta) return;
-	const i = modulo(mapa.sel + paso, modulos.length);
+	const orden = ordenMapa();
+	const i = orden[modulo(orden.indexOf(mapa.sel) + paso, orden.length)];
 	if (mapa.foco >= 0 && mapa.zObjetivo === 1) {
 		if (desbloqueado(i)) elegirMundo(i);
 		else avisoCandado(i);
@@ -277,7 +330,8 @@ function moverSeleccionMapa(paso) {
 function abrirCarta(i) {
 	const m = modulos[i];
 	mapa.carta = true;
-	ui.cartaMundo.textContent = `Mundo ${i + 1} de ${modulos.length}${m.completo ? "  ·  ✓ Completado" : ""}`;
+	const cual = m.extra ? "Mundo extra · opcional" : `Mundo ${numeroMundo(i)} de ${modulosPrincipales().length}`;
+	ui.cartaMundo.textContent = `${cual}${m.completo ? "  ·  ✓ Completado" : ""}`;
 	ui.cartaTitulo.textContent = m.sistema || m.nombre;
 	ui.cartaModulo.textContent = `Módulo ${m.nombre}${m.subtitulo ? " · " + m.subtitulo : ""}`;
 	ui.cartaDescripcion.textContent = m.descripcion || "";
@@ -290,7 +344,9 @@ function abrirCarta(i) {
 		: [
 				m.oficina.companeros.length > 1
 					? `Habla con ${m.oficina.companeros.length} compañeros de la oficina.`
-					: `Escucha lo que te explica ${m.oficina.companeros[0].nombre}.`,
+					: m.oficina.companeros.length
+						? `Escucha lo que te explica ${m.oficina.companeros[0].nombre}.`
+						: "Conversa con todo el equipo, que está aquí reunido.",
 				...(m.mision ? [`Lleva ${m.mision.objeto} del punto A al punto B.`] : []),
 				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length, m),
 			];
@@ -354,13 +410,18 @@ function actualizarMapa(dt) {
 		const antesT = mapa.abrirT;
 		mapa.abrirT += dt;
 		if (antesT < 0.8 && mapa.abrirT >= 0.8) {
-			avisoMapa(`¡Se abrió el mundo ${mapa.abriendo + 1}: ${modulos[mapa.abriendo].nombre}!`);
+			const m = modulos[mapa.abriendo];
+			avisoMapa(m.extra ? `¡Se abrió un mundo extra: ${m.nombre}!` : `¡Se abrió el mundo ${numeroMundo(mapa.abriendo)}: ${m.nombre}!`);
 			sonar("abrir");
 		}
 		if (mapa.abrirT >= 1.8) {
-			mapa.sel = mapa.heroeMundo = mapa.abriendo;
+			// La ficha va al mundo nuevo (a un extra no: es opcional)
+			if (!modulos[mapa.abriendo].extra) mapa.sel = mapa.heroeMundo = mapa.abriendo;
 			mapa.abriendo = -1;
 		}
+	} else if (mapa.porAbrir.length && mapa.foco < 0) {
+		mapa.abriendo = mapa.porAbrir.shift();
+		mapa.abrirT = 0;
 	} else if (mapa.victoriaPendiente && mapa.foco < 0 && estado === "mapa") {
 		mapa.victoriaPendiente = false;
 		abrirRepaso(); // una pregunta de cada módulo y después la bienvenida
@@ -380,21 +441,56 @@ function actualizarMapa(dt) {
 		if (p) Object.assign(d, { x: p.x, y: p.y, dir: Math.random() < 0.5 ? 1 : -1, t: 0 });
 	}
 
-	// La ficha del héroe camina hasta su mundo (en unidades del mapa)
-	const q = lugarHeroeMapa(mapa.heroeMundo);
+	moverHeroeMapa(dt);
+}
+
+// La ficha del héroe va por la calle (sin cortar por el agua): sigue los
+// puntos de rutaMapa (dibujo-mapa.js) de mundo en mundo. Si eliges otro
+// mundo a medio camino, llega al siguiente cruce y de ahí sigue al nuevo.
+function moverHeroeMapa(dt) {
 	if (mapa.heroeX === null) {
+		const q = lugarHeroeMapa(mapa.heroeMundo);
 		mapa.heroeX = q.x;
 		mapa.heroeY = q.y;
+		mapa.heroeEn = mapa.destinoRuta = mapa.heroeMundo;
+		mapa.ruta = [];
 	}
-	const dx = q.x - mapa.heroeX;
-	const dy = q.y - mapa.heroeY;
-	const dist = Math.hypot(dx, dy);
-	mapa.moviendo = dist > 2;
-	if (mapa.moviendo) {
-		const paso = Math.min(dist, 520 * dt);
-		mapa.heroeX += (dx / dist) * paso;
-		mapa.heroeY += (dy / dist) * paso;
+	if (mapa.destinoRuta !== mapa.heroeMundo) {
+		const corte = mapa.ruta.findIndex((p) => p.nodo >= 0);
+		const desde = corte >= 0 ? mapa.ruta[corte].nodo : mapa.heroeEn;
+		const resto = corte >= 0 ? mapa.ruta.slice(0, corte + 1) : [];
+		mapa.ruta = [...resto, ...rutaMapa(desde, mapa.heroeMundo)];
+		mapa.destinoRuta = mapa.heroeMundo;
+	}
+	mapa.moviendo = mapa.ruta.length > 0;
+	if (!mapa.moviendo) return;
+	// Más rápido mientras más lejos queda (cruzar todo el mapa no tarda tanto)
+	let falta = 0;
+	let x = mapa.heroeX;
+	let y = mapa.heroeY;
+	for (const p of mapa.ruta) {
+		falta += Math.hypot(p.x - x, p.y - y);
+		x = p.x;
+		y = p.y;
+	}
+	let paso = clamp(falta / 1.3, 520, 1500) * dt;
+	while (paso > 0 && mapa.ruta.length) {
+		const p = mapa.ruta[0];
+		const dx = p.x - mapa.heroeX;
+		const dy = p.y - mapa.heroeY;
+		const dist = Math.hypot(dx, dy);
 		if (Math.abs(dx) > 1) mapa.dir = Math.sign(dx);
-		mapa.fase += dt * 10;
+		if (dist <= paso) {
+			mapa.heroeX = p.x;
+			mapa.heroeY = p.y;
+			paso -= dist;
+			if (p.nodo >= 0) mapa.heroeEn = p.nodo;
+			mapa.ruta.shift();
+		} else {
+			mapa.heroeX += (dx / dist) * paso;
+			mapa.heroeY += (dy / dist) * paso;
+			paso = 0;
+		}
 	}
+	mapa.fase += dt * 10;
 }

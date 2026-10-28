@@ -16,10 +16,12 @@ window.MODULOS.push({
   icono: "escudo",
   color: "#042523", // verde profundo
   foto: "assets/edificios/Acacias.png",
+  logo: "assets/logos/proyecto-acacias.png",
   fotoBordes: { arriba: 0.05, abajo: 0.12, izquierda: 0.08, derecha: 0.08 },
   // virus: salen virus que hay que esquivar (agacharse o saltar) antes del antivirus.
-  // largo: oficina más larga que las demás (2600), para esquivar más virus
-  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, largo: 3200, edificio: "Acacias San Ignacio" },
+  // anzuelos: anzuelos de phishing que bajan del techo (se pasa cuando suben).
+  // largo: oficina el doble de larga que las demás (2600), para esquivar más cosas
+  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, anzuelos: true, largo: 5200, edificio: "Acacias San Ignacio" },
   anfitrion: {
     nombre: "Sergio Aguiriano",
     cuerpo: "chico",
@@ -28,6 +30,7 @@ window.MODULOS.push({
       "¡Hola! Soy Sergio Aguiriano y te doy la bienvenida al módulo de Seguridad.",
       "En Celaque aplicamos la norma ISO 27001: cuida cómo entramos a los sistemas, los equipos que usamos y cómo nos conectamos a internet.",
       "Hoy tenemos un problema: unos virus dañaron el antivirus del fondo y vienen hacia ti. Agáchate para que no te den los que vuelan alto y salta los que ruedan por el piso.",
+      "Y cuidado con los anzuelos de phishing que bajan del techo: espera a que suban y pasa por debajo. El camino es largo y, mientras más avanzas, más virus salen.",
       "El equipo te va a dar las buenas prácticas en tres niveles: lo personal, tu equipo y la red. Al hablar con alguien los virus se detienen. Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
     ],
   },
@@ -35,7 +38,6 @@ window.MODULOS.push({
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
     { nombre: "Mayita Agradecida", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
-    { nombre: "Mayita Divertida", sobre: "mueble", n: 1, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Este es el módulo de Seguridad.", "Aplicamos la norma ISO 27001: cuidar la información es trabajo de todos."],
   // ✏️ Borrador: revisar con Sergio Aguiriano. Un nivel de buenas prácticas por compañero.

@@ -87,6 +87,7 @@ function tramoRobot(m, r) {
 const robotDePregunta = (m, k) => m.oficina.robots.findIndex((_, r) => k < tramoRobot(m, r).hasta);
 
 function abrirTerminal(m) {
+	if (m.oficina.estacion === "cafe") return beberCafe(m); // la Cafetería (cafeteria.js)
 	m.terminalVisitada = true;
 	if (!misionLista(m)) {
 		const texto = textoMision(m);

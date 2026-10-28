@@ -12,6 +12,7 @@ window.MODULOS.push({
   icono: "nube",
   color: "#488478", // verde institucional
   foto: "assets/edificios/Atlas.png",
+  logo: "assets/logos/proyecto-atlas.png",
   oficina: { vista: "nubes", tema: "documentos", edificio: "Torre Atlas", piso: 40 },
   anfitrion: {
     nombre: "Luis Morán",
@@ -20,34 +21,66 @@ window.MODULOS.push({
     dialogo: [
       "¡Hola! Soy Luis Morán y te doy la bienvenida al módulo de Plataformas.",
       "SharePoint es el repositorio principal de información de Celaque: cada área tiene una carpeta por departamento con la documentación de sus procesos y reportes.",
-      "Ahí los equipos trabajan juntos un documento en tiempo real, y el historial de versiones deja ver los cambios y recuperar una versión anterior.",
-      "Te pido un favor: Aldo, un solicitante, todavía no puede trabajar. Sube a la nube, al punto A, por sus permisos y llévaselos al punto B.",
+      "Hoy lo vas a conocer subiendo a la nube, etapa por etapa, tal como viene en la capacitación.",
+      "Te pido un favor: Aldo, un solicitante, todavía no puede trabajar. Su licencia de Microsoft está en lo más alto de la nube: súbete por ella y bájasela.",
+      "Ten cuidado: en el camino vuelan halcones de malas prácticas que te quieren empujar. Si te caes, tendrás que volver a subir. ¡Salto a salto!",
     ],
   },
   // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Mayita Directa", sobre: "nube", n: 2, altura: 170, imagen: "assets/trofeos/mayita.png" }, // valor: Comunicación Directa
-    { nombre: "Mayita Contenta", sobre: "mueble", n: 6, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
+    { nombre: "Mayita Directa", sobre: "nube", n: 27, altura: 170, imagen: "assets/trofeos/mayita.png" }, // valor: Comunicación Directa (sobre el descanso de la etapa 3)
   ],
   intro: [
     "Bienvenido al módulo de Plataformas.",
     "SharePoint es el repositorio principal de información de la empresa. Outlook es tu correo y calendario, y Teams tu chat y reuniones.",
   ],
-  // Solo Luis: lo demás lo explica quien recibe los permisos en el punto B
+  // Solo Luis: lo demás lo explican las etapas de la torre y quien recibe la licencia en el punto B
   comentarios: [],
-  // Llevar los permisos del punto A (arriba, en la nube) al punto B (ver mision.js)
+  // Subir por la torre de nubes hasta la licencia (punto A, arriba) y bajársela a
+  // Aldo (punto B, abajo). Ver mision.js. Si te caes, vuelves a subir desde donde caíste.
   mision: {
-    objeto: "los permisos",
-    a: { letrero: "La nube", nube: true },
+    objeto: "la licencia",
+    a: { letrero: "Licencia", nube: true },
+    // Una etapa de la torre por tema, en el orden de la capacitación (PDF
+    // "Capacitación SharePoint, Outlook y Parámetros de Excel"). El cartel
+    // sale al llegar a la nube de descanso de cada etapa. Outlook y Teams
+    // los explica Aldo: llegan con la licencia.
+    // halcon: la mala práctica que vuela en esa etapa y te empuja (✏️ Borrador:
+    // es lo contrario de lo que enseña el tema; revisar con Luis Morán).
+    etapas: [
+      {
+        titulo: "Concepto",
+        halcon: "Archivo Suelto",
+        texto: "SharePoint es la plataforma de Microsoft para almacenar, organizar, compartir y acceder a información desde cualquier dispositivo. Es el repositorio principal de Celaque: cada área tiene una carpeta por departamento.",
+      },
+      {
+        titulo: "Gestión de documentos",
+        halcon: "Final_v3_FINAL",
+        texto: "Los documentos se guardan y se comparten en bibliotecas centralizadas, con control de versiones: puedes rastrear los cambios y recuperar una versión anterior.",
+      },
+      {
+        titulo: "Colaboración",
+        halcon: "Copia por Correo",
+        texto: "Su gran ventaja: los equipos trabajan juntos un mismo documento en tiempo real.",
+      },
+      {
+        titulo: "Intranets y sitios internos",
+        halcon: "Acceso para Todos",
+        texto: "Se pueden separar sitios por empresa, cada uno con sus propios miembros, para compartir noticias y recursos y personalizarlo según lo que necesite.",
+      },
+    ],
     b: {
       letrero: "Solicitante",
       nombre: "Aldo Anduray",
       cuerpo: "chico",
-      pide: ["¡Hola! Soy Aldo Anduray y todavía no tengo acceso a nada.", "Mis permisos están arriba, en la nube: el punto A. Sube saltando por las nubes. ¿Me los traes?"],
+      pide: [
+        "¡Hola! Soy Aldo Anduray y todavía no tengo acceso a nada.",
+        "Mi licencia está en lo más alto de la nube: el punto A. Sube saltando de nube en nube, sin caerte. ¿Me la traes?",
+      ],
       // ✏️ Revisar con Luis Morán (sobre todo cómo se solicita la licencia)
       explica: [
-        "¡Gracias! Con estos permisos llega mi licencia de Microsoft.",
+        "¡Gracias! Ya tengo mi licencia de Microsoft.",
         "Con la licencia tengo mi correo empresarial en Outlook, con calendario, contactos y grupos, en la web o en la aplicación de escritorio.",
         "También Microsoft Teams, para chatear y tener reuniones con mi departamento o con otros.",
         "Y acceso a SharePoint, para guardar y trabajar en equipo los documentos de mi departamento.",

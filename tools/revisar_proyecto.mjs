@@ -96,7 +96,7 @@ mundos.forEach((m, i) => {
 	if (m.mision && (m.comentarios || []).length) problemas.push(`${donde}: tiene "mision" y "comentarios"; los puntos A y B usan el lugar de los compañeros`);
 	(m.preguntas || []).forEach((p, k) => revisarPregunta(p, `${donde}, pregunta ${k + 1}`));
 	// Medallas ocultas: si apuntan a algo que no existe, el juego no las crea
-	const lugares = m.completoAlSalirDeLaCueva ? { andamio: 99, roca: 4 } : { mueble: 7, ...(m.mision && m.mision.a && m.mision.a.nube ? { nube: 3 } : {}) };
+	const lugares = m.completoAlSalirDeLaCueva ? { andamio: 99, roca: 4 } : { mueble: 7, ...(m.oficina && m.oficina.terraza ? { terraza: 1 } : {}), ...(m.mision && m.mision.a && m.mision.a.nube ? { nube: Math.max(1, (m.mision.etapas || []).length) * 9 + 1 } : {}) };
 	(m.coleccionables || []).forEach((c, k) => {
 		const d = `${donde}, coleccionable ${k + 1} (${c.nombre || "sin nombre"})`;
 		if (!c.nombre) problemas.push(`${d}: falta "nombre"`);

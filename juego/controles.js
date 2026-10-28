@@ -19,12 +19,24 @@ window.addEventListener("keydown", (e) => {
 		if (e.key === "Escape") cerrarColeccion();
 		return;
 	}
-	// Repaso final: se responde con 1, 2, 3... o con los botones
-	if (estado === "repaso") {
-		const btn = /^[1-9]$/.test(e.key) && uiRepaso.opciones.children[Number(e.key) - 1];
-		if (btn) btn.click();
-		return;
+	// Preguntas (antivalores de Talento, computadora de la oficina y repaso
+	// final): se responde con 1, 2, 3..., o se baja y sube con ↑ ↓ (o W, S)
+	// y se elige con Enter; también con clic
+	const opcionesAbiertas =
+		estado === "pregunta" && !ui.opciones.hidden ? ui.opciones : estado === "terminal" ? ui.terminalOpciones : estado === "repaso" ? uiRepaso.opciones : null;
+	if (opcionesAbiertas) {
+		if (/^[1-9]$/.test(e.key)) {
+			const btn = opcionesAbiertas.children[Number(e.key) - 1];
+			if (btn) btn.click();
+			return;
+		}
+		if (TECLAS_SALTAR.includes(e.key) || TECLAS_AGACHAR.includes(e.key)) {
+			e.preventDefault();
+			moverFocoOpciones(opcionesAbiertas, TECLAS_AGACHAR.includes(e.key) ? 1 : -1);
+			return;
+		}
 	}
+	if (estado === "repaso") return;
 	// Con "Cómo se juega" abierto, Enter, Espacio o Esc lo cierran
 	if (!ui.ayuda.hidden) {
 		if (e.key === "Enter" || e.key === "Escape" || e.key === " ") {
@@ -40,12 +52,6 @@ window.addEventListener("keydown", (e) => {
 	}
 	if (e.key === "Escape") {
 		if (estado === "mapa") atrasMapa();
-		return;
-	}
-	// En la computadora de la oficina se responde también con 1, 2, 3...
-	if (estado === "terminal" && /^[1-9]$/.test(e.key)) {
-		const btn = ui.terminalOpciones.children[Number(e.key) - 1];
-		if (btn) btn.click();
 		return;
 	}
 	if (TECLAS_IZQ.includes(e.key) || TECLAS_DER.includes(e.key)) {
@@ -87,6 +93,20 @@ window.addEventListener("keydown", (e) => {
 	}
 });
 
+// La música (musica.js) empieza con la primera tecla o el primer toque:
+// antes el navegador no deja sonar nada
+for (const ev of ["keydown", "pointerdown"]) window.addEventListener(ev, () => (musica.permitida = true), { once: true, capture: true });
+
+// ↑ ↓ entre las opciones de una pregunta (salta las ya tachadas); sin
+// ninguna enfocada, ↓ va a la primera y ↑ a la última
+function moverFocoOpciones(contenedor, paso) {
+	const botones = [...contenedor.querySelectorAll("button:not(:disabled)")];
+	if (!botones.length) return;
+	const actual = botones.indexOf(document.activeElement);
+	const siguiente = actual < 0 ? (paso > 0 ? 0 : botones.length - 1) : modulo(actual + paso, botones.length);
+	botones[siguiente].focus();
+}
+
 window.addEventListener("keyup", (e) => {
 	if (TECLAS_IZQ.includes(e.key)) entrada.izq = false;
 	if (TECLAS_DER.includes(e.key)) entrada.der = false;
@@ -113,19 +133,35 @@ window.addEventListener(
 // Sonido y modo fácil (juego/base/ajustes.js)
 const btnSonido = $("btn-sonido");
 const btnFacil = $("btn-facil");
+const btnMusica = $("btn-musica");
 function mostrarAjustes() {
 	btnSonido.setAttribute("aria-pressed", String(ajustes.sonido));
 	btnSonido.textContent = ajustes.sonido ? "♪ Sonido" : "♪ Sin sonido";
 	btnSonido.classList.toggle("apagado", !ajustes.sonido);
+	// Sin sonido tampoco hay música: el botón de música se ve apagado
+	const conMusica = ajustes.sonido && ajustes.musica;
+	btnMusica.setAttribute("aria-pressed", String(conMusica));
+	btnMusica.textContent = conMusica ? "♫ Música" : "♫ Sin música";
+	btnMusica.classList.toggle("apagado", !conMusica);
 	btnFacil.setAttribute("aria-checked", String(ajustes.facil));
 }
 mostrarAjustes();
 btnSonido.addEventListener("click", () => {
 	ajustes.sonido = !ajustes.sonido;
+	// Sin sonido se calla todo al instante (efectos y música); contextoAudio lo reanuda
+	if (!ajustes.sonido && audio) audio.suspend().catch(() => {});
 	guardarAjustes();
 	mostrarAjustes();
 	btnSonido.blur(); // Espacio vuelve a ser saltar, no apagar el sonido
 	sonar("dialogo");
+});
+btnMusica.addEventListener("click", () => {
+	// Con todo apagado, encender la música enciende también el sonido
+	if (!ajustes.sonido) ajustes.sonido = ajustes.musica = true;
+	else ajustes.musica = !ajustes.musica;
+	guardarAjustes();
+	mostrarAjustes();
+	btnMusica.blur(); // Espacio vuelve a ser saltar
 });
 btnFacil.addEventListener("click", () => {
 	ajustes.facil = !ajustes.facil;

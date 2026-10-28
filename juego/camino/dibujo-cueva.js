@@ -171,6 +171,15 @@ function dibujarHuecos() {
 		]) {
 			circulo(sx + dx, arriba + dy * S, r * S);
 		}
+		// Modo fácil: un puente de luz dorada tapa el hueco (ver hayHuecoEn)
+		if (modoFacil()) {
+			ctx.save();
+			ctx.shadowColor = "rgba(255,214,90,0.9)";
+			ctx.shadowBlur = 14 * S;
+			ctx.fillStyle = "rgba(255,226,140,0.85)";
+			for (let k = 0; k < 5; k++) ctx.fillRect(izq - 6 * S + k * ((ancho + 12 * S) / 5), SUELO + 34 * S, (ancho + 12 * S) / 5 - 3 * S, 8 * S);
+			ctx.restore();
+		}
 	}
 }
 

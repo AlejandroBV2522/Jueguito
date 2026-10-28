@@ -9,9 +9,13 @@ carpeta. El motor del juego (`juego/`) no se toca.
 | `talento/` | 1 · Talento: el camino y la Cueva (Agalta) | `mundo.js` (anfitriona y carta), `npcs.js` (gente del camino), `cueva.js` (antivalores y sus preguntas) |
 | `proyectos/` | 2 · Proyectos (gestión de proyectos, Distrito Artemisa) | `mundo.js`, `tema.js` (planos, tablero de tareas, maqueta) |
 | `procesos/` | 3 · Procesos (Wrike, Edificio Lirios) | `mundo.js`, `tema.js` (engranes, diagrama de flujo, banda transportadora) |
-| `sharepoint/` | 4 · SharePoint, Outlook y Teams (Torre Atlas, llevar los permisos de A a B) | `mundo.js`, `tema.js` (documentos a la nube, carpetas, servidor) |
-| `seguridad/` | 5 · Seguridad (Acacias San Ignacio, esquivar virus y reparar el antivirus) | `mundo.js`, `tema.js` (escudos, lista de chequeo, cámaras) |
+| `sharepoint/` | 4 · SharePoint, Outlook y Teams (Torre Atlas: subir la torre de nubes por la licencia y bajársela a Aldo) | `mundo.js`, `tema.js` (documentos a la nube, carpetas, servidor) |
+| `seguridad/` | 5 · Seguridad (Acacias San Ignacio, esquivar virus y anzuelos de phishing y reparar el antivirus) | `mundo.js`, `tema.js` (escudos, lista de chequeo, cámaras) |
 | `ia/` | 6 · IA (Zorzales del Merendón, taller con 3 robots) | `mundo.js`, `tema.js` (red de nodos, red neuronal, hologramas) |
+| `cafeteria/` | Extra · Cafetería (opcional, se abre después de Proyectos: café con easter egg, todo el equipo conversando y Heber con música en la terraza) | `mundo.js`, `tema.js` (granos y notas, menú, tostadora) |
+
+Los mundos extra (`extra: true`) van al final en `index.html`: así no cambian
+el número ni el orden de los demás.
 
 Un `mundo.js` tiene la carta del mapa, la foto de su edificio (`foto`, en
 `assets/edificios/`, ya sin cielo), el anfitrión (★), los compañeros de la

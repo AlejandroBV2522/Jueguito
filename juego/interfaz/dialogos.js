@@ -56,7 +56,7 @@ function avanzarDialogo() {
 function subirNivel() {
 	if (nivel >= NIVEL_MAX) return;
 	nivel++;
-	vidas = vidasMax();
+	ganarCorazon();
 	avisos.push({ texto: `¡Nivel ${nivel}! +1 ♥`, t: 0 });
 	sonar("nivel");
 	lanzarChispas(heroe.x, heroe.y + 70, 18, ["#ffd23f", "#ff6b6b", COLORES.blanco]);

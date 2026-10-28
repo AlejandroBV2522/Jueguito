@@ -147,6 +147,7 @@ function sonarArchivo(nombre) {
 
 function sonar(nombre) {
 	if (!ajustes.sonido) return;
+	agacharMusica(); // la música baja un momento (musica.js)
 	if (sonarArchivo(nombre)) return;
 	const ac = contextoAudio();
 	const efecto = EFECTOS[nombre];

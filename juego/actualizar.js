@@ -185,7 +185,8 @@ function actualizar(dt) {
 		else if (!oficinaActual.terminalVisitada && enTerminal()) abrirTerminal(oficinaActual);
 	}
 	actualizarVirus(dt); // virus de la oficina (mundo.js → oficina.virus)
-	actualizarMision(); // llevar algo del punto A al B (mundo.js → mision)
+	actualizarMision(dt); // llevar algo del punto A al B (mundo.js → mision)
+	actualizarCafeteria(); // Heber saluda en su terraza (cafeteria.js)
 	actualizarColeccionables(); // guacamayas ocultas (mundo.js → coleccionables)
 	actualizarChispas(dt);
 	for (const m of modulos) m.brillo = Math.max(0, m.brillo - dt * 0.6);
@@ -256,4 +257,6 @@ function actualizar(dt) {
 		objetivo = clamp(objetivo, of.x0 - 40, Math.max(of.x0 - 40, of.terminalX + 160 - W));
 	}
 	camara += (objetivo - camara) * Math.min(1, dt * 5);
+	// Cámara vertical: sube contigo por la torre de nubes (mision.js)
+	camaraY = seguirTorre(dt);
 }

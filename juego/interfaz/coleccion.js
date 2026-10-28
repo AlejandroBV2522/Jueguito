@@ -50,7 +50,7 @@ const uiColeccion = {
 };
 
 // Pista de dónde buscarla (mundo.js → coleccionables[].sobre)
-const PISTAS_COLECCION = { mueble: "arriba de un mueble", nube: "arriba de las nubes", andamio: "arriba de un andamio", roca: "en la Cueva, arriba de una roca" };
+const PISTAS_COLECCION = { mueble: "arriba de un mueble", nube: "arriba de las nubes", andamio: "arriba de un andamio", roca: "en la Cueva, arriba de una roca", terraza: "en la terraza, con energía de café" };
 
 // En la colección: las encontradas, o todas con el nombre de pruebas (en
 // los niveles se siguen pudiendo buscar)

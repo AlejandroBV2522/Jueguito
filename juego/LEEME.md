@@ -43,11 +43,12 @@ Otras reglas:
 | `base/` | `utilidades.js` | `clamp`, `lerp`, `mezclar`, `conAlfa`, `crearAzar`… |
 | `base/` | `ajustes.js` | sonido y modo fácil del jugador (`ajustes`, `modoFacil`), guardados aparte del progreso |
 | `base/` | `sonido.js` | `sonar(nombre)`: el archivo propio del efecto si hay (`config.js → sonidos`, en `assets/sonidos/`), si no, el armado con Web Audio |
+| `base/` | `musica.js` | música 8 bits de fondo, compuesta para el juego y tocada con Web Audio (sin archivos); baja sola cuando suena un efecto; en la Cafetería, la del parlante de Heber |
 | `base/` | `paleta.js` | de gris a color según el avance |
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
 | `camino/` | `npcs-y-andamios.js` | la gente del camino, sus andamios, los antivalores |
-| `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, SharePoint); va antes de `modulos.js` |
+| `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, SharePoint): la torre de nubes con sus etapas y halcones, la cámara vertical (`camaraY`); va antes de `modulos.js` |
 | `oficina/` | `modulos.js` | `modulos` (un objeto por mundo), muebles, compañeros, `ESTACIONES` |
 | `camino/` | `letreros.js` | dónde van los letreros de obra |
 | `dibujo/` | `sprites-enemigos.js`, `sprites-personajes.js` | imágenes de enemigos, héroe y NPC |
@@ -69,7 +70,8 @@ Otras reglas:
 | `camino/` | `dibujo-cueva.js` | la Cueva y la calle de Celaque (logos, edificios) |
 | `oficina/` | `dibujo-oficina.js` | ventanal, muebles, computadora; llama al tema de cada oficina (`mundos/<mundo>/tema.js`, registrado en `window.TEMAS_OFICINA`) |
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
-| `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`, Seguridad) |
+| `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`) y anzuelos de phishing que bajan del techo (`oficina.anzuelos`), en Seguridad |
+| `oficina/` | `cafeteria.js` | la Cafetería (mundo extra): la barra de café y su easter egg (`beberCafe`), la gente conversando al fondo y la terraza de Heber |
 | `dibujo/` | `coleccionables.js` | guacamayas ocultas en el aire (`mundo.js → coleccionables`), cómo se ven y se recogen; chispas (`lanzarChispas`) |
 | `camino/` | `dibujo-letreros.js` | dibujo de los letreros de obra |
 | `dibujo/` | `aves.js`, `guias.js`, `personajes.js` | aves, guías y enemigos, héroe y NPC |

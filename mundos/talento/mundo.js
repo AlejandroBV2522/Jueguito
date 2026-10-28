@@ -12,6 +12,7 @@ window.MODULOS.push({
     "Conoce quiénes somos: nuestro sueño, nuestros valores y la cultura de Celaque. Recorre el camino por la zona industrial, conoce a la gente de la obra y cruza la Cueva respondiendo a sus guardianes.",
   icono: "montana",
   foto: "assets/edificios/Agalta.png", // Agalta, detrás del camino y la Cueva
+  logo: "assets/logos/proyecto-agalta.png",
   fotoBordes: { abajo: 0.12 },
   color: "#488478", // verde institucional
   completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
@@ -30,8 +31,6 @@ window.MODULOS.push({
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
     { nombre: "Mayita Buena Vibra", sobre: "andamio", n: 5, altura: 190, imagen: "assets/trofeos/mayita.png" }, // valor: Buenas Vibras
-    { nombre: "Mayita Logradora", sobre: "andamio", n: 10, altura: 190, imagen: "assets/trofeos/mayita.png" }, // valor: Logrador
-    { nombre: "Mayita Soñadora", sobre: "roca", n: 4, altura: 210, imagen: "assets/trofeos/mayita.png" }, // emoción alegre (y el sueño: ser la fuente que desarrolla Honduras)
   ],
   intro: [],
   preguntas: [],

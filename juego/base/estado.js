@@ -34,6 +34,7 @@ const estelaHeroe = []; // dónde estuvo el héroe hace un momento: su estela al
 const CLAVES_PERSONAJE = Object.keys(CFG.personajes);
 let personaje = CLAVES_PERSONAJE[0];
 let camara = 0;
+let camaraY = 0; // cuánto subió la cámara (solo en la torre de nubes, ver seguirTorre)
 let tiempo = 0;
 const entrada = { izq: false, der: false, correr: false, abajo: false, rueda: 0, ruedaHasta: 0 };
 const dlg = { npc: null, linea: 0, visibles: 0, mostradas: -1, enemigo: null, sistema: false };

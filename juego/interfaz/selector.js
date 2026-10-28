@@ -77,6 +77,7 @@ function reiniciarHeroe() {
 	vistaUrbana = false;
 	transicion = null;
 	oficinaActual = null;
+	cafeina = 0; // el salto del café dura solo en la Cafetería
 }
 
 // Deja el camino y la Cueva como al principio (también para repetir Talento)
@@ -93,7 +94,7 @@ function iniciarTalento() {
 		e.cayendo = 0;
 		e.preguntaActual = 0;
 	});
-	vidas = vidasMax();
+	vidas = clamp(vidas, 1, vidasMax()); // los corazones vienen del mundo anterior
 	avisos = [];
 	cruzoPlanos = false;
 	destello = 0;
@@ -109,8 +110,10 @@ function iniciarOficina(m) {
 	petalos = [];
 	oficinaActual = m;
 	virusOficina.oficina = null; // los virus (Seguridad) empiezan de cero
-	vidas = vidasMax();
+	vidas = clamp(vidas, 1, vidasMax()); // los corazones vienen del mundo anterior
 	m.visitado = true;
+	m.saludoDj = false; // Heber vuelve a saludar en su terraza (cafeteria.js)
+	if (m.aviso) avisos.push({ texto: m.aviso, t: 0 }); // mundo.js → aviso (la Cafetería no tiene quien te reciba)
 	m.terminalVisitada = m.completo; // ya completo: la computadora no se abre sola
 	heroe.x = m.oficina.x0 + 170; // fuera del alcance de la puerta: Espacio salta, no sale
 	heroe.dir = 1;
@@ -138,7 +141,7 @@ function ganar() {
 	ui.victoriaNombre.textContent = nombreJugador;
 	ui.victoriaNombre.hidden = !nombreJugador;
 	ui.victoriaModulos.innerHTML = "";
-	modulos.forEach((m, i) => {
+	modulosPrincipales().forEach((m, i) => {
 		const li = document.createElement("li");
 		li.textContent = m.nombre;
 		li.style.animationDelay = `${1 + i * 0.15}s`; // van apareciendo uno por uno

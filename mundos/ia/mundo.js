@@ -13,6 +13,7 @@ window.MODULOS.push({
   icono: "chispa",
   color: "#A99886", // beige
   foto: "assets/edificios/Zorzales.png",
+  logo: "assets/logos/proyecto-zorzales.png",
   fotoBordes: { abajo: 0.1, izquierda: 0.04, derecha: 0.04 },
   // Cada robot se arma con 2 preguntas, en este orden (config.js → robots)
   oficina: { vista: "ciudad", tema: "ia", estacion: "robot", robots: ["tierra", "aereo", "humanoide"], edificio: "Zorzales del Merendón" },
@@ -30,7 +31,6 @@ window.MODULOS.push({
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
     { nombre: "Mayita Creativa", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // valor: Creatividad
-    { nombre: "Mayita Inspirada", sobre: "mueble", n: 5, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Bienvenido al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [

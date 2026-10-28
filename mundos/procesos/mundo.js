@@ -13,6 +13,7 @@ window.MODULOS.push({
   icono: "engranes",
   color: "#A99886", // beige
   foto: "assets/edificios/Lirios.png",
+  logo: "assets/logos/proyecto-lirios.png",
   oficina: { vista: "industria", tema: "procesos", edificio: "Edificio Lirios" },
   anfitrion: {
     nombre: "Astrid Coello",
@@ -29,7 +30,6 @@ window.MODULOS.push({
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
     { nombre: "Mayita Feliz", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
-    { nombre: "Mayita Orgullosa", sobre: "mueble", n: 7, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Este es el módulo de Procesos.", "Los procesos nos dan organización, eficiencia y responsabilidad, y todos viven en Wrike."],
   comentarios: [

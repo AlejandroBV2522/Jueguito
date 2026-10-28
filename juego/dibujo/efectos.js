@@ -77,11 +77,18 @@ function dibujar(dt) {
 	// afuera (camino rural) | cueva (oscura) | urbano (al salir, con edificios)
 	// | oficina (adentro de un módulo)
 	if (oficinaActual) {
+		// Con torre de nubes (mision.js) la oficina baja al subir la cámara
+		// y arriba se ve el cielo; el cartel de la etapa queda fijo
+		const torre = oficinaActual.mision && oficinaActual.mision.torre;
+		if (torre) dibujarCieloTorre();
+		ctx.save();
+		ctx.translate(0, camaraY * S);
 		dibujarFondoOficina(oficinaActual, dt);
 		dibujarSueloOficina(oficinaActual);
 		dibujarDecoracionOficina(oficinaActual);
 		dibujarPuertaSalida(oficinaActual);
 		dibujarComputadora(oficinaActual);
+		dibujarTerraza(oficinaActual);
 		dibujarLetrerosObra("oficina", oficinaActual);
 		dibujarGuias();
 		dibujarObstaculos(oficinaActual.oficina.obstaculos);
@@ -92,6 +99,8 @@ function dibujar(dt) {
 		dibujarVirusOficina();
 		dibujarChispas();
 		dibujarAvisos(dt);
+		ctx.restore();
+		if (torre) dibujarCartelEtapa(oficinaActual);
 		return;
 	}
 	const modo = vistaUrbana ? "urbano" : dentroCueva ? "cueva" : "afuera";

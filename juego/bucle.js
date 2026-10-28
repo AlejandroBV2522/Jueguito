@@ -14,6 +14,7 @@ function bucle(ahora) {
 	dibujar(dt);
 	if (estado === "mapa" && mapa.foco < 0) dibujarVistasPrevias();
 	actualizarBarraJugador(dt);
+	actualizarMusica(); // música 8 bits de fondo (musica.js)
 	if (estado === "terminal" && oficinaActual && !ui.terminalFigura.hidden) dibujarFiguraTerminal(oficinaActual);
 	requestAnimationFrame(bucle);
 }

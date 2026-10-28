@@ -13,6 +13,7 @@ window.MODULOS.push({
   icono: "tablero",
   color: "#042523", // verde profundo
   foto: "assets/edificios/DistritoArtemisa.png",
+  logo: "assets/logos/proyecto-distrito-artemisa.png",
   fotoBordes: { abajo: 0.12, izquierda: 0.05, derecha: 0.05 },
   oficina: { vista: "construccion", tema: "planos", edificio: "Distrito Artemisa" },
   anfitrion: {
@@ -28,8 +29,7 @@ window.MODULOS.push({
   // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Mayita Alegre", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
-    { nombre: "Mayita Entusiasta", sobre: "mueble", n: 2, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
+    { nombre: "Mayita Logradora", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // valor: Logrador
   ],
   intro: ["Bienvenido al módulo de Proyectos.", "Aquí aprendes cómo se solicita un proyecto en Wrike y cómo lo llevamos de inicio a cierre."],
   comentarios: [

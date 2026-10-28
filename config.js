@@ -20,6 +20,12 @@ window.CONFIG_JUEGO = {
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
   nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos y aparecen "Estadísticas" y "Ver bienvenida" (para probar); "" lo apaga
 
+  /* Un poco de barba en los NPC hombres (cuerpo "chico"); el protagonista
+     nunca. sinBarba: quienes no la llevan (se compara el primer nombre, sin
+     tildes). Un NPC también puede decidirlo con apariencia.barba: true o
+     false. activa: false se la quita a todos. */
+  barbas: { activa: true, sinBarba: ["Javi", "Javier", "Luis", "Cristian", "James"] },
+
   /* Sonidos propios: cada efecto puede usar un archivo de assets/sonidos/
      (mp3, ogg o wav; ver assets/sonidos/LEEME.md). Vacío ("") = el sonido
      que arma el juego solo. Si el archivo no carga, también usa el suyo. */
@@ -112,7 +118,10 @@ window.TEMAS_OFICINA = {};
    te reciben compañeros (la "intro" y los "comentarios"), hay muebles que
    saltar, y al fondo una computadora (Terminal Celaque) donde se contestan
    las preguntas. Al terminar vuelves al mapa, subes de nivel y se abre el
-   siguiente mundo. Fallar no quita vidas: la opción equivocada se tacha y
+   siguiente mundo. Los corazones se guardan y pasan de un mundo a otro; si
+   se acaban (virus, antivalores), se repite solo ese mundo (o la Cueva)
+   con los corazones llenos. Fallar en la computadora no quita corazones:
+   la opción equivocada se tacha y
    se vuelve a intentar. La computadora hace solo las primeras
    "preguntasPorModulo" (arriba, en CONFIG_JUEGO) de cada módulo.
 
@@ -127,7 +136,8 @@ window.TEMAS_OFICINA = {};
    - sistema:     el sistema o plataforma del módulo (título de su carta).
    - descripcion: qué es ese sistema (texto de la carta en el mapa).
    - icono:       dibujo en la fachada del edificio del mapa: "montana",
-                  "tablero", "engranes", "nube", "escudo" o "chispa".
+                  "tablero", "engranes", "nube", "escudo", "chispa" o "cafe"
+                  (con "cafe" y sin foto se dibuja la Cafetería con su terraza).
    - color:       color del edificio ("#RRGGBB").
    - foto:        (opcional) foto real de su edificio en el mapa, ya sin
                   cielo (PNG transparente y recortado), ej.
@@ -142,6 +152,12 @@ window.TEMAS_OFICINA = {};
                   "assets/logos/Proyectos.png". Se dibuja SIN deformar
                   (respeta su proporción). Sin logo se ve el recuadro "LOGO".
    - completoAlSalirDeLaCueva: solo para Talento.
+   - extra / abreDespues: (opcionales) un mundo extra, como la Cafetería:
+                  se abre al completar el mundo llamado abreDespues, es
+                  opcional (no sube de nivel ni hace falta para terminar)
+                  y en el mapa lleva una taza en vez de número. Va al final
+                  en index.html; su lugar en el mapa es el 7.º de
+                  LUGARES_MAPA (juego/mapa/dibujo-mapa.js).
    - intro:       lo que dice el compañero que te recibe en la oficina.
    - companero:   (opcional) { nombre: "Ana", cuerpo: "chica" } para el
                   compañero que te recibe. Sin esto: "Equipo de <módulo>".
@@ -161,16 +177,32 @@ window.TEMAS_OFICINA = {};
                   edificio / piso: (opcionales) letrero junto a la salida.
                   estacion: dónde se contestan las preguntas: "computadora"
                          (por defecto), "robot" (cada acierto arma piezas de
-                         los robots de IA) o "antivirus" (cada acierto arma
-                         una parte del escudo).
+                         los robots de IA), "antivirus" (cada acierto arma
+                         una parte del escudo) o "cafe" (sin preguntas: la
+                         barra de café; tomarse uno hace saltar más alto en
+                         ese mundo, da 2 corazones dorados y lo completa).
+                  muebles: (opcional) los tipos de los 7 muebles, en orden,
+                         ej. ["planta", "mesa", "sacos", ...]. Sin esto,
+                         muebles de oficina.
+                  terraza: (opcional) número del mueble (1 a 7) sobre el que
+                         hay una terraza alta: solo se llega con el salto del
+                         café. Una mayita puede ir "sobre": "terraza", n: 1.
+                  dj:    (opcional, con terraza) quien pone la música en la
+                         terraza: { nombre, cuerpo, frases: [...] }.
+                  fondo: (opcional) true para que todos los personajes del
+                         juego conversen al fondo.
                   virus: (opcional) true para que crucen virus por la
                          oficina: se esquivan agachándose (los que vuelan) o
                          saltando (los que ruedan). Salen después de hablar
-                         con el anfitrión; mientras hablas con alguien se
-                         detienen.
+                         con el anfitrión, cada vez más seguido y, pasada la
+                         mitad, a veces en pareja; mientras hablas con
+                         alguien se detienen.
+                  anzuelos: (opcional) true para que bajen del techo
+                         anzuelos de phishing en los tramos libres: se pasa
+                         por debajo cuando suben.
                   largo: (opcional) largo de la oficina en px (normal:
-                         2600, máximo 3400). Muebles y compañeros se
-                         estiran con ella. Seguridad usa 3200.
+                         2600, máximo 6400). Muebles y compañeros se
+                         estiran con ella. Seguridad usa 5200.
                   robots: (solo con estacion "robot") cuáles se arman y en
                          qué orden: "tierra", "aereo" y/o "humanoide", ej.
                          ["tierra", "aereo", "humanoide"]. Cada robot hace
@@ -180,20 +212,28 @@ window.TEMAS_OFICINA = {};
                   { nombre, cuerpo: "chico"/"chica", dialogo: [frases] }.
                   Caben 3 (el resto no se muestra).
    - mision:      (opcional) llevar algo del punto A al punto B antes de
-                  la estación del fondo: { objeto: "los permisos",
-                  a: { letrero, nube }, b: { letrero, nombre, cuerpo,
-                  pide: [frases], explica: [frases] } }. En B espera quien
-                  lo pide y, al entregárselo, explica para qué sirve. Con
-                  a.nube: true, A está arriba, en una nube, y se sube
-                  saltando por una escalera de nubes. Ese
+                  la estación del fondo: { objeto: "la licencia",
+                  a: { letrero, nube }, etapas: [{ titulo, texto, halcon }],
+                  b: { letrero, nombre, cuerpo, pide: [frases],
+                  explica: [frases] } }. En B espera quien lo pide y, al
+                  entregárselo, explica para qué sirve. Con a.nube: true,
+                  A está en lo más alto de una torre de nubes (9 nubes
+                  por etapa) que se sube saltando, con la cámara
+                  subiendo detrás. Parado en el descanso de cada etapa
+                  (la nube de la bandera) se lee un cartel con su titulo y
+                  texto, a salvo de los halcones; al salir se quita. En cada etapa
+                  vuelan tres halcones con el nombre "halcon" (una mala
+                  práctica) que te empujan. Si te caes, caes hasta la
+                  nube o el piso que te toque y vuelves a subir. Ese
                   mundo no lleva "comentarios" (A y B usan sus lugares).
    - coleccionables: (opcional) mayitas (trofeos) escondidas en el aire. Solo
                   se alcanzan saltando DESDE algo (desde el piso no llegas).
                   Se ven en el apartado "Colección" del mapa. Cada una:
                   { nombre, sobre, n, altura }:
                   sobre: desde qué se salta: "mueble" (oficinas, del 1 al
-                         7 desde la entrada), "nube" (escalera de nubes de
-                         la misión, de 1 a 3), "andamio" (Talento: escalones
+                         7 desde la entrada), "nube" (torre de nubes de la
+                         misión, de abajo hacia arriba: 9 por etapa + la de
+                         A), "andamio" (Talento: escalones
                          del camino en orden, contando el de cada NPC) o
                          "roca" (Talento: obstáculos de la Cueva, de 1 a 4).
                   n:     cuál (empezando en 1).

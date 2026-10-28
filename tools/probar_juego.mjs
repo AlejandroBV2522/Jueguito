@@ -19,11 +19,13 @@
 //             recoge; revisa que desde el piso no se alcance y abre la colección
 //   estaciones  arma los 3 robots de IA y el antivirus de Seguridad (capturas a medias y al final)
 //   virus     cruza Seguridad esquivando virus (agachado o saltando) y repara el antivirus
-//   mision    SharePoint: lleva los permisos del punto A al B y contesta
+//   mision    SharePoint: sube la torre de nubes por la licencia, bájasela a Aldo y contesta
 //   cueva     cruza el camino de Talento, la Cueva (respondiendo bien) y sale al mapa
 //   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
 //   edificios  todos los mundos abiertos: mapa general y cada edificio acercado
 //   correr    8 cuadros de caminar y 8 de correr de cada personaje (recortados al héroe)
+//   cafeteria  mundo extra: se abre tras Proyectos, la ficha va por la calle, el café,
+//             la terraza de Heber y su mayita, corazones guardados y Talento con el teclado
 //
 // Variables opcionales: ANCHO, ALTO (pantalla, por defecto 1366x768), DPR
 // (densidad, por defecto 1), MOVIL=1 (pantalla táctil) y ARCHIVO=1 (abre
@@ -244,12 +246,13 @@ async function conProgreso(datos) {
 // El mapa abre con la selección en el primer mundo pendiente (y las flechas
 // dan la vuelta), así que se cuenta desde ahí.
 async function entrarAlMundo(indice) {
-	const inicio = await evalua(`(() => {
-		const c = (JSON.parse(localStorage.getItem(${JSON.stringify(CLAVE)}) || "{}").completos) || [];
-		return Math.max(0, window.MODULOS.findIndex((m) => !c.includes(m.nombre)));
+	// Las flechas siguen el orden de la calle (ordenMapa: cada mundo extra
+	// justo después del que lo abre), no el de index.html
+	const pasos = await evalua(`(() => {
+		const orden = ordenMapa();
+		return (orden.indexOf(${indice}) - orden.indexOf(mapa.sel) + orden.length) % orden.length;
 	})()`);
-	const total = await evalua("window.MODULOS.length");
-	for (let k = 0; k < (indice - inicio + total) % total; k++) await tecla("ArrowRight");
+	for (let k = 0; k < pasos; k++) await tecla("ArrowRight");
 	await tecla("Enter");
 	await paso(1300);
 	await tecla("Enter");
@@ -306,14 +309,26 @@ async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
 			await tecla("ArrowDown", "up");
 			agachado = false;
 		}
-		// Misión A → B (mision.js): sube por las nubes hasta A y, con lo
-		// recogido, vuelve hacia B
+		// Misión A → B (mision.js): sube por la torre de nubes hasta A
+		// (esperando a que pasen los halcones) y, con lo recogido, vuelve a B
 		const nube = await evalua(LEER_NUBE);
 		if (nube && nube.subir) {
 			const dir = Math.abs(nube.dx) < 15 ? 0 : Math.sign(nube.dx);
+			const espera = nube.enSuelo && nube.peligro;
 			await tecla(dir > 0 ? "ArrowLeft" : "ArrowRight", "up");
-			if (dir) await tecla(dir > 0 ? "ArrowRight" : "ArrowLeft", "down");
-			if (nube.enSuelo && Math.abs(nube.dx) < 130 && nube.dy > 0) await tecla("ArrowUp");
+			if (dir && !(espera && Math.abs(nube.dx) < 120) && (!nube.enSuelo || nube.orilla)) await tecla(dir > 0 ? "ArrowRight" : "ArrowLeft", "down");
+			else await tecla(dir > 0 ? "ArrowRight" : "ArrowLeft", "up");
+			const enPiso = nube.enSuelo && nube.y < 90 && Math.abs(nube.dx) >= 110; // salta los muebles camino a la torre
+			if ((nube.enSuelo && !espera && Math.abs(nube.dx) < nube.alcance && nube.dy > 0) || (enPiso && ahora() - ultimoSalto > 450)) {
+				await tecla("ArrowUp");
+				ultimoSalto = ahora();
+			}
+			await paso(60);
+			continue;
+		}
+		// Anzuelos de Seguridad (virus.js): espera a que suba el que viene
+		if (await evalua(ESPERAR_ANZUELO)) {
+			await tecla("ArrowRight", "up");
 			await paso(60);
 			continue;
 		}
@@ -338,8 +353,26 @@ const LEER_NUBE = `(() => {
 	if (!mi) return null;
 	if (mi.paso === "llevar") return { volver: true };
 	if (!mi.nubes.length || mi.paso === "listo" || heroe.x < mi.bX + 60) return null;
-	const n = mi.nubes.find((n) => n.alto > heroe.y + 1) || mi.nubes[mi.nubes.length - 1];
-	return { subir: true, dx: n.x - heroe.x, dy: n.alto - heroe.y, enSuelo: heroeEnSuelo() };
+	const n = mi.nubes.find((n) => n.alto > mi.apoyo + 1) || mi.nubes[mi.nubes.length - 1];
+	// Un halcón cerca, a la altura de donde estás o de adonde vas
+	const peligro = mi.halcones.some((h) => Math.abs(h.x - heroe.x) < 230 * S && h.alto > heroe.y - 20 && h.alto < n.alto + 130);
+	// En una nube: no camina más allá de su orilla (espera a que la siguiente se acerque)
+	const actual = mi.nubes.find((c) => c.alto === heroe.y && Math.abs(heroe.x - c.x) < (c.medioAncho + 14) * S);
+	const dir = Math.sign(n.x - heroe.x);
+	const orilla = actual ? dir * (actual.x + dir * (actual.medioAncho + 4) * S - heroe.x) > 0 : true;
+	return { subir: true, dx: n.x - heroe.x, dy: n.alto - heroe.y, y: heroe.y, enSuelo: heroeEnSuelo(), peligro, orilla, alcance: (n.medioAncho + 14) * S + (n.mueve ? 15 : 60) };
+})()`;
+// Anzuelos: si el próximo está cerca y va a estar abajo en el próximo
+// momento, mejor esperar
+const ESPERAR_ANZUELO = `(() => {
+	if (typeof anzuelosDe === "undefined" || !oficinaActual || !heroeEnSuelo()) return false;
+	const v = virusOficina;
+	return anzuelosDe(oficinaActual.oficina).some((a) => {
+		const d = (a.x - heroe.x) / S;
+		if (d < 30 || d > 110) return false;
+		for (let t = 0; t <= 0.9; t += 0.1) if (alturaAnzuelo(a, v.relojAnzuelos + t) < 160) return true;
+		return false;
+	});
 })()`;
 // El virus más cercano que viene hacia el héroe: distancia (en unidades
 // de S) y si vuela alto
@@ -555,16 +588,18 @@ try {
 		const i = await evalua("window.MODULOS.findIndex((m) => m.oficina && m.oficina.virus)");
 		await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
 		await entrarAlMundo(i);
-		console.log(`mundo ${i + 1} completado:`, await jugarOficina(90000, `mundo${i + 1}`, 1500));
-		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"));
+		console.log(`mundo ${i + 1} completado:`, await jugarOficina(180000, `mundo${i + 1}`, Number(process.env.FOTO_CADA || 1500)));
+		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"), "· anzuelos:", await evalua(`anzuelosDe(modulos[${i}].oficina).length`));
 	} else if (escenario === "mision") {
 		// SharePoint: lleva los permisos del punto A al B (captura cada 1.5 s) y contesta
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
 		const i = await evalua("window.MODULOS.findIndex((m) => m.mision)");
 		await conProgreso({ completos: [], nivel: 0, personaje: "chica", nombre: pruebas });
 		await entrarAlMundo(i);
-		console.log(`mundo ${i + 1} completado:`, await jugarOficina(120000, `mundo${i + 1}`, 1500));
-		console.log("misión:", await evalua(`modulos[${i}].mision.paso`));
+		// SIN_HALCONES=1: solo revisa que la torre se pueda subir y entregar
+		if (process.env.SIN_HALCONES === "1") await evalua(`modulos[${i}].mision.halcones.length = 0`);
+		console.log(`mundo ${i + 1} completado:`, await jugarOficina(400000, `mundo${i + 1}`, Number(process.env.FOTO_CADA || 1500)));
+		console.log("misión:", await evalua(`modulos[${i}].mision.paso`), "· caídas:", await evalua(`modulos[${i}].mision.caidas || 0`));
 	} else if (escenario === "zoom") {
 		// Acerca y aleja un mundo cuadro por cuadro: escala, centro, pantalla
 		// y panel del centro, para ver si algo tiembla
@@ -783,6 +818,78 @@ try {
 		} finally {
 			rmSync(wav, { force: true });
 		}
+	} else if (escenario === "cafeteria") {
+		// La Cafetería (mundo extra): se abre después de Proyectos, la ficha va
+		// por la calle, el café (salto más alto y corazones dorados), la terraza
+		// de Heber con su mayita, y los corazones que pasan de un mundo a otro
+		await conProgreso({ completos: ["Talento"], nivel: 1, vidas: 2, personaje: "chico", nombre: "Prueba" });
+		const i = await evalua("window.MODULOS.findIndex((m) => m.extra)");
+		console.log("cafetería con candado sin Proyectos:", !(await evalua(`desbloqueado(${i})`)), "· corazones guardados:", await evalua("vidas"), "de", await evalua("vidasMax()"));
+		await foto("mapa-general");
+		await conProgreso({ completos: ["Talento", "Proyectos"], nivel: 2, vidas: 3, personaje: "chico", nombre: "Prueba" });
+		console.log("abierta tras Proyectos:", await evalua(`desbloqueado(${i})`));
+		const ruta = await evalua(`rutaMapa(0, ${i}).map((p) => p.nodo).filter((n) => n >= 0)`);
+		console.log("ruta de Talento a la Cafetería pasa por:", JSON.stringify(ruta));
+		await evalua(`mapa.heroeMundo = ${i}`);
+		await paso(500);
+		await foto("ficha-en-la-calle");
+		await paso(3000);
+		await foto("ficha-llego");
+		await entrarAlMundo(i);
+		await foto("entrada");
+		console.log("gente al fondo:", await evalua(`gentePara(modulos[${i}]).length`), "· sin lugar:", await evalua(`(gruposFondo(modulos[${i}]), modulos[${i}].oficina.genteFuera)`));
+		// Camina hasta la barra (avanza el diálogo de la barista)
+		const t0 = ahora();
+		let n = 0;
+		await tecla("ArrowRight", "down");
+		while (ahora() - t0 < 40000 && !(await evalua("cafeina > 0"))) {
+			if (await visible("#dialogo")) {
+				await tecla("ArrowRight", "up");
+				await tecla("Enter");
+				await paso(150);
+				await tecla("ArrowRight", "down");
+				continue;
+			}
+			if (ahora() - t0 > 2500 * (n + 1)) await foto(`recorrido-${++n}`);
+			await tecla("ArrowUp");
+			await paso(500);
+		}
+		await tecla("ArrowRight", "up");
+		await paso(300);
+		await foto("cafe");
+		console.log("café:", await evalua("cafeina > 0"), "· dorados:", await evalua("vidasDoradas"), "· completa:", await evalua(`modulos[${i}].completo`), "· nivel:", await evalua("nivel"));
+		// A la terraza: desde la mesa de abajo, con el salto del café
+		const t = await evalua(`JSON.stringify(modulos[${i}].oficina.terraza)`);
+		console.log("terraza:", t);
+		await evalua(`(() => { const o = modulos[${i}].oficina.obstaculos[3]; heroe.x = o.x; heroe.y = o.alto; heroe.velY = 0; camara = heroe.x - W * 0.35; })()`);
+		await paso(300);
+		await tecla("ArrowUp");
+		await paso(1200);
+		console.log("en la terraza:", await evalua(`heroe.y === modulos[${i}].oficina.terraza.alto`));
+		await foto("terraza-heber");
+		await tecla("ArrowUp");
+		await paso(1200);
+		console.log("mayita de la terraza:", await evalua(`COLECCIONABLES.filter((c) => c.modulo === modulos[${i}]).every((c) => coleccionEncontrado(c.id))`));
+		await foto("mayita");
+		// Sin café no se llega a la terraza
+		await evalua(`(() => { cafeina = 0; const o = modulos[${i}].oficina.obstaculos[3]; heroe.x = o.x; heroe.y = o.alto; heroe.velY = 0; })()`);
+		await paso(300);
+		await tecla("ArrowUp");
+		await paso(1200);
+		console.log("sin café NO llega a la terraza:", !(await evalua(`heroe.y === modulos[${i}].oficina.terraza.alto`)));
+		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
+		// Respuestas de Talento con el teclado: ↓ ↓ Enter y con números
+		await evalua(`(() => { ui.terminal.hidden = true; iniciarTalento(); abrirPregunta(enemigos[0]); })()`);
+		await paso(300);
+		await tecla("ArrowDown");
+		await tecla("ArrowDown");
+		await paso(200);
+		console.log("con ↓ ↓ queda en la opción:", await evalua(`[...ui.opciones.children].indexOf(document.activeElement) + 1`));
+		await foto("talento-teclado");
+		const correcta = await evalua("enemigos[0].preguntas[0].correcta");
+		await tecla(String(correcta + 1));
+		await paso(800);
+		console.log("con el número correcto se cierra la pregunta:", await evalua("estado !== 'pregunta'"));
 	} else if (escenario === "facil") {
 		// Modo fácil: el interruptor del mapa y Seguridad sin perder corazones
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
@@ -796,7 +903,7 @@ try {
 		await entrarAlMundo(i);
 		await paso(400);
 		await foto("guias");
-		console.log(`mundo ${i + 1} completado:`, await jugarOficina(90000));
+		console.log(`mundo ${i + 1} completado:`, await jugarOficina(240000));
 		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"));
 	} else if (escenario === "correr") {
 		// Un ciclo de correr (y uno de caminar) de cada personaje, cuadro por cuadro

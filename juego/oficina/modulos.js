@@ -22,7 +22,7 @@ const ALTO_MIN_LOGO = 20;
 // aparte (muy lejos de la calle, para que no se mezclen), recorrida de
 // izquierda a derecha: entrada → compañero → muebles → computadora.
 const OFICINA_BASE = LARGO_META + 4000;
-const SEPARACION_OFICINAS = 4000;
+const SEPARACION_OFICINAS = 7000; // deja caber una oficina de hasta 6400 (mundo.js → oficina.largo)
 const LARGO_OFICINA = 2600;
 // Muebles = obstáculos sólidos (como las rocas de la cueva): se saltan o
 // se camina por encima. Todos de 80 o menos de alto, así un salto normal
@@ -35,6 +35,8 @@ const MUEBLES = {
 	impresora: { medioAncho: 30, alto: 60 },
 	planta: { medioAncho: 18, alto: 50 },
 	dispensador: { medioAncho: 18, alto: 74 },
+	mesa: { medioAncho: 40, alto: 62 }, // mesita de café (Cafetería)
+	sacos: { medioAncho: 34, alto: 56 }, // sacos de café (Cafetería)
 };
 const ORDEN_MUEBLES = ["planta", "escritorio", "silla", "archivero", "cajas", "escritorio", "impresora", "dispensador"];
 // Distancias desde la entrada. Los compañeros esperan en LUGARES_COMPANEROS
@@ -85,6 +87,14 @@ const ESTACIONES = {
 		carta: (n, m) =>
 			`${m.oficina.virus ? "Esquiva los virus (agáchate o salta) y repara" : "Repara"} el antivirus: cada una de las ${n} respuestas correctas completa el escudo.`,
 		fin: "¡Antivirus reparado! La información está protegida.",
+	},
+	// La Cafetería: no hay preguntas, se toma un café (ver cafeteria.js)
+	cafe: {
+		lugar: "a la barra de café",
+		titulo: "Barra de café",
+		usar: "Tomar café",
+		carta: () => "Tómate un café en la barra del fondo (dicen que da energía) y busca la mayita oculta.",
+		fin: "",
 	},
 };
 const PIEZAS_ESTACION = 6; // partes del robot o del escudo
@@ -141,11 +151,23 @@ function companeroOficina(d, i, k, x0, lugares) {
 const modulos = MODULOS_DATOS.map((d, i) => {
 	const x0 = OFICINA_BASE + i * SEPARACION_OFICINAS;
 	const rutaLogo = d.logo || RUTA_LOGOS + "modulo-" + nombreArchivo(d.nombre) + ".png";
-	const cuantos = 1 + Math.min((d.comentarios || []).length, LUGARES_CUATRO.length - 1);
+	// Con recepcion: false (la Cafetería) nadie te recibe en la entrada
+	const cuantos = (d.recepcion === false ? 0 : 1) + Math.min((d.comentarios || []).length, LUGARES_CUATRO.length - 1);
 	// Una oficina más larga (mundo.js → oficina.largo) estira todo por igual
 	const largo = (d.oficina && d.oficina.largo) || LARGO_OFICINA;
 	const estirar = largo / LARGO_OFICINA;
 	const lugares = lugaresCompaneros(cuantos).map((l) => Math.round(l * estirar));
+	// Muebles propios (mundo.js → oficina.muebles, ej. la Cafetería), o los de oficina
+	const tiposMuebles = ((d.oficina && d.oficina.muebles) || []).filter((t) => MUEBLES[t]);
+	const obstaculos = POSICIONES_MUEBLES.map((dist, k) => {
+		const tipo = tiposMuebles.length ? tiposMuebles[k % tiposMuebles.length] : ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
+		return { x: x0 + Math.round(dist * estirar), tipo, ...MUEBLES[tipo] };
+	});
+	// Terraza alta (mundo.js → oficina.terraza: sobre qué mueble, del 1 al 7):
+	// una plataforma que se atraviesa desde abajo, como los andamios. Desde
+	// el mueble no se alcanza con un salto normal: hace falta el café.
+	const bajo = d.oficina && d.oficina.terraza ? obstaculos[d.oficina.terraza - 1] : null;
+	const terraza = bajo ? { x: bajo.x, alto: bajo.alto + 205, medioAncho: 120 } : null;
 	return {
 		...d,
 		indice: i,
@@ -165,19 +187,21 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		oficina: {
 			x0,
 			terminalX: x0 + largo,
-			obstaculos: POSICIONES_MUEBLES.map((dist, k) => {
-				const tipo = ORDEN_MUEBLES[(k + i * 3) % ORDEN_MUEBLES.length];
-				return { x: x0 + Math.round(dist * estirar), tipo, ...MUEBLES[tipo] };
-			}),
-			decoracion: DECORACION_OFICINA.map((o) => ({ x: x0 + Math.round(o.d * estirar), tipo: o.tipo })),
+			obstaculos,
+			terraza,
+			// Decoración propia (mundo.js → oficina.decoracion, en el mismo orden), o la de oficina
+			decoracion: DECORACION_OFICINA.map((o, k) => ({ x: x0 + Math.round(o.d * estirar), tipo: ((d.oficina && d.oficina.decoracion) || [])[k] || o.tipo })),
+			azotea: !!(d.oficina && d.oficina.azotea), // al aire libre: cielo, ciudad y pérgola (cafeteria.js)
 			// Cómo se ve por dentro (mundo.js → oficina)
 			vista: (d.oficina && d.oficina.vista) || "ciudad",
 			tema: (d.oficina && d.oficina.tema) || "planos",
 			edificio: (d.oficina && d.oficina.edificio) || "",
 			piso: (d.oficina && d.oficina.piso) || 0,
 			estacion: ESTACIONES[d.oficina && d.oficina.estacion] ? d.oficina.estacion : "computadora",
+			fondo: !!(d.oficina && d.oficina.fondo), // todos los personajes del juego conversando al fondo (cafeteria.js)
 			robots: d.oficina && d.oficina.estacion === "robot" ? robotsDe(d.oficina) : [],
 			virus: !!(d.oficina && d.oficina.virus), // virus que cruzan la oficina (virus.js)
+			anzuelos: !!(d.oficina && d.oficina.anzuelos), // anzuelos de phishing que bajan del techo (virus.js)
 			// Compañeros: el primero dice la intro del módulo, los demás sus comentarios
 			companeros: Array.from({ length: cuantos }, (_, k) => companeroOficina(d, i, k, x0, lugares)),
 		},
@@ -189,6 +213,9 @@ const moduloTalento = modulos.find((m) => m.completoAlSalirDeLaCueva) || null;
 modulos.forEach((m) => {
 	const primero = m.oficina.companeros[0];
 	m.anfitrionNpc = m.completoAlSalirDeLaCueva ? npcs.find((n) => n.importante) || null : primero && primero.importante ? primero : null;
+	// Quien pone la música en la terraza (mundo.js → oficina.dj, cafeteria.js)
+	const dj = m.oficina.terraza && MODULOS_DATOS[m.indice].oficina.dj;
+	m.djNpc = dj ? { nombre: dj.nombre, apariencia: aparienciaAnfitrion(dj, m.indice), dialogo: dj.frases && dj.frases.length ? dj.frases : ["♪"] } : null;
 });
 // Oficina en la que está el héroe (null = afuera)
 let oficinaActual = null;

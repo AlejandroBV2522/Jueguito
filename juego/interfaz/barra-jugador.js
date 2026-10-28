@@ -26,6 +26,7 @@ const CORAZON_PIXEL = [
 ];
 const COLOR_PIXEL = { k: "#1a1a1a", r: "#e3262b", w: "#ffd9d9", d: "#a8161b" };
 const COLOR_PIXEL_VACIO = { k: "#1a1a1a", r: "#4a5654", w: "#5f6b69", d: "#3a4442" };
+const COLOR_PIXEL_DORADO = { k: "#1a1a1a", r: "#f2b705", w: "#fff6c2", d: "#b98500" }; // los del café (fisica.js → vidasDoradas)
 const barra = {
 	cara: $("cara-jugador"),
 	corazones: $("corazones-jugador"),
@@ -58,17 +59,25 @@ function actualizarBarraJugador(dt) {
 	}
 	const nombre = nombreJugador || CFG.personajes[personaje].nombre;
 	if (barra.nombre.textContent !== nombre) barra.nombre.textContent = nombre;
-	const maximo = vidasMax();
-	if (barra.vidas >= 0 && vidas > barra.vidas) {
-		barra.feliz = 1.4;
-		for (let i = barra.vidas; i < vidas; i++) barra.salto[i] = 1;
-	} else if (barra.vidas >= 0 && vidas < barra.vidas) {
-		barra.dolor = 1;
-		barra.roto = vidas;
-		barra.rotoT = 0.6;
+	// Los dorados (el café de la Cafetería) van después de los normales
+	const maximo = vidasMax() + vidasDoradas;
+	const llenos = (i) => (i < vidasMax() ? i < vidas : true);
+	const total = vidas * 10 + vidasDoradas; // cambia con cualquiera de los dos
+	if (barra.vidas >= 0 && total !== barra.vidas) {
+		const antesDoradas = barra.vidas % 10;
+		const antesVidas = Math.floor(barra.vidas / 10);
+		if (vidas > antesVidas || vidasDoradas > antesDoradas) {
+			barra.feliz = 1.4;
+			for (let i = antesVidas; i < vidas; i++) barra.salto[i] = 1;
+			for (let i = antesDoradas; i < vidasDoradas; i++) barra.salto[vidasMax() + i] = 1;
+		} else {
+			barra.dolor = 1;
+			barra.roto = vidasDoradas < antesDoradas ? vidasMax() + vidasDoradas : vidas;
+			barra.rotoT = 0.6;
+		}
 	}
 	if (heroe.golpeado && barra.dolor < 0.5) barra.dolor = 0.9; // también al caer en un hueco
-	barra.vidas = vidas;
+	barra.vidas = total;
 	barra.dolor = Math.max(0, barra.dolor - dt);
 	barra.feliz = barra.dolor > 0 ? 0 : Math.max(0, barra.feliz - dt);
 	barra.rotoT = Math.max(0, barra.rotoT - dt);
@@ -144,7 +153,7 @@ function actualizarBarraJugador(dt) {
 	h.setTransform(dpr, 0, 0, dpr, 0, 0);
 	h.clearRect(0, 0, anchoC, altoC);
 	for (let i = 0; i < maximo; i++) {
-		const lleno = i < vidas;
+		const lleno = llenos(i);
 		const salto = barra.salto[i] || 0;
 		let x = i * paso;
 		let y = 6 - Math.sin(salto * Math.PI) * 6;
@@ -152,6 +161,6 @@ function actualizarBarraJugador(dt) {
 			x += Math.sin(tiempo * 60) * 2;
 			y += (0.6 - barra.rotoT) * 6;
 		}
-		dibujarCorazonPixel(h, x, y, tam, lleno ? COLOR_PIXEL : COLOR_PIXEL_VACIO);
+		dibujarCorazonPixel(h, x, y, tam, i >= vidasMax() ? COLOR_PIXEL_DORADO : lleno ? COLOR_PIXEL : COLOR_PIXEL_VACIO);
 	}
 }

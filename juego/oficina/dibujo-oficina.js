@@ -570,6 +570,7 @@ function dibujarOficinaLejana(abajo, g, cl, dt) {
 }
 
 function dibujarFondoOficina(m, dt) {
+	if (m.oficina.azotea) return dibujarFondoAzotea(m, dt); // la Cafetería, al aire libre (cafeteria.js)
 	const of = m.oficina;
 	const cl = camara - of.x0;
 	const arribaV = 34 * S; // el vidrio empieza bajo el techo...
@@ -580,12 +581,24 @@ function dibujarFondoOficina(m, dt) {
 	dibujarMarcosVentanal(arribaV, abajoV, cl);
 	dibujarOficinaLejana(abajoV, g, cl, dt);
 
-	// Techo con lámparas que brillan
+	// Techo con lámparas que brillan. Con torre de nubes (mision.js) tiene
+	// un tragaluz por donde la torre sale al cielo.
+	const torre = m.mision && m.mision.torre;
+	const tragaluz = torre && { izq: m.mision.cx + torre.izq * S, der: m.mision.cx + torre.der * S }; // en x del mundo
 	ctx.fillStyle = "#d4d9d6";
-	ctx.fillRect(0, 0, W, 34 * S);
+	if (!tragaluz) ctx.fillRect(0, 0, W, 34 * S);
+	else {
+		const ti = tragaluz.izq - camara, td = tragaluz.der - camara;
+		if (ti > 0) ctx.fillRect(0, 0, ti, 34 * S);
+		if (td < W) ctx.fillRect(td, 0, W - td, 34 * S);
+		ctx.fillStyle = COLORES.verdeProfundo; // marco del tragaluz
+		ctx.fillRect(ti - 8 * S, 0, 8 * S, 34 * S);
+		ctx.fillRect(td, 0, 8 * S, 34 * S);
+	}
 	for (let x = of.x0 + 120; x < of.terminalX + 200; x += 300) {
 		const sx = x - camara;
 		if (sx < -150 || sx > W + 150) continue;
+		if (tragaluz && x > tragaluz.izq - 60 && x < tragaluz.der + 60) continue;
 		const luz = ctx.createLinearGradient(0, 34 * S, 0, 260 * S);
 		luz.addColorStop(0, "rgba(255,255,235,0.45)");
 		luz.addColorStop(1, "rgba(255,255,235,0)");
@@ -601,6 +614,7 @@ function dibujarFondoOficina(m, dt) {
 		ctx.fill();
 	}
 
+	dibujarFondoCafeteria(m); // la gente conversando al fondo, detrás de todo (cafeteria.js)
 	dibujarColumnasOficina(m);
 	dibujarFlotantesOficina(m, cl);
 
@@ -628,6 +642,9 @@ function dibujarColumnasOficina(m) {
 		ctx.fillStyle = m.color;
 		ctx.fillRect(sx - ancho / 2, piso - 16 * S, ancho, 16 * S);
 
+		// Junto a una terraza (Cafetería) va lisa: el afiche chocaría con ella
+		const t = of.terraza;
+		if (t && Math.abs(of.x0 + d - t.x) < t.medioAncho + 160) return;
 		const tipo = k % 3;
 		if (tipo === 0) {
 			// Placa blanca lisa detrás del logo (el manual pide fondo liso)
@@ -791,6 +808,8 @@ function dibujarDecoracionOficina(m) {
 			ctx.fill();
 		} else if (o.tipo === "especial") {
 			dibujarEspecialOficina(m.oficina.tema, sx, piso);
+		} else if (dibujarDecoracionAzotea(o.tipo, sx, piso)) {
+			// jardinera, sofá o fogata de la azotea (cafeteria.js)
 		} else if (o.tipo === "lampara") {
 			ctx.strokeStyle = "#3a4446";
 			ctx.lineWidth = 4 * S;
@@ -813,6 +832,7 @@ function dibujarDecoracionOficina(m) {
 }
 
 function dibujarSueloOficina(m) {
+	if (m.oficina.azotea) return dibujarSueloAzotea(m); // deck de madera (cafeteria.js)
 	const piso = ctx.createLinearGradient(0, SUELO, 0, H);
 	piso.addColorStop(0, "#7a8b88");
 	piso.addColorStop(1, "#56625f");
@@ -935,6 +955,31 @@ function dibujarMueble(o, sx, baseY, topY, w) {
 		ctx.lineTo(sx + w * 0.75, baseY);
 		ctx.lineTo(sx - w * 0.75, baseY);
 		ctx.fill();
+	} else if (o.tipo === "mesa") {
+		// Mesita de café con dos tazas (Cafetería)
+		ctx.fillStyle = "#5e686a";
+		ctx.fillRect(sx - 3 * S, topY + 8 * S, 6 * S, alto - 8 * S);
+		ctx.fillRect(sx - w * 0.6, baseY - 5 * S, w * 1.2, 5 * S);
+		ctx.fillStyle = "#c89b6d";
+		rectRedondo(sx - w, topY, w * 2, 9 * S, 4 * S);
+		ctx.fill();
+		ctx.fillStyle = COLORES.blanco;
+		ctx.fillRect(sx - w * 0.5, topY - 9 * S, 9 * S, 9 * S);
+		ctx.fillStyle = COLORES.verdeInstitucional;
+		ctx.fillRect(sx + w * 0.3, topY - 9 * S, 9 * S, 9 * S);
+	} else if (o.tipo === "sacos") {
+		// Sacos de café apilados (Cafetería)
+		ctx.fillStyle = "#b39470";
+		rectRedondo(sx - w, topY + alto * 0.45, w * 2, alto * 0.55, 10 * S);
+		ctx.fill();
+		rectRedondo(sx - w * 0.7, topY, w * 1.4, alto * 0.5, 10 * S);
+		ctx.fill();
+		ctx.fillStyle = "#6f5238";
+		ctx.font = `700 ${10 * S}px ${FUENTE}`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText("CAFÉ", sx, topY + alto * 0.72);
+		ctx.fillText("HN", sx, topY + alto * 0.25);
 	} else if (o.tipo === "dispensador") {
 		ctx.fillStyle = "#e9edee";
 		ctx.fillRect(sx - w, topY + alto * 0.38, w * 2, alto * 0.62);
@@ -970,6 +1015,7 @@ function dibujarComputadora(m) {
 	const piso = SUELO + 40 * S;
 	const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
 	const tocar = esTactil ? "Toca Hablar para usarla" : `E · ${ESTACIONES[of.estacion].usar}`;
+	if (of.estacion === "cafe") return dibujarBarraCafe(m, sx, piso); // la Cafetería (cafeteria.js)
 	if (of.estacion !== "computadora") {
 		// IA y Seguridad: en vez de computadora, lo que se va armando
 		const alto = dibujarEstacionArmable(m, sx, piso);
