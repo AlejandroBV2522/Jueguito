@@ -114,13 +114,12 @@ function dibujarCaminantesCafeteria(m, sAntes) {
 		const x = of.x0 + 200 + (p < 0.5 ? p * 2 : 2 - p * 2) * largo;
 		const sx = x - camara;
 		if (sx < -100 * S || sx > W + 100 * S) return;
-		const paso = tiempo * vel * 0.16 + i;
+		// Un paso cada media vuelta: alterna las 2 fotos de caminar
+		const paso = tiempo * vel * 0.14 + i;
 		ctx.save();
 		ctx.globalAlpha = 0.8;
-		ctx.translate(sx, pie - Math.abs(Math.sin(paso)) * 2.5 * S);
-		ctx.rotate(Math.sin(paso) * 0.04);
 		S = sAntes * 0.6;
-		dibujarNpcFoto(0, 0, n, p < 0.5 ? 1 : -1);
+		dibujarNpcFoto(sx, pie - Math.abs(Math.sin(paso)) * 2 * S, n, p < 0.5 ? 1 : -1, Math.floor(paso / Math.PI) % 2 ? "caminando2" : "caminando", x);
 		S = sAntes;
 		ctx.restore();
 	});
@@ -129,7 +128,9 @@ function dibujarCaminantesCafeteria(m, sAntes) {
 // La gente conversando al fondo: más chica y más arriba (está más lejos),
 // detrás de las columnas y de todo lo demás (dibujo-oficina.js la llama
 // antes que las columnas), y solo en los huecos libres (gruposFondo). Los
-// grupos sentados están en una banca, con una mesa baja al frente.
+// grupos sentados están en una banca, con una mesa al frente que tapa la
+// costura de la pose sentado (tools/pose_sentado.py). Quien platica mueve
+// el cuerpo y los brazos: alterna su foto de pie con la de un paso corto.
 function dibujarFondoCafeteria(m) {
 	if (!m.oficina.fondo) return;
 	const pie = SUELO - 8 * S;
@@ -141,12 +142,16 @@ function dibujarFondoCafeteria(m) {
 		if (sx < -200 * S || sx > W + 200 * S) continue;
 		const lugares = g.gente.map((_, j) => (j - (g.gente.length - 1) / 2) * PASO_GENTE * S);
 		const ancho = (g.gente.length - 1) * PASO_GENTE * S + 40 * S;
-		const asiento = pie - 14 * S; // la banca de los que están sentados
+		S = sAntes * k;
+		const regazo = pie + puntoNpc(g.gente[0], "sentado", 0, (CUERPOS_NPC.chico.poses.sentado.meta.costura + CUERPOS_NPC.chica.poses.sentado.meta.costura) / 2).y;
+		S = sAntes;
 		if (g.sentados) {
 			// Respaldo de la banca (detrás de ellos)
 			ctx.fillStyle = "#8a6748";
-			rectRedondo(sx - ancho / 2, asiento - 30 * S, ancho, 8 * S, 3 * S);
+			rectRedondo(sx - ancho / 2, regazo - 26 * S, ancho, 8 * S, 3 * S);
 			ctx.fill();
+			ctx.fillRect(sx - ancho / 2 + 4 * S, regazo - 20 * S, 4 * S, pie - regazo + 20 * S);
+			ctx.fillRect(sx + ancho / 2 - 8 * S, regazo - 20 * S, 4 * S, pie - regazo + 20 * S);
 		} else {
 			// Mesa alta con sus tazas, en medio del grupo
 			ctx.fillStyle = "#6f5238";
@@ -166,41 +171,31 @@ function dibujarFondoCafeteria(m) {
 		const hablando = modulo(tiempo / 1.8 + g.fase, 1) < 0.8;
 		const quien = turno % g.gente.length;
 		g.gente.forEach((n, j) => {
-			const risa = hablando && j === quien ? Math.abs(Math.sin(tiempo * 9 + j)) * 5 * S : Math.abs(Math.sin(tiempo * 2.4 + g.fase + j * 1.3)) * 1.5 * S;
+			const habla = hablando && j === quien;
+			const risa = habla ? Math.abs(Math.sin(tiempo * 9 + j)) * 4 * S : Math.abs(Math.sin(tiempo * 2.4 + g.fase + j * 1.3)) * 1.2 * S;
+			// De pie, quien habla gesticula: cambia de postura cada tanto
+			const gesto = habla && !g.sentados && Math.floor(tiempo * 3.2 + j) % 2 === 1;
+			const pose = g.sentados ? "sentado" : gesto ? "caminando2" : "quieto";
 			ctx.save();
 			ctx.globalAlpha = 0.9;
-			if (g.sentados) {
-				// Sentados: lo de abajo de la banca no se ve
-				ctx.beginPath();
-				ctx.rect(sx - ancho, 0, ancho * 2, asiento);
-				ctx.clip();
-			}
-			ctx.translate(sx + lugares[j], pie + (g.sentados ? 24 * S : 0) - risa);
-			ctx.rotate(Math.sin(tiempo * 1.8 + j + g.fase) * 0.035);
 			S = sAntes * k;
-			dibujarNpcFoto(0, 0, n, lugares[j] > 0 ? -1 : 1); // cada uno mira hacia el centro
+			dibujarNpcFoto(sx + lugares[j], pie - risa, n, lugares[j] > 0 ? -1 : 1, pose, g.x + j * 7); // cada uno mira hacia el centro
 			S = sAntes;
 			ctx.restore();
 		});
 		if (g.sentados) {
-			// El asiento de la banca y la mesa baja con sus tazas, al frente
-			ctx.fillStyle = "#a07c58";
-			rectRedondo(sx - ancho / 2, asiento - 2 * S, ancho, 7 * S, 3 * S);
-			ctx.fill();
+			// La mesa larga al frente, a la altura del regazo, con sus tazas
 			ctx.fillStyle = "#6f5238";
-			for (const lado of [-1, 1]) ctx.fillRect(sx + lado * (ancho / 2 - 8 * S) - 2 * S, asiento + 4 * S, 4 * S, pie - asiento - 4 * S);
+			for (const lado of [-1, 1]) ctx.fillRect(sx + lado * (ancho / 2 - 12 * S) - 2 * S, regazo, 4 * S, pie - regazo);
 			ctx.fillStyle = "#c89b6d";
-			ctx.beginPath();
-			ctx.ellipse(sx, pie - 10 * S, 18 * S, 4.5 * S, 0, 0, Math.PI * 2);
+			rectRedondo(sx - ancho / 2 + 4 * S, regazo - 3 * S, ancho - 8 * S, 7 * S, 3 * S);
 			ctx.fill();
-			ctx.fillStyle = "#6f5238";
-			ctx.fillRect(sx - 2 * S, pie - 9 * S, 4 * S, 9 * S);
-			ctx.fillStyle = COLORES.blanco;
-			ctx.fillRect(sx - 9 * S, pie - 18 * S, 6 * S, 7 * S);
-			ctx.fillStyle = "#e0b84a";
-			ctx.fillRect(sx + 3 * S, pie - 18 * S, 6 * S, 7 * S);
+			g.gente.forEach((_, j) => {
+				ctx.fillStyle = j % 2 ? "#e0b84a" : COLORES.blanco;
+				ctx.fillRect(sx + lugares[j] + (lugares[j] > 0 ? -12 : 6) * S, regazo - 10 * S, 6 * S, 7 * S);
+			});
 		}
-		if (hablando) globoChico(sx + lugares[quien], pie - (g.sentados ? 70 : 92) * S, FRASES_FONDO[(turno * 3 + quien) % FRASES_FONDO.length]);
+		if (hablando) globoChico(sx + lugares[quien], pie - (g.sentados ? 80 : 92) * S, FRASES_FONDO[(turno * 3 + quien) % FRASES_FONDO.length]);
 	}
 }
 
@@ -263,28 +258,23 @@ function dibujarTerraza(m) {
 	const dj = m.djNpc;
 	if (dj) {
 		const hx = sx + w * 0.4;
-		const asiento = y - 30 * S;
-		// Silla (respaldo detrás de él)
+		const meta = (CUERPOS_NPC[dj.apariencia.cuerpo] || CUERPOS_NPC.chico).poses.sentado.meta;
+		const mesa = y + puntoNpc(dj, "sentado", 0, meta.costura).y; // a la altura del regazo
+		const boca = puntoNpc(dj, "sentado", 0.53, 0.2 + meta.bajaCara);
+		// Silla: el respaldo asoma detrás de él
 		ctx.fillStyle = "#6f5238";
-		ctx.fillRect(hx - 22 * S, asiento - 34 * S, 5 * S, 34 * S);
-		// Sentado: lo de abajo del asiento no se ve
-		ctx.save();
-		ctx.beginPath();
-		ctx.rect(hx - 80 * S, 0, 160 * S, asiento);
-		ctx.clip();
-		ctx.translate(0, Math.abs(Math.sin(tiempo * 4)) * -1.5 * S); // sigue el ritmo
-		dibujarNpcFoto(hx, y + 38 * S, dj, 1);
-		ctx.restore();
-		ctx.fillStyle = "#a07c58"; // asiento
-		ctx.fillRect(hx - 24 * S, asiento - 2 * S, 30 * S, 6 * S);
-		// Mesita al frente, con el tazón de sopa humeando
-		const mesa = asiento - 8 * S;
-		const tx = hx + 20 * S;
+		ctx.fillRect(hx - 26 * S, mesa - 40 * S, 5 * S, y - mesa + 40 * S);
+		ctx.fillRect(hx + 18 * S, mesa, 4 * S, y - mesa);
+		// Eber completo, sentado (sigue el ritmo con un saltito)
+		const ritmo = Math.abs(Math.sin(tiempo * 4)) * 1.5 * S;
+		dibujarNpcFoto(hx, y - ritmo, dj, 1, "sentado", t.x);
+		// Mesita al frente, a la altura del regazo, con el tazón de sopa humeando
+		const tx = hx + 12 * S;
 		ctx.fillStyle = "#6f5238";
-		ctx.fillRect(tx - 2.5 * S, mesa, 5 * S, y - mesa);
+		ctx.fillRect(tx - 24 * S, mesa, 4 * S, y - mesa);
+		ctx.fillRect(tx + 20 * S, mesa, 4 * S, y - mesa);
 		ctx.fillStyle = "#c89b6d";
-		ctx.beginPath();
-		ctx.ellipse(tx, mesa, 22 * S, 5 * S, 0, 0, Math.PI * 2);
+		rectRedondo(tx - 30 * S, mesa - 3 * S, 60 * S, 7 * S, 3 * S);
 		ctx.fill();
 		ctx.fillStyle = COLORES.blanco; // tazón
 		ctx.beginPath();
@@ -305,8 +295,8 @@ function dibujarTerraza(m) {
 		ctx.globalAlpha = 1;
 		// La cuchara va del tazón a la boca y vuelve
 		const ida = (1 - Math.cos(tiempo * 2.4)) / 2; // 0 en el tazón, 1 en la boca
-		const cx = lerp(tx - 2 * S, hx + 9 * S, ida);
-		const cy = lerp(mesa - 9 * S, asiento - 50 * S, ida);
+		const cx = lerp(tx - 2 * S, hx + boca.x, ida);
+		const cy = lerp(mesa - 9 * S, y - ritmo + boca.y, ida);
 		ctx.strokeStyle = "#9aa3a5";
 		ctx.lineWidth = 2 * S;
 		linea(cx, cy, cx + 9 * S, cy + 4 * S);

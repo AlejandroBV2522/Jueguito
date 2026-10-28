@@ -146,12 +146,18 @@ function figura(u, puntos, relleno) {
 
 // NPC con la foto del héroe ya teñida (ver fotoNpc). Misma escala, sombra
 // y vaivén que dibujarHeroeSprite, para que se vean del mismo mundo.
-function dibujarNpcFoto(x, pie, n, dir) {
-	const f = fotoNpc(n);
+// pose: "quieto" (de pie), "caminando", "caminando2" o "sentado". La
+// escala sale siempre de la de pie (como en dibujarHeroeSprite), así una
+// pose no se ve más grande que otra. mundoX: su x en el mundo, para que el
+// vaivén no dependa de la cámara (si se dibuja ya trasladado, en x = 0).
+function dibujarNpcFoto(x, pie, n, dir, pose = "quieto", mundoX = x + camara) {
+	const f = fotoNpc(n, pose) || fotoNpc(n);
 	if (!f) return false;
 	const s = S * 1.15 * (n.apariencia.escala || 1);
-	const rebote = Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
-	const k = (100 * s) / ((f.meta.abajo - f.meta.arriba) * f.lienzo.height);
+	const rebote = pose === "quieto" ? Math.sin(tiempo * 2 + mundoX) * 0.8 * s : 0;
+	const cuerpo = CUERPOS_NPC[n.apariencia.cuerpo] || CUERPOS_NPC.chico;
+	const ref = cuerpo.poses.quieto.meta;
+	const k = ((100 * s) / ((ref.abajo - ref.arriba) * f.lienzo.height)) * (f.meta.escalaExtra || 1);
 	const dw = f.lienzo.width * k;
 	const dh = f.lienzo.height * k;
 	ctx.save();
@@ -162,9 +168,25 @@ function dibujarNpcFoto(x, pie, n, dir) {
 	ctx.fill();
 	ctx.translate(0, -rebote);
 	ctx.scale(dir, 1);
-	ctx.drawImage(f.lienzo, -f.meta.anclaX * dw, -f.meta.abajo * dh, dw, dh);
+	// En pixeles enteros de la pantalla, con la foto ya achicada: nítida y sin temblar
+	const m = ctx.getTransform();
+	ctx.translate((Math.round(m.e) - m.e) / m.a, (Math.round(m.f) - m.f) / m.d);
+	const px = Math.round(-f.meta.anclaX * dw * DPR) / DPR;
+	const py = Math.round(-f.meta.abajo * dh * DPR) / DPR;
+	ctx.drawImage(fotoEscalada(f, dw, dh), px, py, Math.round(dw * DPR) / DPR, Math.round(dh * DPR) / DPR);
 	ctx.restore();
 	return true;
+}
+
+// Dónde queda un punto de la foto de un NPC (fx, fy: fracciones de la
+// foto, como anclaX/abajo), medido desde sus pies, mirando a la derecha.
+// Con la escala S de ahora (la misma que usaría dibujarNpcFoto).
+function puntoNpc(n, pose, fx, fy) {
+	const cuerpo = CUERPOS_NPC[n.apariencia.cuerpo] || CUERPOS_NPC.chico;
+	const meta = (cuerpo.poses[pose] || cuerpo.poses.quieto).meta;
+	const ref = cuerpo.poses.quieto.meta;
+	const alto = (100 * S * 1.15 * (n.apariencia.escala || 1) * (meta.escalaExtra || 1)) / (ref.abajo - ref.arriba); // alto de la foto entera
+	return { x: (fx - meta.anclaX) * alto * (2 / 3), y: -(meta.abajo - fy) * alto }; // las fotos son de 1024 x 1536
 }
 
 function dibujarObrero(x, pie, o) {
