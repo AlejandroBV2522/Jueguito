@@ -186,7 +186,7 @@ function puntoNpc(n, pose, fx, fy) {
 	const meta = (cuerpo.poses[pose] || cuerpo.poses.quieto).meta;
 	const ref = cuerpo.poses.quieto.meta;
 	const alto = (100 * S * 1.15 * (n.apariencia.escala || 1) * (meta.escalaExtra || 1)) / (ref.abajo - ref.arriba); // alto de la foto entera
-	return { x: (fx - meta.anclaX) * alto * (2 / 3), y: -(meta.abajo - fy) * alto }; // las fotos son de 1024 x 1536
+	return { x: (fx - meta.anclaX) * alto * (meta.proporcion || 2 / 3), y: -(meta.abajo - fy) * alto }; // (casi todas las fotos son de 1024 x 1536)
 }
 
 function dibujarObrero(x, pie, o) {

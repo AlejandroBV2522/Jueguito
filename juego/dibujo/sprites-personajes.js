@@ -98,15 +98,17 @@ const CUERPOS_NPC = {
 };
 // Poses de los NPC: la foto y el nombre de sus máscaras. Las de caminar
 // salen de tools/mascaras_npc.py y la de sentado (armada desde la de pie,
-// sin el muslo) de tools/pose_sentado.py, que también da sus medidas;
-// "costura" es la fila donde se unió (ahí va la mesa que la tapa) y
-// "bajaCara" cuánto bajó la cara (para la barba). Las de platicar (el
+// con las piernas dobladas) de tools/pose_sentado.py, que también da sus
+// medidas: "regazo" es la fila de arriba de los muslos (ahí va una mesa),
+// "asiento" la de abajo (ahí va la banca) y "proporcion" el ancho entre el
+// alto de la foto (es más ancha: las rodillas salen hacia adelante). La cara
+// queda donde estaba, así que la barba también. Las de platicar (el
 // antebrazo doblado, de tools/pose_platica.py) son la foto de pie con
 // otro brazo: usan sus mismas máscaras y medidas.
 const POSES_NPC = { quieto: "", caminando: "Caminando", caminando2: "Caminando2", sentado: "Sentado", platica1: "", platica2: "" };
 const SENTADO_NPC = {
-	chico: { archivo: "PersonajeHSentado.png", anclaX: 0.458, arriba: 0.1406, abajo: 0.9831, costura: 1175 / 1536, bajaCara: 185 / 1536 },
-	chica: { archivo: "PersonajeMSentado.png", anclaX: 0.4399, arriba: 0.153, abajo: 0.9772, costura: 1185 / 1536, bajaCara: 190 / 1536 },
+	chico: { archivo: "PersonajeHSentado.png", anclaX: 0.349, arriba: 0.0163, abajo: 0.8027, regazo: 0.5443, asiento: 0.625, proporcion: 1344 / 1536 },
+	chica: { archivo: "PersonajeMSentado.png", anclaX: 0.3352, arriba: 0.0254, abajo: 0.8014, regazo: 0.541, asiento: 0.651, proporcion: 1344 / 1536 },
 };
 for (const [clave, c] of Object.entries(CUERPOS_NPC)) {
 	c.poses = {};
@@ -163,7 +165,7 @@ function fotoNpc(n, pose = "quieto") {
 	}
 	// La barba está medida en la cara de la foto de pie: sentado, la cara
 	// solo bajó; caminando cambia de lugar (son chicos, del fondo: sin barba)
-	if (conBarba(n) && !pose.startsWith("caminando")) dibujarBarbaNpc(g, w, h, n.apariencia.pelo, (meta.bajaCara || 0) * h);
+	if (conBarba(n) && !pose.startsWith("caminando")) dibujarBarbaNpc(g, w, h, n.apariencia.pelo);
 	n.fotos[pose] = { lienzo, meta, escaladas: new Map() };
 	return n.fotos[pose];
 }
@@ -212,11 +214,10 @@ function conBarba(n) {
 // difuminados y solo sobre la piel ya dibujada (source-atop).
 const BARBA_NPC = [[484, 245], [476, 280], [492, 312], [520, 336], [545, 348], [565, 346], [582, 332], [590, 318], [578, 311], [555, 307], [535, 303], [518, 297], [504, 282], [496, 250]];
 const BIGOTE_NPC = [[538, 292], [560, 286], [584, 284], [588, 289], [566, 293], [540, 297]];
-function dibujarBarbaNpc(g, w, h, pelo, baja = 0) {
-	const kx = w / 1024;
+function dibujarBarbaNpc(g, w, h, pelo) {
 	const ky = h / 1536;
+	const kx = ky; // en px de la foto de pie (las más anchas, como sentado, solo crecen a la derecha)
 	g.save();
-	g.translate(0, baja);
 	g.globalCompositeOperation = "source-atop";
 	g.filter = `blur(${(2.5 * kx).toFixed(2)}px)`;
 	g.globalAlpha = 0.5;
