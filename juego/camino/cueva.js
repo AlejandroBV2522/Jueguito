@@ -41,7 +41,8 @@ function alturaTuboEn(x) {
 // dentro de uno sin saltarlo, no hay suelo=0 que te detenga y te sigues
 // cayendo hasta perder.
 function hayHuecoEn(x) {
-	if (!dentroCueva || vistaUrbana) return false;
+	// Modo fácil: los huecos tienen un puente de luz (dibujarHuecos), no te caes
+	if (!dentroCueva || vistaUrbana || modoFacil()) return false;
 	return HUECOS_CUEVA.some((h) => Math.abs(x - h.x) < ANCHO_HUECO / 2);
 }
 
@@ -74,7 +75,12 @@ function alturaSolidaEn(x) {
 // parado en vez de pasar de largo.
 const MARGEN_BORDE = 26;
 function alturasPlataformaEn(x) {
-	if (oficinaActual) return alturasNubesEn(x); // nubes de una misión (mision.js)
+	if (oficinaActual) {
+		// Nubes de una misión (mision.js) y la terraza de la Cafetería (cafeteria.js)
+		const t = oficinaActual.oficina.terraza;
+		const enTerraza = t && Math.abs(x - t.x) < t.medioAncho + MARGEN_BORDE ? [t.alto] : [];
+		return [...alturasNubesEn(x), ...enTerraza];
+	}
 	if (dentroCueva || vistaUrbana) return [];
 	return PLATAFORMAS.filter((pl) => Math.abs(x - pl.x) < pl.medioAncho + MARGEN_BORDE).map((pl) => pl.alto);
 }
@@ -219,7 +225,11 @@ function abrirPregunta(enemigo) {
 	p.opciones.forEach((texto, i) => {
 		const btn = document.createElement("button");
 		btn.className = "boton opcion-respuesta";
-		btn.textContent = texto;
+		// Con número, como en la computadora: se elige con 1, 2, 3 (o ↑ ↓ y Enter)
+		const num = document.createElement("span");
+		num.className = "num-opcion";
+		num.textContent = i + 1;
+		btn.append(num, document.createTextNode(texto));
 		btn.addEventListener("click", (e) => {
 			e.stopPropagation(); // no debe disparar el click-to-advance de #dialogo
 			responder(i, enemigo);
@@ -270,8 +280,7 @@ function responder(indice, enemigo) {
 		sonar("error");
 		anotarPregunta(moduloTalento ? moduloTalento.nombre : "Talento", p.pregunta, true);
 		// Modo fácil: el antivalor golpea, pero no quita corazones
-		if (!modoFacil()) vidas--;
-		if (vidas <= 0) setTimeout(perderCueva, 350);
+		if (perderCorazon()) setTimeout(perderCueva, 350);
 		else ui.pista.textContent = `Incorrecto, intenta de nuevo. Vidas: ${corazones()}`;
 	}
 }

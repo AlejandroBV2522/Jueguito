@@ -79,6 +79,12 @@ function dibujar(dt) {
 	if (oficinaActual) {
 		const obra = oficinaActual.oficina.exterior;
 		const fabrica = esFabrica(oficinaActual.oficina); // la fábrica de Procesos: mismas zonas, otro dibujo (dibujo-fabrica.js)
+		// Con torre de nubes (mision.js) la oficina baja al subir la cámara
+		// y arriba se ve el cielo; el cartel de la etapa queda fijo
+		const torre = oficinaActual.mision && oficinaActual.mision.torre;
+		if (torre) dibujarCieloTorre();
+		ctx.save();
+		ctx.translate(0, camaraY * S);
 		if (fabrica) {
 			dibujarFondoFabrica(oficinaActual, dt);
 			dibujarSueloFabrica(oficinaActual);
@@ -99,6 +105,7 @@ function dibujar(dt) {
 			dibujarDecoracionOficina(oficinaActual);
 			dibujarPuertaSalida(oficinaActual);
 			dibujarComputadora(oficinaActual);
+			dibujarTerraza(oficinaActual);
 		}
 		dibujarLetrerosObra("oficina", oficinaActual);
 		dibujarGuias();
@@ -113,6 +120,8 @@ function dibujar(dt) {
 		if (fabrica) dibujarPrensasFabrica(oficinaActual);
 		dibujarChispas();
 		dibujarAvisos(dt);
+		ctx.restore();
+		if (torre) dibujarCartelEtapa(oficinaActual);
 		return;
 	}
 	const modo = vistaUrbana ? "urbano" : dentroCueva ? "cueva" : "afuera";

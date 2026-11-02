@@ -140,8 +140,40 @@ function fotoNpc(n) {
 		c.drawImage(cuerpo.mascaras[z].elemento, 0, 0, w, h);
 		g.drawImage(capa, 0, 0);
 	}
+	if (conBarba(n)) dibujarBarbaNpc(g, w, h, n.apariencia.pelo);
 	n.foto = { lienzo, meta: cuerpo.meta };
 	return n.foto;
+}
+
+// ¿Este NPC lleva barba? (config.js → barbas)
+function conBarba(n) {
+	const cfg = CFG.barbas || {};
+	if (typeof n.apariencia.barba === "boolean") return n.apariencia.barba;
+	if (!cfg.activa || n.apariencia.cuerpo !== "chico") return false;
+	const primero = nombreArchivo((n.nombre || "").split(" ")[0]);
+	return !(cfg.sinBarba || []).some((x) => nombreArchivo(x) === primero);
+}
+
+// Barba de unos días sobre la quijada y un bigote fino, del color del pelo.
+// Puntos en px de la foto del chico (1024 x 1536, PersonajeHDePie.png),
+// difuminados y solo sobre la piel ya dibujada (source-atop).
+const BARBA_NPC = [[484, 245], [476, 280], [492, 312], [520, 336], [545, 348], [565, 346], [582, 332], [590, 318], [578, 311], [555, 307], [535, 303], [518, 297], [504, 282], [496, 250]];
+const BIGOTE_NPC = [[538, 292], [560, 286], [584, 284], [588, 289], [566, 293], [540, 297]];
+function dibujarBarbaNpc(g, w, h, pelo) {
+	const kx = w / 1024;
+	const ky = h / 1536;
+	g.save();
+	g.globalCompositeOperation = "source-atop";
+	g.filter = `blur(${(2.5 * kx).toFixed(2)}px)`;
+	g.globalAlpha = 0.5;
+	g.fillStyle = pelo || "#2b1a12";
+	for (const forma of [BARBA_NPC, BIGOTE_NPC]) {
+		g.beginPath();
+		forma.forEach(([x, y], k) => (k ? g.lineTo(x * kx, y * ky) : g.moveTo(x * kx, y * ky)));
+		g.closePath();
+		g.fill();
+	}
+	g.restore();
 }
 
 const azar = crearAzar(20260925);

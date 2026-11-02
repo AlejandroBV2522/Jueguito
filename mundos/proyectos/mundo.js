@@ -22,6 +22,7 @@ window.MODULOS.push({
   icono: "tablero",
   color: "#042523", // verde profundo
   foto: "assets/edificios/DistritoArtemisa.png", // el edificio que se va levantando en el fondo de la obra
+  logo: "assets/logos/proyecto-distrito-artemisa.png",
   fotoBordes: { abajo: 0.12, izquierda: 0.05, derecha: 0.05 },
   oficina: {
     exterior: true, // la obra es al aire libre y se recorre por zonas (ver juego/oficina/obra.js)
@@ -264,12 +265,11 @@ window.MODULOS.push({
       "Al final de cada zona te espera un riesgo que te cierra el paso. Respóndele bien para seguir. ¡Adelante!",
     ],
   },
-  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // sobre "mueble" n = el obstáculo n de la obra, contando desde la entrada (2 por zona).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Guacamaya del cronograma", sobre: "mueble", n: 4, altura: 260, imagen: "" },
-    { nombre: "Guacamaya de la maqueta", sobre: "mueble", n: 2, altura: 260, imagen: "" },
+    { nombre: "Mayita Logradora", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // valor: Logrador
   ],
   intro: ["Bienvenido al módulo de Proyectos."],
   // En la obra las personas de cada zona están en oficina.zonas[].companero

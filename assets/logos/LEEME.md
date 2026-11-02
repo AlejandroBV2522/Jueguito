@@ -26,24 +26,25 @@ Cada uno en 6 colores: `negro`, `verde-profundo`, `gris`, `beige`,
 | `celaque-horizontal-<color>.png` | Símbolo + "CELAQUE" | verde-profundo: inicio, pantalla final, pared de la oficina, letrero final · blanco: computadora de la oficina |
 | `celaque-isotipo-<color>.png` | Solo el símbolo | (disponibles para usos futuros) |
 
-## Pendientes (mientras no estén, se ve un recuadro que dice LOGO)
+## Logos de los proyectos (ya incluidos)
 
-Basta con copiar el archivo con el nombre exacto: no hay que tocar código.
-Formato: **PNG con fondo transparente**, recortado al contenido, de al menos
-**600 px** de ancho.
+Fuente: Logos_Proyectos_Celaque.zip. Cada mundo lleva el logo del proyecto de
+su edificio (`logo:` en su `mundos/<mundo>/mundo.js`): se ve en la carta del
+mapa antes de entrar y en el letrero del edificio.
 
-| Archivo | Qué es | Dónde se ve |
+| Archivo | Proyecto | Dónde se ve |
 |---|---|---|
-| `modulo-talento.png` | Logo/ícono del módulo Talento | Letrero del edificio Talento |
-| `modulo-proyectos.png` | Logo/ícono del módulo Proyectos | Letrero del edificio Proyectos |
-| `modulo-procesos.png` | Logo/ícono del módulo Procesos | Letrero del edificio Procesos |
-| `modulo-sharepoint.png` | Logo/ícono del módulo SharePoint | Letrero del edificio SharePoint |
-| `modulo-seguridad.png` | Logo/ícono del módulo Seguridad | Letrero del edificio Seguridad |
-| `modulo-ia.png` | Logo/ícono del módulo IA | Letrero del edificio IA |
-| `proyecto-zorzales.png` | Logo del proyecto Zorzales | Fachada de su torre en la calle |
-| `proyecto-astria.png` | Logo del proyecto Astria | Fachada de su torre en la calle |
-| `proyecto-cefiro.png` | Logo del proyecto Céfiro | Fachada de su torre en la calle |
+| `proyecto-agalta.png` | Agalta | Mundo Talento |
+| `proyecto-distrito-artemisa.png` | Distrito Artemisa | Mundo Proyectos |
+| `proyecto-lirios.png` | Lirios de Miraflores | Mundo Procesos |
+| `proyecto-atlas.png` | Atlas | Mundo SharePoint |
+| `proyecto-acacias.png` | Acacias San Ignacio | Mundo Seguridad |
+| `proyecto-zorzales.png` | Zorzales del Merendón | Mundo IA y su torre en la calle |
+| `proyecto-astria.png` | Astria | Fachada de su torre en la calle |
+| `proyecto-cefiro.png` | Céfiro Azul | Fachada de su torre en la calle |
 
-Los nombres de módulos y proyectos salen de `config.js` (`MODULOS` y
-`PROYECTOS_CELAQUE`), en minúsculas y sin tildes. Si se agrega o renombra uno,
-el archivo sigue la misma regla (ej. "Recursos Humanos" → `modulo-recursos-humanos.png`).
+Las torres de la calle salen de `config.js` (`PROYECTOS_CELAQUE`): el archivo
+es `proyecto-<nombre>.png`, en minúsculas y sin tildes (ej. "Céfiro" →
+`proyecto-cefiro.png`). Si un mundo no trae `logo:`, se busca
+`modulo-<nombre>.png`, y si tampoco está se ve un recuadro que dice LOGO.
+Formato: **PNG con fondo transparente**, recortado al contenido.

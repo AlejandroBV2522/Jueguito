@@ -12,6 +12,7 @@ window.MODULOS.push({
     "Conoce quiénes somos: nuestro sueño, nuestros valores y la cultura de Celaque. Recorre el camino por la zona industrial, conoce a la gente de la obra y cruza la Cueva respondiendo a sus guardianes.",
   icono: "montana",
   foto: "assets/edificios/Agalta.png", // Agalta, detrás del camino y la Cueva
+  logo: "assets/logos/proyecto-agalta.png",
   fotoBordes: { abajo: 0.12 },
   color: "#488478", // verde institucional
   completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
@@ -26,12 +27,10 @@ window.MODULOS.push({
       "Recorre el camino, conoce a la gente de la obra y cruza la Cueva. ¡Te espero del otro lado!",
     ],
   },
-  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Guacamaya del camino", sobre: "andamio", n: 5, altura: 190, imagen: "" },
-    { nombre: "Guacamaya de la grúa", sobre: "andamio", n: 10, altura: 190, imagen: "" },
-    { nombre: "Guacamaya de la Cueva", sobre: "roca", n: 4, altura: 210, imagen: "" },
+    { nombre: "Mayita Buena Vibra", sobre: "andamio", n: 5, altura: 190, imagen: "assets/trofeos/mayita.png" }, // valor: Buenas Vibras
   ],
   intro: [],
   preguntas: [],

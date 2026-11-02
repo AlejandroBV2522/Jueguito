@@ -5,11 +5,12 @@
 // Se recuerdan en este navegador, aparte del progreso: "Empezar de cero"
 // no los borra. Si no hay almacenamiento, valen solo para esta partida.
 const CLAVE_AJUSTES = "camino-a-celaque:ajustes";
-const ajustes = { sonido: true, facil: false };
+const ajustes = { sonido: true, musica: true, facil: false }; // sonido apaga todo; musica, solo la música
 try {
 	const guardados = JSON.parse(localStorage.getItem(CLAVE_AJUSTES) || "null");
 	if (guardados && typeof guardados === "object") {
 		if (typeof guardados.sonido === "boolean") ajustes.sonido = guardados.sonido;
+		if (typeof guardados.musica === "boolean") ajustes.musica = guardados.musica;
 		if (typeof guardados.facil === "boolean") ajustes.facil = guardados.facil;
 	}
 } catch (e) {

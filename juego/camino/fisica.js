@@ -16,15 +16,40 @@ const GRAVEDAD = 3300;
 const IMPULSO_SALTO = 1080;
 // En el modo fácil (ajustes.js) sube ~32 % más y dura más en el aire:
 // caminando ya alcanza para pasar los huecos de la Cueva.
-const impulsoSalto = () => IMPULSO_SALTO * (modoFacil() ? 1.15 : 1);
+// El café de la Cafetería (easter egg) también: mientras dura, ~35 % más.
+let cafeina = 0; // segundos que le quedan al salto del café
+const impulsoSalto = () => IMPULSO_SALTO * (modoFacil() ? 1.15 : 1) * (cafeina > 0 ? 1.16 : 1);
 // Niveles: cada NPC con el que hablas por PRIMERA vez te sube un nivel
 // (máximo NIVEL_MAX) y cada nivel te da un corazón más para la Cueva.
 const NIVEL_MAX = 5;
 const VIDAS_BASE = 3;
 let nivel = 0;
 let vidas = VIDAS_BASE;
+// Corazones dorados (el café de la Cafetería): extra, encima de los
+// normales, y se pierden primero
+const DORADAS_MAX = 2;
+let vidasDoradas = 0;
 const vidasMax = () => VIDAS_BASE + nivel;
-const corazones = () => "♥".repeat(vidas) + "♡".repeat(Math.max(0, vidasMax() - vidas));
+const corazones = () => "♥".repeat(vidas + vidasDoradas) + "♡".repeat(Math.max(0, vidasMax() - vidas));
+
+// Los corazones se mantienen de un mundo a otro (se guardan con el
+// progreso, ver mapa.js). Un golpe quita primero los dorados. Devuelve
+// true si te quedaste sin corazones: entonces se repite solo ese mundo
+// (o la Cueva), con los corazones llenos otra vez.
+function perderCorazon() {
+	if (modoFacil()) return false; // modo fácil (ajustes.js): nada quita corazones
+	if (vidasDoradas > 0) vidasDoradas--;
+	else vidas--;
+	const sinVidas = vidas <= 0;
+	if (sinVidas) vidas = vidasMax();
+	guardarProgreso();
+	return sinVidas;
+}
+
+// Ganar un corazón (subir de nivel): el nuevo llega lleno
+function ganarCorazon() {
+	vidas = Math.min(vidasMax(), vidas + 1);
+}
 let avisos = []; // textos flotantes sobre el héroe ("¡Nivel 2! +1 ♥")
 
 // Zona de planos del inicio: termina en la puerta de luz (en x)

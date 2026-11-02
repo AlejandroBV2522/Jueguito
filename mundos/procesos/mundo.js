@@ -14,6 +14,7 @@ window.MODULOS.push({
   icono: "engranes",
   color: "#A99886", // beige
   foto: "assets/edificios/Lirios.png",
+  logo: "assets/logos/proyecto-lirios.png",
   // Una fábrica de 5 zonas, una por tema; cada una termina en un riesgo que pregunta (ver juego/oficina/fabrica.js).
   // Al vencer el último se activa la gran máquina, que completa el módulo.
   oficina: {
@@ -217,13 +218,14 @@ window.MODULOS.push({
       "¡Hola! Soy Astrid Coello y te doy la bienvenida a la fábrica de procesos.",
       "Los procesos nos dan organización, eficiencia y responsabilidad para el trabajo del día a día, y todos viven en Wrike.",
       "Hay dos tipos: los recurrentes, que se repiten con una frecuencia, y los secuenciales (plantillas y solicitudes), que se activan por un evento.",
+      "Nuestros principios: OHIO (hazlo solo una vez), niveles de revisión, consistencia, recurrencias y eficiencias. Y recuerda: los procesos no son independientes.",
     ],
   },
-  // Guacamayas ocultas en el aire (✏️ Borrador: nombres por validar).
+  // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
+  // sobre "mueble" n = el obstáculo n de la fábrica, contando desde la entrada.
   // imagen: un archivo de assets/trofeos/ (vacío = la guacamaya dibujada).
   coleccionables: [
-    { nombre: "Guacamaya del engrane", sobre: "mueble", n: 4, altura: 260, imagen: "" },
-    { nombre: "Guacamaya del flujo", sobre: "mueble", n: 7, altura: 260, imagen: "" },
+    { nombre: "Mayita Feliz", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // emoción alegre
   ],
   intro: ["Este es el módulo de Procesos.", "Los procesos nos dan organización, eficiencia y responsabilidad, y todos viven en Wrike."],
   comentarios: [],
