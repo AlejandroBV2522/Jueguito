@@ -77,26 +77,47 @@ function dibujar(dt) {
 	// afuera (camino rural) | cueva (oscura) | urbano (al salir, con edificios)
 	// | oficina (adentro de un módulo)
 	if (oficinaActual) {
+		const obra = oficinaActual.oficina.exterior;
+		const fabrica = esFabrica(oficinaActual.oficina); // la fábrica de Procesos: mismas zonas, otro dibujo (dibujo-fabrica.js)
 		// Con torre de nubes (mision.js) la oficina baja al subir la cámara
 		// y arriba se ve el cielo; el cartel de la etapa queda fijo
 		const torre = oficinaActual.mision && oficinaActual.mision.torre;
 		if (torre) dibujarCieloTorre();
 		ctx.save();
 		ctx.translate(0, camaraY * S);
-		dibujarFondoOficina(oficinaActual, dt);
-		dibujarSueloOficina(oficinaActual);
-		dibujarDecoracionOficina(oficinaActual);
-		dibujarPuertaSalida(oficinaActual);
-		dibujarComputadora(oficinaActual);
-		dibujarTerraza(oficinaActual);
+		if (fabrica) {
+			dibujarFondoFabrica(oficinaActual, dt);
+			dibujarSueloFabrica(oficinaActual);
+			dibujarEscenasObra(oficinaActual);
+			dibujarCintasFabrica(oficinaActual);
+			dibujarPuertaObra(oficinaActual);
+			dibujarGranMaquina(oficinaActual);
+		} else if (obra) {
+			dibujarFondoObra(oficinaActual, dt);
+			dibujarSueloObra(oficinaActual);
+			dibujarEscenasObra(oficinaActual);
+			dibujarZanjasObra(oficinaActual);
+			dibujarPuertaObra(oficinaActual);
+			dibujarInauguracion(oficinaActual);
+		} else {
+			dibujarFondoOficina(oficinaActual, dt);
+			dibujarSueloOficina(oficinaActual);
+			dibujarDecoracionOficina(oficinaActual);
+			dibujarPuertaSalida(oficinaActual);
+			dibujarComputadora(oficinaActual);
+			dibujarTerraza(oficinaActual);
+		}
 		dibujarLetrerosObra("oficina", oficinaActual);
 		dibujarGuias();
 		dibujarObstaculos(oficinaActual.oficina.obstaculos);
 		dibujarMision(oficinaActual);
 		dibujarColeccionables();
 		dibujarCompaneros(oficinaActual);
+		if (obra) dibujarRiesgosObra(oficinaActual);
 		dibujarHeroe(t);
 		dibujarVirusOficina();
+		if (obra) dibujarPeligrosObra(oficinaActual);
+		if (fabrica) dibujarPrensasFabrica(oficinaActual);
 		dibujarChispas();
 		dibujarAvisos(dt);
 		ctx.restore();

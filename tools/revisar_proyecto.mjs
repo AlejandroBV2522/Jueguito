@@ -74,6 +74,11 @@ const mundos = w.MODULOS || [];
 const npcs = w.NPCS || [];
 const cueva = w.PREGUNTAS_CUEVA || [];
 function revisarPregunta(p, donde) {
+	// Pregunta de ordenar (riesgos de la obra): los pasos van en el orden correcto
+	if (p && Array.isArray(p.orden)) {
+		if (!p.pregunta || p.orden.length < 2 || p.orden.some((x) => typeof x !== "string" || !x)) problemas.push(`${donde}: pregunta de ordenar sin texto o con menos de 2 pasos`);
+		return;
+	}
 	if (!p || !p.pregunta || !Array.isArray(p.opciones) || p.opciones.length < 2) problemas.push(`${donde}: pregunta sin texto o con menos de 2 opciones`);
 	else if (!Number.isInteger(p.correcta) || p.correcta < 0 || p.correcta >= p.opciones.length) problemas.push(`${donde}: "correcta" (${p.correcta}) no es una de sus ${p.opciones.length} opciones`);
 }
@@ -89,6 +94,32 @@ mundos.forEach((m, i) => {
 		if (!t) problemas.push(`${donde}: su oficina usa el tema "${tema}", pero ningún tema.js lo registra en window.TEMAS_OFICINA`);
 		else for (const parte of ["flotante", "pizarra", "especial"]) if (typeof t[parte] !== "function") problemas.push(`${donde}: al tema "${tema}" le falta ${parte}()`);
 		for (const r of m.oficina.robots || []) if (!["tierra", "aereo", "humanoide"].includes(r)) problemas.push(`${donde}: el robot "${r}" no existe (puede ser "tierra", "aereo" o "humanoide")`);
+		if (m.oficina.exterior) {
+			const zonas = m.oficina.zonas || [];
+			if (!zonas.length) problemas.push(`${donde}: su oficina es "exterior" pero no tiene "zonas"`);
+			if (!m.anfitrion || !(m.anfitrion.dialogo || []).length) problemas.push(`${donde}: la zona 1 la explica el anfitrión y no tiene diálogo`);
+			// La obra de Proyectos y la fábrica de Procesos (oficina.vista "fabrica") comparten zonas y riesgos; cambian sus escenas, obstáculos y dibujos
+			const fabrica = m.oficina.vista === "fabrica";
+			const estacion = fabrica ? "maquina" : "inauguracion";
+			const escenas = fabrica ? ["recepcion", "moldes", "ventanilla", "etiquetado", "calidad"] : ["idea", "caseta", "planos", "reunion", "obra"];
+			const peligros = fabrica ? ["prensa", "cinta"] : ["zanja", "talanquera"];
+			const dibujos = fabrica ? ["gemelo", "copia", "solicitud", "codigo", "subtarea"] : ["tarea", "mensaje", "papel", "blob", "reloj"];
+			if (m.oficina.estacion !== estacion) problemas.push(`${donde}: ${fabrica ? "una fábrica" : "una obra exterior"} termina en la estación "${estacion}"`);
+			zonas.forEach((z, k) => {
+				const dz = `${donde}, zona ${k + 1} (${z.nombre || "sin nombre"})`;
+				if (!z.nombre) problemas.push(`${dz}: falta "nombre"`);
+				if (!escenas.includes(z.escena)) problemas.push(`${dz}: la escena "${z.escena}" no existe (${escenas.join(", ")})`);
+				if (k > 0 && !(z.companero && (z.companero.dialogo || []).length)) problemas.push(`${dz}: falta "companero" con su diálogo`);
+				if (z.peligro && !peligros.includes(z.peligro.tipo)) problemas.push(`${dz}: su "peligro" debe ser { tipo: ${peligros.map((p) => `"${p}"`).join(" o ")} }`);
+				const e = z.enemigo;
+				if (!e) problemas.push(`${dz}: falta su "enemigo"`);
+				else {
+					if (!dibujos.includes(e.dibujo)) problemas.push(`${dz}: el dibujo "${e.dibujo}" del enemigo no existe (${dibujos.join(", ")})`);
+					if (!(e.preguntas || []).length) problemas.push(`${dz}: su enemigo no tiene preguntas`);
+					(e.preguntas || []).forEach((q, j) => revisarPregunta(q, `${dz}, pregunta ${j + 1}`));
+				}
+			});
+		}
 		const porRobot = m.preguntasPorModulo || (w.CONFIG_JUEGO && w.CONFIG_JUEGO.preguntasPorModulo) || 2;
 		const robots = (m.oficina.robots || []).length;
 		if (robots > 1 && (m.preguntas || []).length < robots * porRobot) problemas.push(`${donde}: tiene ${robots} robots y ${(m.preguntas || []).length} preguntas; cada robot necesita ${porRobot}`);
@@ -96,7 +127,7 @@ mundos.forEach((m, i) => {
 	if (m.mision && (m.comentarios || []).length) problemas.push(`${donde}: tiene "mision" y "comentarios"; los puntos A y B usan el lugar de los compañeros`);
 	(m.preguntas || []).forEach((p, k) => revisarPregunta(p, `${donde}, pregunta ${k + 1}`));
 	// Medallas ocultas: si apuntan a algo que no existe, el juego no las crea
-	const lugares = m.completoAlSalirDeLaCueva ? { andamio: 99, roca: 4 } : { mueble: 7, ...(m.oficina && m.oficina.terraza ? { terraza: 1 } : {}), ...(m.mision && m.mision.a && m.mision.a.nube ? { nube: Math.max(1, (m.mision.etapas || []).length) * 9 + 1 } : {}) };
+	const lugares = m.completoAlSalirDeLaCueva ? { andamio: 99, roca: 4 } : { mueble: m.oficina && m.oficina.exterior ? (m.oficina.zonas || []).length * 2 : 7, ...(m.oficina && m.oficina.terraza ? { terraza: 1 } : {}), ...(m.mision && m.mision.a && m.mision.a.nube ? { nube: Math.max(1, (m.mision.etapas || []).length) * 9 + 1 } : {}) };
 	(m.coleccionables || []).forEach((c, k) => {
 		const d = `${donde}, coleccionable ${k + 1} (${c.nombre || "sin nombre"})`;
 		if (!c.nombre) problemas.push(`${d}: falta "nombre"`);

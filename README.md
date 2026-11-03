@@ -76,6 +76,26 @@ hacer. Desde la carta se entra al nivel:
 
 - **Talento** es el camino por la zona industrial y la Cueva (igual que
   antes). Al salir de la Cueva por el tubo vuelves al mapa.
+- **Proyectos** es una **obra al aire libre** (el Distrito Artemisa) con
+  5 zonas, una por tema de la capacitación: la idea, la caseta de
+  solicitudes (con pantallazos de Wrike), la mesa de planos, la reunión de
+  alcance y la obra y el cierre. Cada zona tiene a alguien que explica su
+  tema y termina con un **riesgo** (La Tarea Disfrazada, El Mensaje Perdido,
+  El Requerimiento Vago, El Alcance Infinito y El Proyecto Eterno) que cierra
+  el paso hasta responderle bien; dos preguntas son de **ordenar** (se
+  tocan los pasos en orden). Mientras avanzas, el edificio del fondo se va
+  levantando, y al final se corta la cinta de la inauguración.
+- **Procesos** es una **fábrica** (el Edificio Lirios por dentro) con 5
+  zonas, una por tema de la capacitación "Procesos & Wrike": la recepción
+  (procesos recurrentes y secuenciales, y el principio OHIO), la sala de
+  moldes (plantillas y cómo se duplican), la ventanilla de pedidos
+  (solicitudes, con el formulario real de Wrike), el etiquetado (el código
+  de cada proceso) y el control de calidad (buenas prácticas). Cada zona
+  termina con un **riesgo** (El Doble Trabajo, La Copia Equivocada, La
+  Solicitud Eterna, El Código Ilegible y La Subtarea Colgada) que cierra el
+  paso hasta responderle bien; dos preguntas son de **ordenar**. Hay una
+  **prensa** que baja y sube y una **cinta transportadora** que te lleva o
+  te frena. Al vencer el último riesgo se activa la gran máquina.
 - **Los demás** son una **oficina en lo alto de un edificio**: ventanal con
   la ciudad abajo, nubes, guacamayas y loros, y una oficina enorme al fondo.
   Te reciben varios compañeros con comentarios, hay muebles que saltar y al
@@ -104,8 +124,8 @@ Con el nombre de pruebas (Kojima) todos los mundos están abiertos y ninguno
 queda completado, para poder jugarlos una y otra vez.
 
 En la Cueva cada enemigo es un **antivalor**, lo opuesto a lo que promueve
-Celaque (La Mediocridad, El Individualismo, La Imprudencia, La
-Improvisación y, de jefe final, La Indiferencia).
+Celaque (La Mala Vibra, El Chisme, El Conformismo, La Mediocridad y, de jefe
+final, La Indiferencia).
 
 La primera vez se abre **"¿Cómo se juega?"**; después está en el botón de
 arriba a la izquierda del mapa. Y hay sorpresas escondidas: un delfín que
@@ -193,6 +213,8 @@ proyectos). Mientras no estén, se ve un recuadro que dice "LOGO".
   las fotos del protagonista, para teñir a cada NPC con sus colores.
 - `assets/edificios/`: imágenes PNG que se ven al salir de la Cueva, junto
   al letrero de llegada a Celaque.
+- `assets/obra/`: pantallazos de Wrike (recortados de la capacitación) que se ven en la caseta de solicitudes de Proyectos.
+- `assets/fabrica/`: el formulario de solicitud de Wrike (recortado de la capacitación) que se ve en la ventanilla de pedidos de Procesos.
 - `tools/probar_juego.mjs`: prueba el juego en Chrome sin ventana (teclas reales,
   capturas y errores de JavaScript). Ej.: `node tools/probar_juego.mjs oficinas`.
 - `tools/comparar_capturas.mjs`: corre todos los escenarios y compara cada

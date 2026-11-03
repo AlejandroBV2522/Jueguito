@@ -12,7 +12,7 @@ function dibujarLetrerosObra(zona, modulo) {
 	for (const l of LETREROS) {
 		if (l.zona !== zona || (modulo && l.modulo !== modulo)) continue;
 		// Un enemigo vivo cerca: el letrero espera a que lo venzas
-		if (enemigos.some((e) => !e.derrotado && Math.abs(e.x - l.x) < l.medio + 160 * (e.escala || 1) * S)) continue;
+		if ((modulo && modulo.oficina.enemigos ? modulo.oficina.enemigos : enemigos).some((e) => !e.derrotado && Math.abs(e.x - l.x) < l.medio + 160 * (e.escala || 1) * S)) continue;
 		const sx = l.x - camara;
 		if (sx < -200 || sx > W + 200) continue;
 		const texto = esTactil ? l.tactil : l.teclado;

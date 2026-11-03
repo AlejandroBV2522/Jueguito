@@ -49,6 +49,8 @@ Otras reglas:
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
 | `camino/` | `npcs-y-andamios.js` | la gente del camino, sus andamios, los antivalores |
 | `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, SharePoint): la torre de nubes con sus etapas y halcones, la cámara vertical (`camaraY`); va antes de `modulos.js` |
+| `oficina/` | `obra.js` | la obra al aire libre de Proyectos (`oficina.exterior`): zonas, riesgos que cierran el paso, sus preguntas (propias, no usan las de la Cueva), los peligros que se mueven, la zanja con su plataforma y la talanquera (`zonas[].peligro`), avance del edificio |
+| `oficina/` | `fabrica.js` | los obstáculos de la fábrica de Procesos (`oficina.vista: "fabrica"`): la prensa y la cinta transportadora (`zonas[].peligro`); usa las zonas y los riesgos de `obra.js` |
 | `oficina/` | `modulos.js` | `modulos` (un objeto por mundo), muebles, compañeros, `ESTACIONES` |
 | `camino/` | `letreros.js` | dónde van los letreros de obra |
 | `dibujo/` | `sprites-enemigos.js`, `sprites-personajes.js` | imágenes de enemigos, héroe y NPC |
@@ -69,6 +71,8 @@ Otras reglas:
 | `dibujo/` | `avisos.js` | avisos flotantes, andamios, barreras y suelo |
 | `camino/` | `dibujo-cueva.js` | la Cueva y la calle de Celaque (logos, edificios) |
 | `oficina/` | `dibujo-oficina.js` | ventanal, muebles, computadora; llama al tema de cada oficina (`mundos/<mundo>/tema.js`, registrado en `window.TEMAS_OFICINA`) |
+| `oficina/` | `dibujo-obra.js` | la obra: fondo, suelo, escena de cada zona, puertas, inauguración y los 5 riesgos |
+| `oficina/` | `dibujo-fabrica.js` | la fábrica: fondo, piso, escenas de las 5 zonas, sus 5 riesgos, la prensa, la cinta y la gran máquina (se suma a las tablas de `dibujo-obra.js`) |
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
 | `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`) y anzuelos de phishing que bajan del techo (`oficina.anzuelos`), en Seguridad |
 | `oficina/` | `cafeteria.js` | la Cafetería (mundo extra): la barra de café y su easter egg (`beberCafe`), la gente conversando al fondo y la terraza de Eber |

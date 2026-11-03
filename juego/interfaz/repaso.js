@@ -18,7 +18,11 @@ const uiRepaso = {
 };
 
 function preguntaDeRepaso(m) {
-	const lista = m.completoAlSalirDeLaCueva ? enemigos.flatMap((e) => e.preguntas) : preguntasDe(m);
+	const lista = m.completoAlSalirDeLaCueva
+		? enemigos.flatMap((e) => e.preguntas)
+		: m.oficina.exterior
+		? m.oficina.enemigos.flatMap((e) => e.preguntas).filter((p) => !p.orden) // las de ordenar no entran en el repaso
+		: preguntasDe(m);
 	// El jefe de la Cueva repite preguntas de otros antivalores
 	const unicas = lista.filter((p, i) => p && lista.findIndex((q) => q && q.pregunta === p.pregunta) === i);
 	return unicas.length ? unicas[Math.floor(Math.random() * unicas.length)] : null;
