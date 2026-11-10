@@ -27,12 +27,17 @@ window.MODULOS.push({
     edificio: "Astria · Cafetería",
     estacion: "cafe", // la barra de café al fondo (juego/oficina/cafeteria.js)
     fondo: true, // todos los personajes conversando al fondo
-    // Al aire libre, en la azotea de Astria al anochecer: cielo, ciudad
-    // encendida, baranda de vidrio, pérgola con luces y piso de deck
+    // Como el lugar real (fotos de la terraza y del local): primero la
+    // terraza de noche (cerros con las luces de la ciudad, el edificio
+    // blanco, pérgolas con focos, jardineras, sofás con cojines amarillos y
+    // sillas acapulco) y, pasando la puerta de vidrio, el local por dentro
+    // (lámparas de papel, columnas con círculos verdes, cortinas verdes,
+    // pantalla, sillas blancas en fila) con la barra al fondo
     azotea: true,
-    decoracion: ["jardinera", "sofa", "pizarra", "cafetera", "fogata", "jardinera", "especial"],
+    interior: 2400, // desde aquí es por dentro (px desde la entrada; la terraza de Eber queda afuera)
+    decoracion: ["acapulco", "sofa", "jardinera", "pizarra", "chiavari", "plantaAlta", "especial"],
     largo: 4400, // más larga que una oficina: así cabe todo el equipo al fondo
-    muebles: ["planta", "mesa", "sacos", "mesa", "silla", "mesa", "planta"],
+    muebles: ["planta", "mesa", "sacos", "mesa", "planta", "mesa", "planta"], // sin la silla negra de oficina: desentonaba con las sillas blancas del local
     terraza: 4, // la terraza alta queda sobre el 4.º mueble (una mesa)
     // ✏️ Borrador: frases de Eber, por revisar con él
     dj: {

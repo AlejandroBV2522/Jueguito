@@ -62,8 +62,8 @@ function degradadosOficina(arriba, abajo, horizonte, vista) {
 	sol.addColorStop(0.25, vista === "ciudad" ? "rgba(255,214,170,0.75)" : "rgba(255,244,200,0.7)");
 	sol.addColorStop(1, "rgba(255,244,200,0)");
 	const pisoLejano = ctx.createLinearGradient(0, abajo, 0, SUELO);
-	pisoLejano.addColorStop(0, "#b9c4c1");
-	pisoLejano.addColorStop(1, "#97a6a3");
+	pisoLejano.addColorStop(0, "#b4b7bc"); // alfombra gris, como la de la oficina real
+	pisoLejano.addColorStop(1, "#979ba1");
 	cacheFondoOficina[clave] = { cielo, bruma, sol, pisoLejano };
 	return cacheFondoOficina[clave];
 }
@@ -426,24 +426,79 @@ function dibujarEspecialOficina(tema, sx, piso) {
 	if (t && t.especial) t.especial(sx, piso);
 }
 
-// Parteluces del ventanal y reflejos en el vidrio
+// Las mamparas de vidrio del fondo, como en la oficina real: marcos negros
+// delgados, una franja esmerilada a media altura y, cada tanto, una sala de
+// juntas con su pared blanca, la puerta de madera y luces de riel. La vista
+// de cada mundo se sigue viendo por el vidrio.
+const PASO_MAMPARA = 170; // ancho de cada hoja de vidrio (a S = 1)
+const SALA_CADA = 5; // una de cada tantas hojas es la pared de una sala, con su puerta
 function dibujarMarcosVentanal(arriba, abajo, cl) {
-	const paso = 230 * S;
-	const off = modulo(cl * 0.55, paso);
-	ctx.fillStyle = "rgba(255,255,255,0.08)";
-	for (let x = -off - paso; x < W + paso; x += paso) {
-		ctx.beginPath();
-		ctx.moveTo(x + paso * 0.15, abajo);
-		ctx.lineTo(x + paso * 0.45, arriba);
-		ctx.lineTo(x + paso * 0.62, arriba);
-		ctx.lineTo(x + paso * 0.32, abajo);
-		ctx.fill();
+	const paso = PASO_MAMPARA * S;
+	const corrido = cl * 0.7; // las mamparas están más cerca que la vista: se mueven más
+	const primera = Math.floor(corrido / paso) - 1;
+	const hojas = Math.ceil(W / paso) + 3; // tope fijo: si algo llegara a valer NaN, el ciclo no se queda girando
+	const alto = abajo - arriba;
+	for (let k = primera; k < primera + hojas; k++) {
+		const x = k * paso - corrido;
+		if (x > W) break;
+		if (modulo(k, SALA_CADA) === 2) {
+			// Dentro de una sala: pared blanca, puerta de madera y riel de luces
+			ctx.fillStyle = "#e6ddcf"; // pared de la sala, más cálida que el cielo de afuera
+			ctx.fillRect(x, arriba, paso, alto);
+			ctx.fillStyle = "rgba(0,0,0,0.07)"; // la sombra del techo de la sala y del piso
+			ctx.fillRect(x, arriba, paso, 26 * S);
+			ctx.fillRect(x, abajo - 14 * S, paso, 14 * S);
+			const puertaY = abajo - Math.min(150 * S, alto * 0.6);
+			ctx.fillStyle = "#d4ab7c"; // puerta de madera (del alto de una persona)
+			ctx.fillRect(x + paso * 0.58, puertaY, 52 * S, abajo - puertaY);
+			ctx.fillStyle = "#b98d5c";
+			ctx.fillRect(x + paso * 0.58, puertaY, 3 * S, abajo - puertaY);
+			ctx.fillStyle = "#3a4446"; // jaladera
+			ctx.fillRect(x + paso * 0.58 + 42 * S, puertaY + (abajo - puertaY) * 0.5, 3 * S, 14 * S);
+			ctx.fillStyle = "#fbfbfa"; // pizarra blanca en la pared de la sala
+			ctx.fillRect(x + 14 * S, puertaY - 6 * S, paso * 0.45, 56 * S);
+			ctx.strokeStyle = "#b9bfbe";
+			ctx.lineWidth = 2 * S;
+			ctx.strokeRect(x + 14 * S, puertaY - 6 * S, paso * 0.45, 56 * S);
+			ctx.fillStyle = "rgba(170,205,220,0.16)"; // el vidrio de enfrente de la sala
+			ctx.fillRect(x, arriba, paso, alto);
+			ctx.fillStyle = "#2a2f31"; // riel con focos
+			ctx.fillRect(x + 14 * S, arriba + 14 * S, paso - 28 * S, 3 * S);
+			for (let f = 0; f < 3; f++) {
+				const fx = x + paso * (0.25 + f * 0.25);
+				ctx.fillRect(fx - 4 * S, arriba + 17 * S, 8 * S, 7 * S);
+				ctx.fillStyle = "rgba(255,248,225,0.9)";
+				circulo(fx, arriba + 25 * S, 2.5 * S);
+				ctx.fillStyle = "#2a2f31";
+			}
+		} else {
+			// Vidrio: un tinte muy leve y un reflejo diagonal
+			ctx.fillStyle = "rgba(225,236,240,0.12)";
+			ctx.fillRect(x, arriba, paso, alto);
+			ctx.fillStyle = "rgba(255,255,255,0.1)";
+			ctx.beginPath();
+			ctx.moveTo(x + paso * 0.1, abajo);
+			ctx.lineTo(x + paso * 0.45, arriba);
+			ctx.lineTo(x + paso * 0.6, arriba);
+			ctx.lineTo(x + paso * 0.25, abajo);
+			ctx.fill();
+		}
 	}
-	ctx.fillStyle = COLORES.verdeProfundo;
-	for (let x = -off; x < W + paso; x += paso) ctx.fillRect(x - 4 * S, arriba, 8 * S, abajo - arriba);
-	ctx.fillRect(0, arriba + (abajo - arriba) * 0.16, W, 4 * S);
-	ctx.fillStyle = "#cfd7d4"; // alféizar
-	ctx.fillRect(0, abajo - 3 * S, W, 8 * S);
+	// Franja esmerilada a media altura (con sus puntitos de cinta arriba)
+	const franja = arriba + alto * 0.62;
+	ctx.fillStyle = "rgba(255,255,255,0.22)";
+	ctx.fillRect(0, franja, W, 12 * S);
+	// Marcos negros: arriba, abajo y entre cada hoja
+	ctx.fillStyle = "#1f2426";
+	ctx.fillRect(0, arriba - 2 * S, W, 6 * S);
+	ctx.fillRect(0, abajo - 4 * S, W, 6 * S);
+	for (let k = primera; k < primera + hojas; k++) {
+		const x = k * paso - corrido;
+		if (x > W + 4 * S) break;
+		ctx.fillRect(x - 2.5 * S, arriba, 5 * S, alto);
+	}
+	ctx.fillStyle = "#c8a46e"; // cinta de los vidrios, bajo el techo
+	for (let x = -modulo(corrido, 46 * S); x < W; x += 46 * S) ctx.fillRect(x, arriba + 8 * S, 6 * S, 3 * S);
 }
 
 // Persona a lo lejos (para la oficina borrosa): sentada o de pie
@@ -504,19 +559,19 @@ function oficinaLejana() {
 				personaLejana(c, x + (p ? 96 : 12) * S, piso - 26 * S, ROPAS[Math.floor(az() * ROPAS.length)], PIELES[Math.floor(az() * PIELES.length)], true);
 			}
 			if (az() < 0.4) personaLejana(c, x + 128 * S, piso, ROPAS[Math.floor(az() * ROPAS.length)], PIELES[Math.floor(az() * PIELES.length)], false);
-			// Isla de escritorios con dos monitores encendidos
-			c.fillStyle = "#cfd6d3";
+			// Isla de escritorios de madera, costados blancos y dos monitores negros
+			c.fillStyle = "#d2a86f";
 			c.fillRect(x, piso - 30 * S, 110 * S, 6 * S);
-			c.fillStyle = "#8f9b98";
-			c.fillRect(x + 6 * S, piso - 24 * S, 5 * S, 24 * S);
-			c.fillRect(x + 99 * S, piso - 24 * S, 5 * S, 24 * S);
+			c.fillStyle = "#e4e7e6";
+			c.fillRect(x + 4 * S, piso - 24 * S, 8 * S, 24 * S);
+			c.fillRect(x + 98 * S, piso - 24 * S, 8 * S, 24 * S);
 			for (const mx of [x + 28 * S, x + 60 * S]) {
-				c.fillStyle = "#1c2526";
-				c.fillRect(mx, piso - 54 * S, 24 * S, 19 * S);
-				c.fillStyle = "rgba(140,210,195,0.95)";
-				c.fillRect(mx + 2 * S, piso - 52 * S, 20 * S, 15 * S);
-				c.fillStyle = "#1c2526";
-				c.fillRect(mx + 10 * S, piso - 35 * S, 4 * S, 5 * S);
+				c.fillStyle = "#15191b";
+				c.fillRect(mx, piso - 54 * S, 26 * S, 18 * S);
+				c.fillStyle = k % 2 ? "#2c3438" : "rgba(140,190,215,0.7)";
+				c.fillRect(mx + 2 * S, piso - 52 * S, 22 * S, 14 * S);
+				c.fillStyle = "#15191b";
+				c.fillRect(mx + 11 * S, piso - 36 * S, 4 * S, 6 * S);
 			}
 			if (k % 3 === 1) {
 				c.fillStyle = "#3f9b5a";
@@ -585,7 +640,7 @@ function dibujarFondoOficina(m, dt) {
 	// un tragaluz por donde la torre sale al cielo.
 	const torre = m.mision && m.mision.torre;
 	const tragaluz = torre && { izq: m.mision.cx + torre.izq * S, der: m.mision.cx + torre.der * S }; // en x del mundo
-	ctx.fillStyle = "#d4d9d6";
+	ctx.fillStyle = "#eef0ee"; // techo blanco, como el de la oficina real
 	if (!tragaluz) ctx.fillRect(0, 0, W, 34 * S);
 	else {
 		const ti = tragaluz.izq - camara, td = tragaluz.der - camara;
@@ -595,23 +650,37 @@ function dibujarFondoOficina(m, dt) {
 		ctx.fillRect(ti - 8 * S, 0, 8 * S, 34 * S);
 		ctx.fillRect(td, 0, 8 * S, 34 * S);
 	}
+	// Paneles de luz cuadrados empotrados (con su luz que baja) y, entre
+	// ellos, las rejillas del aire acondicionado
+	if (!cacheFondoOficina.luzTecho || cacheFondoOficina.luzTecho.S !== S) {
+		const g = ctx.createLinearGradient(0, 34 * S, 0, 250 * S);
+		g.addColorStop(0, "rgba(255,255,240,0.32)");
+		g.addColorStop(1, "rgba(255,255,240,0)");
+		cacheFondoOficina.luzTecho = { S, g };
+	}
 	for (let x = of.x0 + 120; x < of.terminalX + 200; x += 300) {
 		const sx = x - camara;
 		if (sx < -150 || sx > W + 150) continue;
 		if (tragaluz && x > tragaluz.izq - 60 && x < tragaluz.der + 60) continue;
-		const luz = ctx.createLinearGradient(0, 34 * S, 0, 260 * S);
-		luz.addColorStop(0, "rgba(255,255,235,0.45)");
-		luz.addColorStop(1, "rgba(255,255,235,0)");
-		ctx.fillStyle = luz;
+		ctx.fillStyle = cacheFondoOficina.luzTecho.g;
 		ctx.beginPath();
-		ctx.moveTo(sx - 45 * S, 34 * S);
-		ctx.lineTo(sx + 45 * S, 34 * S);
-		ctx.lineTo(sx + 120 * S, 260 * S);
-		ctx.lineTo(sx - 120 * S, 260 * S);
+		ctx.moveTo(sx - 40 * S, 34 * S);
+		ctx.lineTo(sx + 40 * S, 34 * S);
+		ctx.lineTo(sx + 110 * S, 250 * S);
+		ctx.lineTo(sx - 110 * S, 250 * S);
 		ctx.fill();
+		ctx.fillStyle = "#c9ccca"; // marco del panel
+		ctx.fillRect(sx - 46 * S, 25 * S, 92 * S, 10 * S);
 		ctx.fillStyle = "#ffffff";
-		rectRedondo(sx - 50 * S, 28 * S, 100 * S, 10 * S, 4 * S);
-		ctx.fill();
+		ctx.fillRect(sx - 42 * S, 27 * S, 84 * S, 7 * S);
+		// La rejilla, a medio camino del panel siguiente
+		const rx = sx + 150 * S;
+		if (!(tragaluz && x + 150 > tragaluz.izq - 60 && x + 150 < tragaluz.der + 60)) {
+			ctx.fillStyle = "#b9bdbb";
+			ctx.fillRect(rx - 26 * S, 27 * S, 52 * S, 7 * S);
+			ctx.fillStyle = "#8f9492";
+			for (let k = 0; k < 6; k++) ctx.fillRect(rx - 22 * S + k * 8 * S, 28 * S, 4 * S, 5 * S);
+		}
 	}
 
 	dibujarFondoCafeteria(m); // la gente conversando al fondo, detrás de todo (cafeteria.js)
@@ -632,13 +701,27 @@ function dibujarFondoOficina(m, dt) {
 function dibujarColumnasOficina(m) {
 	const of = m.oficina;
 	const piso = SUELO + 40 * S;
+	// Bajo el tragaluz de la torre de nubes (mision.js) no hay techo: ahí no va la viga
+	const torre = m.mision && m.mision.torre;
+	const tragaluz = torre && { izq: m.mision.cx + torre.izq * S, der: m.mision.cx + torre.der * S };
 	COLUMNAS_OFICINA.forEach((d, k) => {
 		const sx = of.x0 + d - camara;
-		if (sx < -200 || sx > W + 200) return;
+		if (sx < -260 * S || sx > W + 260 * S) return; // la viga mide 300·S: que no aparezca de golpe
+		// Columna de acero azul con su viga en el techo, como en la oficina real
 		const ancho = 54 * S;
-		ctx.fillStyle = "#e6eae7";
+		const x = of.x0 + d;
+		const bajoTragaluz = tragaluz && x + 150 * S > tragaluz.izq && x - 150 * S < tragaluz.der;
+		if (!bajoTragaluz) {
+			ctx.fillStyle = "#3f6d99";
+			ctx.fillRect(sx - 150 * S, 20 * S, 300 * S, 14 * S); // viga
+			ctx.fillStyle = "#335a80";
+			ctx.fillRect(sx - 150 * S, 30 * S, 300 * S, 4 * S);
+		}
+		ctx.fillStyle = "#4677a6";
 		ctx.fillRect(sx - ancho / 2, 30 * S, ancho, piso - 30 * S);
-		ctx.fillStyle = "rgba(0,0,0,0.08)";
+		ctx.fillStyle = "rgba(255,255,255,0.12)";
+		ctx.fillRect(sx - ancho / 2 + 4 * S, 30 * S, 6 * S, piso - 30 * S);
+		ctx.fillStyle = "rgba(0,0,0,0.16)";
 		ctx.fillRect(sx + ancho * 0.22, 30 * S, ancho * 0.28, piso - 30 * S);
 		ctx.fillStyle = m.color;
 		ctx.fillRect(sx - ancho / 2, piso - 16 * S, ancho, 16 * S);
@@ -682,7 +765,7 @@ function dibujarColumnasOficina(m) {
 			while (tam > 9 && ctx.measureText(texto).width > w - 16 * S) ctx.font = `700 ${--tam * S}px ${FUENTE}`;
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText(texto, sx, y0 + 112 * S);
+			ctx.fillText(texto, sx, y0 + 112 * S, w - 12 * S); // sin salirse del afiche
 			ctx.font = `400 ${11 * S}px ${FUENTE}`;
 			if (m.subtitulo !== texto) ctx.fillText(m.subtitulo || "", sx, y0 + 136 * S, w - 12 * S);
 		} else {
@@ -704,7 +787,7 @@ function dibujarColumnasOficina(m) {
 			for (const [ang, largo, grosor, col] of [
 				[horas, 0.5, 4, COLORES.verdeProfundo],
 				[minutos, 0.75, 3, COLORES.verdeProfundo],
-				[segundos, 0.8, 1.5, COLORES.verdeInstitucional],
+				[segundos, 0.8, 1.5, "#d9362b"], // segundero rojo, como los relojes de la oficina
 			]) {
 				ctx.strokeStyle = col;
 				ctx.lineWidth = grosor * S;
@@ -810,7 +893,7 @@ function dibujarDecoracionOficina(m) {
 		} else if (o.tipo === "especial") {
 			dibujarEspecialOficina(m.oficina.tema, sx, piso);
 		} else if (dibujarDecoracionAzotea(o.tipo, sx, piso)) {
-			// jardinera, sofá o fogata de la azotea (cafeteria.js)
+			// jardinera, sofá, acapulco, chiavari o fogata de la Cafetería (cafeteria.js)
 		} else if (o.tipo === "lampara") {
 			ctx.strokeStyle = "#3a4446";
 			ctx.lineWidth = 4 * S;
@@ -834,23 +917,31 @@ function dibujarDecoracionOficina(m) {
 
 function dibujarSueloOficina(m) {
 	if (m.oficina.azotea) return dibujarSueloAzotea(m); // deck de madera (cafeteria.js)
-	const piso = ctx.createLinearGradient(0, SUELO, 0, H);
-	piso.addColorStop(0, "#7a8b88");
-	piso.addColorStop(1, "#56625f");
-	ctx.fillStyle = piso;
+	// Alfombra gris con rayas largas, como la de la oficina real
+	const clave = `alfombra|${SUELO}|${H}`;
+	if (!cacheFondoOficina[clave]) {
+		const g = ctx.createLinearGradient(0, SUELO, 0, H);
+		g.addColorStop(0, "#8f9298");
+		g.addColorStop(1, "#63666c");
+		cacheFondoOficina[clave] = g;
+	}
+	ctx.fillStyle = cacheFondoOficina[clave];
 	ctx.fillRect(0, SUELO, W, H - SUELO);
+	const franja = RAYAS_ALFOMBRA.ancho * S;
+	const off = modulo(camara, franja);
+	for (const r of RAYAS_ALFOMBRA.lista) {
+		const y = SUELO + r.y * (H - SUELO);
+		ctx.fillStyle = r.clara ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.12)";
+		for (let x = r.x * S - off - franja; x < W; x += franja) ctx.fillRect(x, y, r.largo * S, r.grosor * S);
+	}
 	ctx.fillStyle = m.color; // borde de la alfombra con el color del módulo
 	ctx.fillRect(0, SUELO, W, 4 * S);
-	// Losetas de alfombra
-	ctx.strokeStyle = "rgba(0,0,0,0.12)";
-	ctx.lineWidth = 1.5 * S;
-	ctx.beginPath();
-	const paso = 90 * S;
-	const off = ((camara % paso) + paso) % paso;
-	for (let sx = -off; sx < W; sx += paso) linea(sx, SUELO + 6 * S, sx, H);
-	linea(0, SUELO + 50 * S, W, SUELO + 50 * S);
-	ctx.stroke();
 }
+const RAYAS_ALFOMBRA = (() => {
+	const az = crearAzar(913);
+	const ancho = 900;
+	return { ancho, lista: Array.from({ length: 70 }, () => ({ x: az() * ancho, y: 0.04 + az() * 0.96, largo: 60 + az() * 260, grosor: 1 + az() * 1.5, clara: az() < 0.5 })) };
+})();
 
 // Puerta de salida, al inicio de la oficina
 function dibujarPuertaSalida(m) {
@@ -892,27 +983,70 @@ function dibujarPuertaSalida(m) {
 function dibujarMueble(o, sx, baseY, topY, w) {
 	const alto = baseY - topY;
 	if (o.tipo === "escritorio") {
-		ctx.fillStyle = "#8a6a4a";
-		ctx.fillRect(sx - w + 6 * S, topY + 8 * S, 8 * S, alto - 8 * S);
-		ctx.fillRect(sx + w - 14 * S, topY + 8 * S, 8 * S, alto - 8 * S);
-		ctx.fillStyle = "#a07c58";
-		ctx.fillRect(sx + w * 0.2, topY + 8 * S, w * 0.6, alto * 0.55); // cajonera
-		ctx.fillStyle = "#c89b6d";
-		rectRedondo(sx - w, topY, w * 2, 10 * S, 3 * S);
+		// Como los de la oficina real: cubierta de madera clara, costados
+		// blancos perforados, dos monitores en su brazo, teclado, post-its y
+		// una plantita
+		ctx.fillStyle = "#e4e7e6";
+		for (const lx of [sx - w + 2 * S, sx + w - 16 * S]) {
+			ctx.fillRect(lx, topY + 8 * S, 14 * S, alto - 8 * S);
+			ctx.fillStyle = "#b9bfbe"; // las ranuras del costado
+			for (let y = topY + 16 * S; y < baseY - 8 * S; y += 7 * S) ctx.fillRect(lx + 5 * S, y, 4 * S, 3 * S);
+			ctx.fillStyle = "#e4e7e6";
+		}
+		ctx.fillStyle = "#b88d5a"; // panel de enfrente, de madera
+		ctx.fillRect(sx - w + 16 * S, topY + 8 * S, w * 2 - 32 * S, alto * 0.42);
+		ctx.fillStyle = "#d2a86f";
+		rectRedondo(sx - w, topY, w * 2, 10 * S, 2 * S);
 		ctx.fill();
-		ctx.fillStyle = "#3a4446"; // laptop cerrada y taza
-		ctx.fillRect(sx - w * 0.6, topY - 4 * S, 36 * S, 4 * S);
-		ctx.fillStyle = COLORES.verdeInstitucional;
-		ctx.fillRect(sx + w * 0.45, topY - 10 * S, 9 * S, 10 * S);
+		ctx.fillStyle = "#b88d5a";
+		ctx.fillRect(sx - w, topY + 7 * S, w * 2, 3 * S);
+		// Brazo y dos monitores negros
+		ctx.fillStyle = "#1a1e20";
+		ctx.fillRect(sx - 2 * S, topY - 34 * S, 4 * S, 34 * S);
+		ctx.fillRect(sx - 26 * S, topY - 36 * S, 52 * S, 3 * S);
+		for (const mx of [sx - 47 * S, sx + 1 * S]) {
+			ctx.fillStyle = "#15191b";
+			rectRedondo(mx, topY - 70 * S, 46 * S, 30 * S, 2 * S);
+			ctx.fill();
+			ctx.fillStyle = "#283034";
+			ctx.fillRect(mx + 2 * S, topY - 68 * S, 42 * S, 24 * S);
+			ctx.fillStyle = "rgba(255,255,255,0.08)";
+			ctx.fillRect(mx + 4 * S, topY - 68 * S, 10 * S, 24 * S);
+		}
+		ctx.fillStyle = "#ffe066"; // post-its en la orilla del monitor
+		ctx.fillRect(sx + 40 * S, topY - 66 * S, 8 * S, 8 * S);
+		ctx.fillStyle = "#9be27a";
+		ctx.fillRect(sx + 40 * S, topY - 56 * S, 8 * S, 8 * S);
+		ctx.fillStyle = "#2b3134"; // teclado
+		ctx.fillRect(sx - 20 * S, topY - 3 * S, 40 * S, 3 * S);
+		ctx.fillStyle = COLORES.blanco; // la maceta y su plantita
+		ctx.fillRect(sx - w + 8 * S, topY - 9 * S, 10 * S, 9 * S);
+		ctx.fillStyle = "#3f9b5a";
+		for (let k = -1; k <= 1; k++) {
+			ctx.beginPath();
+			ctx.ellipse(sx - w + 13 * S + k * 4 * S, topY - 15 * S, 3 * S, 7 * S, k * 0.45, 0, Math.PI * 2);
+			ctx.fill();
+		}
 	} else if (o.tipo === "silla") {
-		ctx.fillStyle = "#2e3a3c";
-		ctx.fillRect(sx - 2 * S, topY + 6 * S, 4 * S, alto - 10 * S);
-		ctx.fillRect(sx - w, baseY - 5 * S, w * 2, 5 * S);
-		ctx.fillStyle = COLORES.verdeProfundo;
-		rectRedondo(sx - w, topY, w * 2, 9 * S, 4 * S);
+		// Silla negra de malla, con brazos y base de cinco ruedas
+		ctx.fillStyle = "#1c2022";
+		ctx.fillRect(sx - 2.5 * S, topY + 6 * S, 5 * S, alto - 12 * S); // pistón
+		ctx.fillRect(sx - w, baseY - 6 * S, w * 2, 3 * S); // base
+		for (const rx of [sx - w, sx, sx + w - 4 * S]) circulo(rx + 2 * S, baseY - 2 * S, 2.5 * S); // ruedas
+		rectRedondo(sx - w, topY, w * 2, 9 * S, 4 * S); // asiento
 		ctx.fill();
-		rectRedondo(sx - w, topY - 34 * S, 9 * S, 38 * S, 4 * S); // respaldo
+		ctx.fillRect(sx + w * 0.2, topY - 14 * S, 3 * S, 14 * S); // brazo
+		ctx.fillRect(sx + w * 0.2 - 4 * S, topY - 15 * S, 12 * S, 3 * S);
+		ctx.save(); // respaldo de malla, un poco inclinado
+		ctx.translate(sx - w + 4 * S, topY + 2 * S);
+		ctx.rotate(-0.12);
+		ctx.fillStyle = "#2a2f31";
+		rectRedondo(-5 * S, -44 * S, 11 * S, 46 * S, 5 * S);
 		ctx.fill();
+		ctx.strokeStyle = "rgba(255,255,255,0.12)";
+		ctx.lineWidth = 1 * S;
+		for (let y = -40; y < 0; y += 5) linea(-4 * S, y * S, 5 * S, (y + 3) * S);
+		ctx.restore();
 	} else if (o.tipo === "archivero") {
 		ctx.fillStyle = "#9aa5a6";
 		ctx.fillRect(sx - w, topY, w * 2, alto);

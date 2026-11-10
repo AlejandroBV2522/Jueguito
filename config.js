@@ -232,6 +232,16 @@ window.TEMAS_OFICINA = {};
                          terraza: { nombre, cuerpo, frases: [...] }.
                   fondo: (opcional) true para que todos los personajes del
                          juego conversen al fondo.
+                  azotea: (opcional) true: al aire libre, en una terraza de
+                         noche (cielo, cerros con las luces de la ciudad,
+                         pérgolas con focos, jardineras y piso de deck).
+                  interior: (opcional, con azotea) desde cuántos px de la
+                         entrada es por dentro: una puerta de vidrio y luego
+                         el local (lámparas de papel, columnas con círculos
+                         verdes, cortinas, pantalla y piso de madera clara).
+                         La decoración "acapulco" y "sofa" van bien afuera;
+                         "chiavari" (sillas blancas en fila), "pizarra" y
+                         "plantaAlta", adentro.
                   platicas: (opcional, con fondo) de qué platica cada grupo
                          del fondo: [{ tema, globos: [frases cortas del globo],
                          lineas: [páginas que escuchas al acercarte con E] }].

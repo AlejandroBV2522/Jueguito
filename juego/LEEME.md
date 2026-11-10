@@ -78,7 +78,7 @@ Otras reglas:
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
 | `oficina/` | `dibujo-taller-ia.js` | dibujo del taller de prompts: el dron (el robot aéreo de `estaciones.js`), las piezas, la pared de luz con la pantalla del modelo y el tablero RICO |
 | `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`) y anzuelos de phishing que bajan del techo (`oficina.anzuelos`), en Seguridad |
-| `oficina/` | `cafeteria.js` | la Cafetería (mundo extra): la barra de café y su easter egg (`beberCafe`), la gente conversando al fondo (sus pláticas de la Inducción, que se escuchan con E: `platicaCerca`, `abrirPlatica`), la barista, la azotea al atardecer (sol, nubes, guacamaya, palomas) y la terraza de Eber |
+| `oficina/` | `cafeteria.js` | la Cafetería (mundo extra): la barra de café y su easter egg (`beberCafe`), la gente conversando al fondo (sus pláticas de la Inducción, que se escuchan con E: `platicaCerca`, `abrirPlatica`), la barista, la terraza de noche (cerros con luces, edificio blanco, pérgolas con focos, jardineras, guacamaya, palomas), el local por dentro pasando la puerta de vidrio (`oficina.interior`: lámparas de papel, columnas con círculos verdes, pantalla) y la terraza de Eber |
 | `dibujo/` | `coleccionables.js` | guacamayas ocultas en el aire (`mundo.js → coleccionables`), cómo se ven y se recogen; chispas (`lanzarChispas`) |
 | `camino/` | `dibujo-letreros.js` | dibujo de los letreros de obra |
 | `dibujo/` | `aves.js`, `guias.js`, `personajes.js` | aves, guías y enemigos, héroe y NPC |
