@@ -37,9 +37,9 @@ window.MODULOS.push({
             {
               pregunta: "¿En qué se dividen los procesos de Celaque?",
               opciones: [
-                "En fáciles y difíciles.",
-                "En recurrentes (se repiten con una frecuencia) y secuenciales (plantillas y solicitudes).",
-                "En los de oficina y los de obra.",
+                "En diarios, semanales y mensuales, según cuándo se hacen.",
+                "En recurrentes, que se repiten, y secuenciales, que activa un evento.",
+                "En los de cada departamento y los de toda la empresa.",
               ],
               correcta: 1,
               explicacion: "Los secuenciales no tienen frecuencia: se activan cuando pasa un evento.", // lám. 4
@@ -47,16 +47,17 @@ window.MODULOS.push({
             {
               pregunta: "Uno de los principios de los procesos es OHIO. ¿Qué significa?",
               opciones: [
-                "Hazlo solo una vez: no repetir trabajo que el proceso ya resuelve.",
-                "Hazlo lo más rápido que puedas.",
-                "Hazlo y que otro lo revise siempre.",
+                "Hazlo solo una vez: no repetir lo que el proceso ya resuelve.",
+                "Hazlo hoy mismo: ningún proceso se deja para mañana.",
+                "Hazlo con otro: cada paso lo revisan dos personas.",
               ],
               correcta: 0,
-              explicacion: "OHIO viene de «Hazlo solo una vez». Un buen proceso evita el trabajo doble.", // lám. 5
+              explicacion: "OHIO significa «hazlo solo una vez». Un buen proceso evita el trabajo doble.", // lám. 5
             },
           ],
         },
       },
+      // Compañeros de cada zona: personas del equipo (✏️ confirmar con Astrid quién explica cada zona)
       // 2 · Sala de moldes: las plantillas y cómo se duplican (lám. 11, 13 y 14); lleva la prensa
       {
         nombre: "Sala de moldes",
@@ -80,8 +81,8 @@ window.MODULOS.push({
               pregunta: "Vas a duplicar una plantilla en Wrike. ¿Qué datos debes indicar?",
               opciones: [
                 "El nombre, la carpeta de archivo, el asignado (si no tiene) y la fecha.",
-                "Solo el nombre de la plantilla.",
-                "El departamento y el nivel de revisión.",
+                "Solo el nombre; Wrike completa lo demás por su cuenta.",
+                "El departamento, el nivel de revisión y la recurrencia.",
               ],
               correcta: 0,
               explicacion: "Así la copia nace con su nombre, en su carpeta de archivo, con responsable y con fecha.", // lám. 14
@@ -110,9 +111,9 @@ window.MODULOS.push({
             {
               pregunta: "¿Cuándo se genera una solicitud en Wrike?",
               opciones: [
-                "Cada mes, en una fecha fija.",
-                "Cuando ocurre un evento con un inicio y un fin definidos.",
-                "Solo cuando termina un proyecto.",
+                "Cada mes, en una fecha fija del calendario.",
+                "Cuando ocurre un evento con inicio y fin definidos.",
+                "Cuando el jefe la asigna en la reunión semanal.",
               ],
               correcta: 1,
               explicacion: "A diferencia de un proceso recurrente, la solicitud no se repite sola: la origina un evento.", // lám. 16
@@ -140,6 +141,8 @@ window.MODULOS.push({
           dialogo: [
             "Cada proceso lleva un código en su nombre. En «T-RH-4-1 Revisión Mensual Talento», la T es el departamento (Talento) y RH es el macroproceso.",
             "El 4 es la recurrencia (mensual) y el 1 es el nivel de revisión. Un buen código es lo que mantiene todo ordenado.",
+            "Las recurrencias: 1 diario, 2 semanal, 3 quincenal, 4 mensual, 5 trimestral, 6 semestral y 7 anual.",
+            "Y tres más: 8 es más de una vez a la semana, 9 bimensual y 10 cada 4 meses.",
           ],
         },
         enemigo: {
@@ -153,6 +156,12 @@ window.MODULOS.push({
               orden: ["Departamento (T)", "Macroproceso (RH)", "Recurrencia (4)", "Nivel de revisión (1)"],
               explicacion: "T-RH-4-1: departamento, macroproceso, recurrencia y nivel de revisión.", // lám. 20
             },
+            {
+              pregunta: "Vas a crear un proceso que se hace cada trimestre. ¿Qué número de recurrencia lleva su código?",
+              opciones: ["El 3", "El 4", "El 5", "El 7"],
+              correcta: 2,
+              explicacion: "3 es quincenal, 4 mensual, 5 trimestral y 7 anual.",
+            },
           ],
         },
       },
@@ -164,7 +173,9 @@ window.MODULOS.push({
           nombre: "Franklin Matute",
           cuerpo: "chico",
           dialogo: [
-            "Antes de dar un proceso por terminado, tres cosas: deja la evidencia de lo que hiciste, revisa que no queden subtareas activas y corre el proceso en un día específico.",
+            "Antes de dar un proceso por terminado, deja la evidencia de lo que hiciste.",
+            "Revisa que no queden subtareas activas y córrelo en un día específico, no en un rango.",
+            "Y al documentarlo no uses nombres propios: escribe «notificar al siguiente nivel».",
             "El último riesgo te espera adelante. ¡Cuando lo venzas se activa la gran máquina!",
           ],
         },
@@ -178,9 +189,9 @@ window.MODULOS.push({
             {
               pregunta: "Terminaste de ejecutar un proceso. ¿Cuál es la buena práctica?",
               opciones: [
-                "Marcarlo completado sin dejar nada escrito.",
-                "Documentar la evidencia de cumplimiento en la tarea (lo que se hizo y sus enlaces).",
-                "Borrar el proceso para que no estorbe.",
+                "Marcarlo completado y avisar por chat que ya quedó.",
+                "Documentar en la tarea la evidencia: lo que hiciste y sus enlaces.",
+                "Guardar la evidencia en tu computadora por si te la piden.",
               ],
               correcta: 1,
               explicacion: "La evidencia deja constancia de que el proceso se cumplió.", // lám. 24
@@ -188,9 +199,9 @@ window.MODULOS.push({
             {
               pregunta: "Un proceso todavía tiene subtareas activas. ¿Lo puedes marcar como completado?",
               opciones: [
-                "Sí, si ya pasó su fecha.",
+                "Sí, si ya pasó su fecha de entrega.",
                 "No: primero se completan todas sus subtareas.",
-                "Sí, nadie lo revisa.",
+                "Sí, si dejas una nota explicando por qué.",
               ],
               correcta: 1,
               explicacion: "No se completan los procesos que tienen subtareas activas.", // lám. 25
@@ -205,6 +216,16 @@ window.MODULOS.push({
               correcta: 0,
               explicacion: "Los procesos se corren en un día específico, no en un rango de días.", // lám. 26
             },
+            {
+              pregunta: "Estás escribiendo los pasos de un proceso. ¿Cuál está bien escrito?",
+              opciones: [
+                "«Avisarle a Pamela cuando termine».",
+                "«Notificar al siguiente nivel».",
+                "«Mandarle un mensaje a quien sepa».",
+              ],
+              correcta: 1,
+              explicacion: "En los procesos no se usan nombres propios: se notifica o se etiqueta al siguiente nivel.",
+            },
           ],
         },
       },
@@ -217,6 +238,7 @@ window.MODULOS.push({
     dialogo: [
       "¡Hola! Soy Astrid Coello y te doy la bienvenida a la fábrica de procesos.",
       "Los procesos nos dan organización, eficiencia y responsabilidad para el trabajo del día a día, y todos viven en Wrike.",
+      "Los encuentras en tus paneles de control, en los espacios «Personal» y «Compartido conmigo», y en Proyectos y carpetas.",
       "Hay dos tipos: los recurrentes, que se repiten con una frecuencia, y los secuenciales (plantillas y solicitudes), que se activan por un evento.",
       "Nuestros principios: OHIO (hazlo solo una vez), niveles de revisión, consistencia, recurrencias y eficiencias. Y recuerda: los procesos no son independientes.",
     ],

@@ -48,7 +48,7 @@ Otras reglas:
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
 | `camino/` | `npcs-y-andamios.js` | la gente del camino, sus andamios, los antivalores |
-| `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, SharePoint): la torre de nubes con sus etapas y halcones, la cámara vertical (`camaraY`); va antes de `modulos.js` |
+| `oficina/` | `mision.js` | llevar algo del punto A al B (`mision` en `mundo.js`, Plataformas): la torre de nubes con sus etapas y halcones, la cámara vertical (`camaraY`); va antes de `modulos.js` |
 | `oficina/` | `obra.js` | la obra al aire libre de Proyectos (`oficina.exterior`): zonas, riesgos que cierran el paso, sus preguntas (propias, no usan las de la Cueva), los peligros que se mueven, la zanja con su plataforma y la talanquera (`zonas[].peligro`), avance del edificio |
 | `oficina/` | `torre-preguntas.js` | las preguntas de los banderines de la torre de nubes (`mision.etapas[].preguntas`): se abren con E y, al acabarlas, se forman las nubes de la etapa siguiente; va después de `controles.js` |
 | `oficina/` | `fabrica.js` | los obstáculos de la fábrica de Procesos (`oficina.vista: "fabrica"`): la prensa y la cinta transportadora (`zonas[].peligro`); usa las zonas y los riesgos de `obra.js` |

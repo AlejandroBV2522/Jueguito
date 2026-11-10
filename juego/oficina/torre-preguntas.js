@@ -1,4 +1,4 @@
-/* Camino a Celaque — las preguntas de los banderines de la torre de nubes (SharePoint). Ver juego/LEEME.md. */
+/* Camino a Celaque — las preguntas de los banderines de la torre de nubes (Plataformas). Ver juego/LEEME.md. */
 "use strict";
 
 // ---------- Preguntas de los banderines (mundo.js → mision.etapas[].preguntas) ----------

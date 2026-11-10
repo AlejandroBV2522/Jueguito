@@ -453,7 +453,9 @@ const LEER_TALENTO = `(() => {
 const RESPONDER_BIEN = `(() => {
 	const botones = [...document.querySelectorAll("#dialogo-opciones button")];
 	const texto = document.querySelector("#dialogo-texto").textContent;
-	const p = window.PREGUNTAS_CUEVA.flatMap((d) => d.preguntas || [d]).find((q) => q.pregunta === texto && q.opciones.every((o, i) => botones[i] && botones[i].textContent === o));
+	// Cada botón lleva su número delante (span.num-opcion): se compara solo el texto de la opción
+	const sinNumero = (b) => [...b.childNodes].filter((n) => !(n.classList && n.classList.contains("num-opcion"))).map((n) => n.textContent).join("");
+	const p = window.PREGUNTAS_CUEVA.flatMap((d) => d.preguntas || [d]).find((q) => q.pregunta === texto && q.opciones.every((o, i) => botones[i] && sinNumero(botones[i]) === o));
 	if (!p) return false;
 	botones[p.correcta].click();
 	return true;
