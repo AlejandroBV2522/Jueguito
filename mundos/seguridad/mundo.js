@@ -21,7 +21,9 @@ window.MODULOS.push({
   // virus: salen virus que hay que esquivar (agacharse o saltar) antes del antivirus.
   // anzuelos: anzuelos de phishing que bajan del techo (se pasa cuando suben).
   // largo: oficina el doble de larga que las demás (2600), para esquivar más cosas
-  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, anzuelos: true, largo: 5200, edificio: "Acacias San Ignacio" },
+  // companerosAlInicio: el equipo espera junto a la entrada; virus y anzuelos
+  // empiezan cuando hablaste con todos, y el resto del camino es esquivar
+  oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, anzuelos: true, largo: 5200, companerosAlInicio: true, edificio: "Acacias San Ignacio" },
   anfitrion: {
     nombre: "Sergio Aguiriano",
     cuerpo: "chico",
@@ -29,9 +31,11 @@ window.MODULOS.push({
     dialogo: [
       "¡Hola! Soy Sergio Aguiriano y te doy la bienvenida al módulo de Seguridad.",
       "En Celaque aplicamos la norma ISO 27001: cuida cómo entramos a los sistemas, los equipos que usamos y cómo nos conectamos a internet.",
-      "Hoy tenemos un problema: unos virus dañaron el antivirus del fondo y vienen hacia ti. Agáchate para que no te den los que vuelan alto y salta los que ruedan por el piso.",
-      "Y cuidado con los anzuelos de phishing que bajan del techo: espera a que suban y pasa por debajo. El camino es largo y, mientras más avanzas, más virus salen.",
-      "El equipo te va a dar las buenas prácticas en tres niveles: lo personal, tu equipo y la red. Al hablar con alguien los virus se detienen. Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
+      "Hoy tenemos un problema: unos virus dañaron el antivirus del fondo y vienen hacia ti.",
+      "Agáchate ante los que vuelan alto y salta los que ruedan por el piso.",
+      "Cuidado con los anzuelos de phishing que bajan del techo: espera a que suban y pasa por debajo.",
+      "Primero, el equipo que está aquí conmigo te da las buenas prácticas en tres niveles: lo personal, tu equipo y la red.",
+      "Cuando hables con los tres, empiezan los virus. Llega al antivirus y repáralo respondiendo bien. ¡Cuento contigo!",
     ],
   },
   // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
@@ -69,7 +73,7 @@ window.MODULOS.push({
       dialogo: [
         "Nivel 3, la red: antes de escribir tus datos en una página, revisa que tenga el candado (SSL).",
         "Sophos revisa los correos para detectar phishing, y cada mes hacemos pruebas de phishing a personas al azar. ¡Si algo se ve raro, repórtalo!",
-        "Ya casi llegas al antivirus. ¡Sigue esquivando!",
+        "Con esto ya conoces la red. Cuando tengas los tres niveles, los virus vienen hacia ti. ¡Esquívalos hasta el antivirus!",
       ],
     },
   ],
@@ -102,7 +106,7 @@ window.MODULOS.push({
       // ✏️ Borrador · Nivel 3, perimetral
       pregunta: "Una página te pide tu usuario y contraseña. ¿Qué revisas primero?",
       opciones: [
-        "Que tenga colores bonitos.",
+        "Que cargue rápido y se vea profesional.",
         "Que la dirección sea la correcta y tenga el candado (SSL).",
         "Nada: si apareció en el buscador, es segura.",
       ],
@@ -113,9 +117,9 @@ window.MODULOS.push({
       // ✏️ Borrador · Nivel 3, perimetral (phishing)
       pregunta: "Te llega un correo urgente pidiendo tu contraseña. ¿Qué haces?",
       opciones: [
-        "La envío rápido para no tener problemas.",
+        "La envío rápido: si es urgente, mejor no atrasar.",
         "No la comparto y lo reporto al área de Sistemas.",
-        "Se la reenvío a un compañero.",
+        "Le pregunto a un compañero si a él también le llegó.",
       ],
       correcta: 1,
       explicacion: "Nadie de Celaque te pide tu contraseña por correo. Puede ser phishing… o una de las pruebas mensuales de phishing.",
@@ -124,9 +128,9 @@ window.MODULOS.push({
       // ✏️ Borrador · Nivel 1, personal (contraseñas)
       pregunta: "¿Puedes usar la misma contraseña para el correo, Wrike y tu banco?",
       opciones: [
-        "Sí, así no se me olvida.",
-        "Solo si es larga.",
-        "No: cada cuenta lleva su contraseña, guardada en Bitwarden, y se rota cuando toca.",
+        "Sí, si es larga y difícil de adivinar.",
+        "Sí, mientras no la anote en un papel.",
+        "No: cada cuenta lleva la suya, guardada en Bitwarden.",
       ],
       correcta: 2,
       explicacion: "Si una contraseña repetida se filtra, abre todas tus cuentas. Bitwarden te ayuda a tener una distinta para cada una.",

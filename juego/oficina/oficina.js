@@ -71,6 +71,8 @@ function actualizarHudOficina() {
 		? `Módulo ${oficinaActual.nombre} ✓  ·  Vuelve a la puerta para salir`
 		: !misionLista(oficinaActual) && oficinaActual.oficina.companeros.every((n) => n.hablado)
 		? `Módulo ${oficinaActual.nombre}  ·  ${textoMision(oficinaActual)}`
+		: !tallerListo(oficinaActual) && oficinaActual.oficina.companeros.every((n) => n.hablado)
+		? `Módulo ${oficinaActual.nombre}  ·  ${textoTaller(oficinaActual)}` // taller de prompts (taller-ia.js)
 		: `Módulo ${oficinaActual.nombre}  ·  Llega ${ESTACIONES[oficinaActual.oficina.estacion].lugar} del fondo`;
 }
 
@@ -102,6 +104,10 @@ function abrirTerminal(m) {
 	if (!misionLista(m)) {
 		const texto = textoMision(m);
 		avisos.push({ texto: `Primero: ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, t: 0 });
+		return;
+	}
+	if (!tallerListo(m)) {
+		avisos.push({ texto: "Primero: arma los prompts del taller", t: 0 });
 		return;
 	}
 	m.preguntaActual = 0;

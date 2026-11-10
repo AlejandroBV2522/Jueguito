@@ -195,6 +195,7 @@ function actualizar(dt) {
 	}
 	actualizarVirus(dt); // virus de la oficina (mundo.js → oficina.virus)
 	actualizarMision(dt); // llevar algo del punto A al B (mundo.js → mision)
+	actualizarTallerIA(dt); // taller de prompts de IA (mundo.js → taller)
 	actualizarCafeteria(); // Eber saluda en su terraza (cafeteria.js)
 	actualizarColeccionables(); // guacamayas ocultas (mundo.js → coleccionables)
 	actualizarChispas(dt);
@@ -264,6 +265,7 @@ function actualizar(dt) {
 	if (oficinaActual) {
 		const of = oficinaActual.oficina;
 		objetivo = clamp(objetivo, of.x0 - 40, Math.max(of.x0 - 40, of.terminalX + 160 - W));
+		objetivo = camaraTallerIA(objetivo); // en plena ronda del taller de prompts, quieta y centrada en él
 	}
 	camara += (objetivo - camara) * Math.min(1, dt * 5);
 	// Cámara vertical: sube contigo por la torre de nubes (mision.js)

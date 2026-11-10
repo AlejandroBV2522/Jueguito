@@ -11,8 +11,8 @@ carpeta. El motor del juego (`juego/`) no se toca.
 | `procesos/` | 3 · Procesos (Wrike, Edificio Lirios): la fábrica de procesos, en 5 zonas con un riesgo al final de cada una | `mundo.js` (zonas, gente, riesgos y preguntas), `tema.js` |
 | `sharepoint/` | 4 · SharePoint, Outlook y Teams (Torre Atlas: subir la torre de nubes por la licencia y bajársela a Aldo) | `mundo.js`, `tema.js` (documentos a la nube, carpetas, servidor) |
 | `seguridad/` | 5 · Seguridad (Acacias San Ignacio, esquivar virus y anzuelos de phishing y reparar el antivirus) | `mundo.js`, `tema.js` (escudos, lista de chequeo, cámaras) |
-| `ia/` | 6 · IA (Zorzales del Merendón, taller con 3 robots) | `mundo.js`, `tema.js` (red de nodos, red neuronal, hologramas) |
-| `cafeteria/` | Extra · Cafetería (opcional, se abre después de Proyectos: café con easter egg, todo el equipo conversando y Heber con música en la terraza) | `mundo.js`, `tema.js` (granos y notas, menú, tostadora) |
+| `ia/` | 6 · IA (Zorzales del Merendón: el taller de prompts, 3 rondas atrapando las piezas de un prompt RICO y esquivando trampas, y después 3 robots) | `mundo.js`, `tema.js` (red de nodos, red neuronal, hologramas) |
+| `cafeteria/` | Extra · Cafetería (opcional, se abre después de Proyectos: café con easter egg, todo el equipo conversando de temas de la Inducción que se escuchan con E, y Eber con música en la terraza) | `mundo.js` (con `oficina.platicas`), `tema.js` (granos y notas, menú, tostadora) |
 
 Los mundos extra (`extra: true`) van al final en `index.html`: así no cambian
 el número ni el orden de los demás.

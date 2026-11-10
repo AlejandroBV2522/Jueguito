@@ -378,6 +378,7 @@ function accion() {
 		if (enTerminal()) abrirTerminal(oficinaActual); // también para repasar uno ya completo
 		else if (companero) abrirDialogo(companero);
 		else if (enSalidaOficina()) salirDeOficina();
+		else if (platicaCerca()) abrirPlatica(platicaCerca()); // los grupos de la Cafetería (cafeteria.js); Espacio sigue saltando ahí
 	} else if (estado === "terminal" && !ui.terminalSalir.hidden) {
 		cerrarTerminal();
 	}

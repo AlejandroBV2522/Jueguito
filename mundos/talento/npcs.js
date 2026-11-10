@@ -32,10 +32,10 @@ window.NPCS = [
       casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "martillo",
     },
     dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 1
-      "Todo se ve tan gris por aquí... hace tiempo que las fábricas no tienen color.",
-      "Dicen que si caminas hacia Celaque, el color vuelve poco a poco.",
-      "Anda, yo te espero aquí. ¡Y nunca te quites el casco!",
+      // ✏️ Borrador (inducción de Talento): valor Buenas Vibras
+      "¡Qué gusto verte en la obra! Por aquí todo se ve gris, pero con Buenas Vibras el color vuelve.",
+      "Buenas Vibras es uno de nuestros 4 valores: saludar, dar ánimo y echarle una mano a quien lo necesita.",
+      "Si un compañero llega desanimado, una buena actitud contagia a todo el equipo. ¡Recuérdalo en la Cueva!",
     ],
   },
   {
@@ -46,9 +46,10 @@ window.NPCS = [
       casco: "#ffffff", chaleco: "#c6f432", botas: "#4a3020", herramienta: "plano",
     },
     dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 2
-      "¡Hola! ¿Viste? La lluvia ya casi se fue.",
-      "Mira las bodegas: ya empiezan a pintarse de colores otra vez.",
+      // ✏️ Borrador (inducción de Talento): valor Creatividad
+      "¡Hola! ¿Ves cómo las bodegas empiezan a pintarse? Eso es Creatividad, otro de nuestros valores.",
+      "En Celaque buscamos formas nuevas y más sencillas de hacer las cosas, aunque \"siempre se haya hecho así\".",
+      "Si se te ocurre una mejora, compártela con tu equipo. Las buenas ideas no se quedan guardadas.",
     ],
   },
   {
@@ -59,9 +60,10 @@ window.NPCS = [
       casco: "#ffd23f", chaleco: "#ff7a1a", botas: "#5a3a1f", herramienta: "llave",
     },
     dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 3
-      "Ya vas a mitad de camino.",
-      "Aquí construimos desde hace años. ¿Podemos arreglarlo? ¡Sí, podemos!",
+      // ✏️ Borrador (inducción de Talento): valor Logrador y los ORCs
+      "Ya vas a mitad de camino. ¡Eso es ser Logrador: proponerte algo y sacarlo adelante!",
+      "Para eso usamos los ORCs: objetivos y resultados clave. Deben ser específicos, medibles, alcanzables y con periodo de caducidad.",
+      "Si un ORC se pone difícil, no lo sueltes: haz un plan, pide ayuda y da seguimiento. ¿Podemos? ¡Sí, podemos!",
     ],
   },
   {
@@ -72,9 +74,11 @@ window.NPCS = [
       casco: "#2f80ed", chaleco: "#c6f432", botas: "#3a2616", herramienta: "portapapeles",
     },
     dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 4
-      "Esta zona industrial le da trabajo a muchísima gente.",
-      "Respeta las señales mientras caminas. Celaque ya está cerca.",
+      // ✏️ Borrador (inducción de Talento): valor Comunicación Directa y registro de casos
+      "Aquí hablamos claro: Comunicación Directa. Si algo no te parece, díselo con respeto a la persona indicada.",
+      "Nada de chismes: los problemas se hablan de frente y se resuelven en equipo.",
+      "Y cuando algo sale mal, lo anotamos en el registro de casos: así aprendemos de nuestros errores.",
+      "Un buen caso busca la raíz, no solo apaga el fuego: tiene responsable, seguimiento y una resolución que perdure.",
     ],
   },
   {
@@ -85,9 +89,10 @@ window.NPCS = [
       casco: "#ffffff", chaleco: "#ff7a1a", botas: "#4a3020", herramienta: "plano",
     },
     dialogo: [
-      // ✏️ Escribe aquí el diálogo del NPC 5
-      "¡Lo lograste! Solo un poco más.",
-      "Pero antes de llegar, hay una cueva por cruzar. Ten cuidado.",
+      // ✏️ Borrador (inducción de Talento): el sueño de Celaque
+      "¡Ya casi llegas! ¿Sabes cuál es nuestro sueño? Ser la fuente que desarrolla Honduras.",
+      "Lo cumplimos con nuestros 4 valores: Buenas Vibras, Logrador, Creatividad y Comunicación Directa.",
+      "Adelante hay una cueva con guardianes que ponen a prueba esos valores. Cambiemos percepciones, cambiemos hábitos. ¡Crezcamos juntos!",
     ],
   },
 ];

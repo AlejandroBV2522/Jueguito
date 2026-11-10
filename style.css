@@ -51,6 +51,11 @@
 	--cel-verde-suave: rgba(72, 132, 120, 0.12);
 
 	--fuente: "Mulish", "Muli", Arial, sans-serif;
+
+	/* Cursor de Celaque: flecha verde profundo y, sobre lo que se puede
+	   tocar, una mano que señala (assets/cursor/). */
+	--cursor: url("assets/cursor/flecha.svg") 2 2, default;
+	--cursor-mano: url("assets/cursor/mano.svg") 12 2, pointer;
 }
 
 * {
@@ -72,6 +77,12 @@ body {
 	color: var(--cel-verde-profundo);
 	-webkit-user-select: none;
 	user-select: none;
+	cursor: var(--cursor);
+}
+
+/* El campo del nombre conserva la barrita para escribir. */
+input[type="text"] {
+	cursor: text;
 }
 
 #juego {
@@ -630,7 +641,7 @@ kbd {
 	color: var(--cel-blanco);
 	background: var(--cel-verde-profundo);
 	box-shadow: 0 7px 0 var(--cel-verde-institucional), 0 12px 28px rgba(4, 37, 35, 0.25);
-	cursor: pointer;
+	cursor: var(--cursor-mano);
 	transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
 }
 
@@ -731,7 +742,7 @@ kbd {
 	font: inherit;
 	font-size: 1.1rem;
 	font-weight: 700;
-	cursor: pointer;
+	cursor: var(--cursor-mano);
 	transition: transform 0.15s, background 0.15s, border-color 0.15s;
 }
 
@@ -1109,7 +1120,7 @@ kbd {
 	border-radius: 18px;
 	background: var(--cel-blanco);
 	box-shadow: 0 10px 30px rgba(4, 37, 35, 0.3);
-	cursor: pointer;
+	cursor: var(--cursor-mano);
 	animation: aparecer 0.25s ease-out;
 }
 
@@ -1216,7 +1227,7 @@ kbd {
 	text-decoration: line-through;
 	box-shadow: none;
 	transform: none;
-	cursor: default;
+	cursor: var(--cursor);
 }
 
 /* Preguntas de los riesgos de la obra de Proyectos (la de ordenar lleva 5 pasos: debe caber en pantallas bajas) */
@@ -1227,7 +1238,7 @@ kbd {
 
 #dialogo.obra .opcion-respuesta:disabled.correcta {
 	opacity: 1;
-	cursor: default;
+	cursor: var(--cursor);
 }
 
 /* ---------- Terminal Celaque (computadora de la oficina) ---------- */
@@ -1321,7 +1332,7 @@ kbd {
 	font-size: 1.05rem;
 	font-weight: 400;
 	text-align: left;
-	cursor: pointer;
+	cursor: var(--cursor-mano);
 	transition: transform 0.1s, background 0.1s, border-color 0.1s;
 }
 
@@ -1356,7 +1367,7 @@ kbd {
 	background: transparent;
 	color: var(--cel-gris-claro);
 	text-decoration: line-through;
-	cursor: default;
+	cursor: var(--cursor);
 }
 
 #terminal-pista {
@@ -1549,7 +1560,7 @@ body.con-dialogo #controles-tactiles {
 	color: var(--cel-verde-profundo);
 	font: inherit;
 	text-align: left;
-	cursor: pointer;
+	cursor: var(--cursor-mano);
 	transition: border-color 0.15s, background 0.15s;
 }
 
@@ -1708,7 +1719,7 @@ body.con-dialogo #controles-tactiles {
 	font-size: 1.05rem;
 	font-weight: 400;
 	text-align: left;
-	cursor: pointer;
+	cursor: var(--cursor-mano);
 	transition: transform 0.1s, background 0.1s;
 }
 
@@ -1733,7 +1744,7 @@ body.con-dialogo #controles-tactiles {
 	border-color: var(--cel-gris-claro);
 	color: var(--cel-gris-claro);
 	text-decoration: line-through;
-	cursor: default;
+	cursor: var(--cursor);
 }
 
 #repaso-pista {

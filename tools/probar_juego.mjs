@@ -13,6 +13,8 @@
 //             vence a los 5 riesgos hasta completar el módulo
 //   peligros  los peligros de la obra (zanja con plataforma en la zona 3, talanquera en la 5): 3 momentos de cada uno
 //   oficina   juega la oficina de IA completa y vuelve al mapa
+//   taller    IA: el taller de prompts (3 rondas: atrapa Rol, Instrucciones, Contexto y Objetivo y esquiva
+//             las trampas), con capturas cada 2.5 s y de cada diálogo, los robots y el mapa (FACIL=1: modo fácil)
 //   oficinas  entra a las 5 oficinas (con el nombre de pruebas) y captura cada una
 //   victoria  completa la última oficina, el repaso final (una equivocada a
 //             propósito), la tarjeta final, la constancia impresa y las estadísticas
@@ -218,6 +220,7 @@ const evalua = async (expr) => (await cmd("Runtime.evaluate", { expression: expr
 // Deja correr el juego ms milisegundos: con reloj fijo, cuadro por cuadro;
 // si no, esperando de verdad. ahora() es el tiempo del juego que ya pasó.
 let virtual = 0;
+let fotoDialogosTaller = 0; // escenario taller: > 0 = capturar los diálogos del taller de prompts
 async function paso(ms) {
 	if (!FIJO) return espera(ms);
 	virtual += ms;
@@ -301,6 +304,12 @@ async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
 			continue;
 		}
 		if (await visible("#dialogo")) {
+			// Escenario taller: una captura de cada diálogo del taller (el reto y la respuesta del modelo), con el texto ya completo
+			if (fotoDialogosTaller && (await evalua("(() => { const c = tallerIA.charla; if (!c || dlg.npc !== c || c.foto || dlg.visibles < 1) return false; c.foto = true; return true; })()"))) {
+				await paso(1500);
+				await foto(`${fotoTerminal || "oficina"}-dialogo-${await evalua("tallerIA.paso")}`);
+				fotoDialogosTaller++;
+			}
 			await tecla("Enter");
 			await paso(120);
 			continue;
@@ -340,6 +349,23 @@ async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
 			await paso(60);
 			continue;
 		}
+		// Taller de prompts de IA (taller-ia.js): va debajo de la pieza buena
+		// más baja, salta si está a su alcance y se aparta de las trampas
+		const taller = await evalua(LEER_TALLER(fotoDialogosTaller > 0 && process.env.TRAMPA !== "0"));
+		if (taller) {
+			let dir = taller.hay && Math.abs(taller.dx) > 18 ? Math.sign(taller.dx) : 0;
+			const trampaCerca = taller.trampaDx !== null && Math.abs(taller.trampaDx) < 150 * taller.S;
+			if (trampaCerca && (dir === 0 || Math.sign(taller.trampaDx) === dir)) dir = -Math.sign(taller.trampaDx) || -1;
+			await tecla(dir > 0 ? "ArrowLeft" : "ArrowRight", "up");
+			if (dir) await tecla(dir > 0 ? "ArrowRight" : "ArrowLeft", "down");
+			else await tecla("ArrowLeft", "up");
+			if (taller.hay && !trampaCerca && taller.enSuelo && Math.abs(taller.dx) < 50 * taller.S && taller.y > 110 && taller.y < 250 && ahora() - ultimoSalto > 450) {
+				await tecla("ArrowUp");
+				ultimoSalto = ahora();
+			}
+			await paso(60);
+			continue;
+		}
 		// Anzuelos de Seguridad (virus.js): espera a que suba el que viene
 		if (await evalua(ESPERAR_ANZUELO)) {
 			await tecla("ArrowRight", "up");
@@ -360,6 +386,19 @@ async function jugarOficina(limite = 60000, fotoTerminal = "", fotoCada = 0) {
 	await tecla("ArrowLeft", "up");
 	return false;
 }
+// Taller de prompts: la pieza buena que falta y está más baja, y la trampa
+// más cercana que viene a la altura del héroe (o null fuera de una ronda)
+const LEER_TALLER = (unaTrampa) => `(() => {
+	if (typeof tallerIA === "undefined" || !oficinaActual || !oficinaActual.taller || tallerIA.oficina !== oficinaActual) return null;
+	const t = tallerIA;
+	if (t.paso !== "atrapar" && t.paso !== "enviando") return null;
+	const vivas = t.piezas.filter((p) => !p.fin);
+	// En el escenario taller atrapa a propósito la primera trampa que salga (para ver cómo se avisa); TRAMPA=0 no
+	const adrede = ${unaTrampa} && t.trampas === 0 && vivas.find((p) => p.trampa);
+	const meta = adrede || vivas.filter((p) => !p.trampa && !t.hechas[p.parte.clave]).sort((a, b) => a.y - b.y)[0];
+	const trampa = adrede ? null : vivas.filter((p) => p.trampa && p.y < 190).sort((a, b) => Math.abs(a.x - heroe.x) - Math.abs(b.x - heroe.x))[0];
+	return { hay: !!meta, dx: meta ? meta.x - heroe.x : 0, y: meta ? meta.y : 0, trampaDx: trampa ? trampa.x - heroe.x : null, S, enSuelo: heroeEnSuelo() };
+})()`;
 // Misión: hacia qué nube subir (la más baja que esté más arriba que el
 // héroe, o A) y si ya toca volver a B
 const LEER_NUBE = `(() => {
@@ -801,6 +840,22 @@ try {
 		await paso(2500);
 		await foto("mapa-desbloqueo");
 		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
+	} else if (escenario === "taller") {
+		// IA: el taller de prompts (3 rondas atrapando piezas RICO y esquivando trampas), los robots y el mapa.
+		// FACIL=1 lo juega en modo fácil. Para celular: ANCHO=844 ALTO=390 DPR=2 MOVIL=1
+		await conProgreso({ completos: ["Talento", "Proyectos", "Procesos", "SharePoint", "Seguridad"], nivel: 7, personaje: "chico", nombre: "Prueba" });
+		if (process.env.FACIL === "1") await evalua(`ajustes.facil = true`);
+		fotoDialogosTaller = 1;
+		// Con la máquina ocupada la página puede tardar en cargar: espera a que el juego exista
+		for (let k = 0; k < 40 && !(await evalua(`typeof modulos !== "undefined" && typeof mapa !== "undefined" && estado === "mapa"`)); k++) await espera(500);
+		const i = await evalua("window.MODULOS.findIndex((m) => m.taller)");
+		await entrarAlMundo(i, "carta");
+		console.log("taller de", await evalua(`modulos[${i}].oficina.x0 && bordesTaller(modulos[${i}].taller).izq - modulos[${i}].oficina.x0`), "a", await evalua(`bordesTaller(modulos[${i}].taller).der - modulos[${i}].oficina.x0`), "· computadora en", await evalua(`modulos[${i}].oficina.terminalX - modulos[${i}].oficina.x0`));
+		console.log("terminal completada:", await jugarOficina(400000, "ia", Number(process.env.FOTO_CADA || 2500)));
+		console.log("rondas hechas:", await evalua(`modulos[${i}].taller.hechas`), "· trampas atrapadas:", await evalua("tallerIA.trampas"), "· corazones:", await evalua("vidas"), "de", await evalua("vidasMax()"));
+		await tecla("Enter");
+		await paso(2500);
+		await foto("mapa");
 	} else if (escenario === "oficinas") {
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
 		const total = await evalua("window.MODULOS.length");
@@ -826,6 +881,8 @@ try {
 				console.log(`mundo ${i + 1}: obra recorrida y contestada:`, await jugarObra(300000));
 				continue;
 			}
+			// El taller de prompts de IA tiene su propio escenario (taller): aquí se da por hecho
+			await evalua("oficinaActual.taller && (oficinaActual.taller.hechas = oficinaActual.taller.rondas.length)");
 			const t0 = ahora();
 			let ultimoSalto = -Infinity;
 			let ultimaFoto = t0;
@@ -864,8 +921,12 @@ try {
 		// Seguridad: esquiva los virus (captura cada 1.5 s) y repara el antivirus
 		const pruebas = await evalua("window.CONFIG_JUEGO.nombrePruebas");
 		const i = await evalua("window.MODULOS.findIndex((m) => m.oficina && m.oficina.virus)");
-		await conProgreso({ completos: [], nivel: 0, personaje: "chico", nombre: pruebas });
+		// Nivel 4: los corazones con que llega quien ya hizo los 4 mundos de
+		// antes (sin corazones se repite todo el mundo)
+		await conProgreso({ completos: [], nivel: 4, personaje: "chico", nombre: pruebas });
 		await entrarAlMundo(i);
+		await paso(200);
+		console.log("compañeros al inicio:", await evalua(`modulos[${i}].oficina.companeros.map((n) => n.x - modulos[${i}].oficina.x0).join(", ")`));
 		console.log(`mundo ${i + 1} completado:`, await jugarOficina(180000, `mundo${i + 1}`, Number(process.env.FOTO_CADA || 1500)));
 		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"), "· anzuelos:", await evalua(`anzuelosDe(modulos[${i}].oficina).length`));
 	} else if (escenario === "mision") {
@@ -1138,6 +1199,38 @@ try {
 		await paso(300);
 		await foto("cafe");
 		console.log("café:", await evalua("cafeina > 0"), "· dorados:", await evalua("vidasDoradas"), "· completa:", await evalua(`modulos[${i}].completo`), "· nivel:", await evalua("nivel"));
+		// Las pláticas del fondo (temas de la Inducción): cuántos grupos tienen
+		// tema, y escuchar una con E (página por página) y luego otra distinta
+		console.log("grupos con plática:", await evalua(`modulos[${i}].oficina.grupos.filter((g) => g.tema >= 0).length`), "de", await evalua(`modulos[${i}].oficina.grupos.length`), "· temas:", await evalua(`modulos[${i}].oficina.platicas.length`));
+		await evalua(`(() => { const g = modulos[${i}].oficina.grupos.find((g) => g.tema >= 0); heroe.x = g.x; heroe.y = 0; heroe.velY = 0; camara = heroe.x - W * 0.4; })()`);
+		await paso(400);
+		await foto("platica-cerca");
+		for (let vez = 1; vez <= 2; vez++) {
+			await tecla("e");
+			await paso(1500);
+			console.log(`plática ${vez}:`, await evalua("ui.nombre.textContent"), "·", await evalua("dlg.npc && dlg.npc.dialogo.length"), "páginas");
+			await foto(`platica-${vez}`);
+			for (let k = 0; k < 12 && (await visible("#dialogo")); k++) {
+				await tecla("Enter");
+				await paso(250);
+			}
+			// Se aleja y vuelve: el grupo ya platica de otro tema
+			await evalua("heroe.x -= 400");
+			await paso(200);
+			await evalua("heroe.x += 400");
+			await paso(200);
+		}
+		console.log("tras escuchar, de vuelta en la Cafetería:", await evalua("estado"), "· nivel:", await evalua("nivel"));
+		// Animaciones del fondo, con el reloj puesto: alguien va por café, la guacamaya cruza
+		await evalua(`(() => { const g = modulos[${i}].oficina.grupos.find((g) => !g.sentados && g.gente.length >= 3); heroe.x = g.x - 200; camara = g.x - W * 0.5; tiempo = (modulo(0.9 - g.fase * 0.37, 1)) * VUELTA_CAFE; })()`);
+		await paso(100);
+		await foto("vuelve-con-cafe");
+		await evalua(`tiempo = Math.ceil(tiempo / VUELO_GUACAMAYA) * VUELO_GUACAMAYA + VUELO_GUACAMAYA * 0.14`);
+		await paso(100);
+		await foto("guacamaya");
+		await evalua(`(() => { const of = modulos[${i}].oficina; heroe.x = of.terminalX - 300; camara = of.terminalX - W * 0.55; })()`);
+		await paso(200);
+		await foto("barista");
 		// A la terraza: desde la mesa de abajo, con el salto del café
 		const t = await evalua(`JSON.stringify(modulos[${i}].oficina.terraza)`);
 		console.log("terraza:", t);

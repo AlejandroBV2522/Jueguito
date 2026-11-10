@@ -116,7 +116,10 @@ zona industrial desde el Edificio Lirios, solo nubes desde la Torre Atlas,
 montaña o puntas de edificios al atardecer), lo que flota en el aire
 (planos, engranes, documentos, escudos, una red de IA), la pizarra y un
 objeto propio. Al fondo, las preguntas se contestan en la computadora, salvo
-en IA (se arman tres robots: de tierra, aéreo y humanoide, con dos aciertos cada uno) y en
+en IA (primero, en el taller de prompts, atrapas las piezas que suelta un dron: un Rol,
+unas Instrucciones, un Contexto y un Objetivo, y esquivas las trampas, como una
+contraseña o un prompt genérico, en tres rondas; luego se arman tres robots: de tierra,
+aéreo y humanoide, con dos aciertos cada uno) y en
 Seguridad (primero esquivas los virus agachándote o saltando y luego cada
 acierto repara una parte del antivirus). En SharePoint, antes de la
 computadora, llevas los permisos de un miembro nuevo del punto A al B.
@@ -215,6 +218,7 @@ proyectos). Mientras no estén, se ve un recuadro que dice "LOGO".
   al letrero de llegada a Celaque.
 - `assets/obra/`: pantallazos de Wrike (recortados de la capacitación) que se ven en la caseta de solicitudes de Proyectos.
 - `assets/fabrica/`: el formulario de solicitud de Wrike (recortado de la capacitación) que se ve en la ventanilla de pedidos de Procesos.
+- `assets/cursor/`: el cursor de Celaque (`flecha.svg`, y `mano.svg` sobre lo que se puede tocar), asignado en `style.css → --cursor`.
 - `tools/probar_juego.mjs`: prueba el juego en Chrome sin ventana (teclas reales,
   capturas y errores de JavaScript). Ej.: `node tools/probar_juego.mjs oficinas`.
 - `tools/comparar_capturas.mjs`: corre todos los escenarios y compara cada

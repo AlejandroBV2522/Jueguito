@@ -119,6 +119,7 @@ function reiniciarProgreso(todo) {
 		m.oficina.companeros.forEach((n) => (n.hablado = false));
 		reiniciarObra(m);
 		if (m.mision) reiniciarMision(m.mision);
+		reiniciarTallerIA(m);
 	});
 	nivel = 0;
 	vidas = VIDAS_BASE;
@@ -360,6 +361,7 @@ function abrirCarta(i) {
 						? `Escucha lo que te explica ${m.oficina.companeros[0].nombre}.`
 						: "Conversa con todo el equipo, que está aquí reunido.",
 				...(m.mision ? [`Lleva ${m.mision.objeto} del punto A al punto B.`] : []),
+				...(m.taller ? [`Arma ${m.taller.rondas.length} prompts en el taller: atrapa un Rol, unas Instrucciones, un Contexto y un Objetivo.`] : []),
 				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length, m),
 			];
 	ui.cartaLista.innerHTML = "";

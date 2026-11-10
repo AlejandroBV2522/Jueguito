@@ -6,13 +6,13 @@
 // desde el fondo hacia ti: los que vuelan alto se esquivan agachándose y
 // los que ruedan por el piso, saltando. Si uno te toca pierdes un corazón;
 // sin corazones vuelves a empezar este mundo, con los corazones llenos.
-// Mientras más avanzas, salen más seguido y, pasada la mitad, a veces en
+// Mientras más avanzas, salen más seguido y, en el último tramo (70 %), a veces en
 // pareja (uno alto y uno bajo). Con oficina.anzuelos, además bajan del
 // techo anzuelos de phishing (un correo con gancho) en los tramos libres:
 // se pasa por debajo cuando suben.
 const VIRUS = {
-	cada: 2.3, // segundos entre un virus y el siguiente (al principio)
-	cadaFinal: 1.5, // ...y al llegar al antivirus
+	cada: 3.0, // segundos entre un virus y el siguiente (al principio)
+	cadaFinal: 2.2, // ...y al llegar al antivirus (el público casi no juega: sin rachas seguidas)
 	pareja: 0.8, // segundos entre los dos virus de una pareja
 	velocidad: 260, // px por segundo, hacia la izquierda
 	radio: 10, // para el choque (en unidades de S, como heroe.y); se dibuja más grande, para perdonar roces
@@ -37,19 +37,23 @@ const virusOficina = { oficina: null, lista: [], reloj: 0, cuenta: 0, inmune: 0,
 function anzuelosDe(of) {
 	if (!of.anzuelos) return [];
 	if (of.listaAnzuelos) return of.listaAnzuelos;
-	const desde = of.companeros[0].x + 250;
+	const desde = Math.max(...of.companeros.map((n) => n.x)) + 250; // después del último compañero
 	const hasta = of.terminalX - 380;
 	const ocupados = [
 		...of.obstaculos.map((o) => ({ x: o.x, r: o.medioAncho + 70 })),
 		...of.companeros.map((n) => ({ x: n.x, r: 170 })),
+		// Las columnas con la placa del logo (una de cada 3, ver dibujarColumnasOficina):
+		// el hilo y el correo no deben pasar por encima del logo
+		...COLUMNAS_OFICINA.filter((d, k) => k % 3 === 0).map((d) => ({ x: of.x0 + d, r: 150 * S + 20 })),
 		{ x: hasta, r: 0 },
 	].sort((a, b) => a.x - b.x);
 	of.listaAnzuelos = [];
+	let izq = ocupados[0].x + ocupados[0].r; // el borde derecho más lejano hasta ahora
 	for (let k = 1; k < ocupados.length; k++) {
-		const izq = ocupados[k - 1].x + ocupados[k - 1].r;
 		const der = ocupados[k].x - ocupados[k].r;
 		const x = (izq + der) / 2;
 		if (der - izq >= 100 && x >= desde && x <= hasta) of.listaAnzuelos.push({ x, fase: of.listaAnzuelos.length * 0.37 });
+		izq = Math.max(izq, ocupados[k].x + ocupados[k].r);
 	}
 	return of.listaAnzuelos;
 }
@@ -62,6 +66,12 @@ function alturaAnzuelo(a, t) {
 	return ANZUELO.arriba + (ANZUELO.abajo - ANZUELO.arriba) * bajada;
 }
 
+// ¿Ya pueden salir los virus y bajar los anzuelos? Al hablar con el
+// anfitrión, o con oficina.companerosAlInicio, con todos los compañeros
+// (sin virus ni anzuelos, como la Cafetería, que no tiene compañeros: nunca)
+const virusListos = (of) =>
+	(of.virus || of.anzuelos) && (of.companerosAlInicio ? of.companeros.every((n) => n.hablado) : !!of.companeros[0] && of.companeros[0].hablado);
+
 function actualizarVirus(dt) {
 	const m = oficinaActual;
 	const v = virusOficina;
@@ -73,9 +83,11 @@ function actualizarVirus(dt) {
 	const of = m.oficina;
 	v.inmune = Math.max(0, v.inmune - dt);
 
-	// Salen después de hablar con el anfitrión y dejan de salir cerca del
-	// antivirus. Mientras hablas con alguien el juego se detiene: no te dan.
-	if (of.virus && of.companeros[0].hablado && heroe.x < of.terminalX - 260) {
+	// Salen después de hablar con el anfitrión (con oficina.companerosAlInicio,
+	// con todos los compañeros: esperan juntos a la entrada) y dejan de salir
+	// cerca del antivirus. Mientras hablas con alguien el juego se detiene.
+	const listos = virusListos(of);
+	if (of.virus && listos && heroe.x < of.terminalX - 260) {
 		if (!v.avisado) {
 			v.avisado = true;
 			avisos.push({ texto: esTactil ? "¡Virus! Agáchate o salta" : "¡Virus! ↓ agáchate · ↑ salta", t: 0 });
@@ -88,8 +100,8 @@ function actualizarVirus(dt) {
 			// Dos que vuelan alto (agacharse) por cada uno que rueda (saltar)
 			const alto = v.cuenta++ % 3 !== 2;
 			v.lista.push({ x: salida, alto, giro: 0, pum: 0 });
-			// Pasada la mitad, uno de cada cuatro trae pareja (del otro tipo)
-			if (avance > 0.45 && v.cuenta % 4 === 0) v.pareja = { t: VIRUS.pareja, alto: !alto };
+			// En el último tramo (70 %), uno de cada cuatro trae pareja (del otro tipo)
+			if (avance > 0.7 && v.cuenta % 4 === 0) v.pareja = { t: VIRUS.pareja, alto: !alto };
 		}
 		if (v.pareja && (v.pareja.t -= dt) <= 0) {
 			v.lista.push({ x: salida, alto: v.pareja.alto, giro: 0, pum: 0 });
@@ -98,10 +110,11 @@ function actualizarVirus(dt) {
 	}
 
 	// Anzuelos de phishing: siempre suben y bajan (menos mientras hablas)
-	v.relojAnzuelos += dt;
+	if (listos) v.relojAnzuelos += dt; // antes, quietos arriba (ver dibujarVirusOficina)
 	for (const a of anzuelosDe(of)) {
+		if (!listos) break; // todavía hablando con el equipo: los anzuelos esperan arriba
 		const d = a.x - heroe.x;
-		if (!v.avisoAnzuelo && d > 0 && d < 420 && of.companeros[0].hablado) {
+		if (!v.avisoAnzuelo && d > 0 && d < 420 && listos) {
 			v.avisoAnzuelo = true;
 			avisos.push({ texto: "¡Anzuelo de phishing! Pasa cuando suba", t: 0 });
 		}
@@ -166,7 +179,8 @@ function golpear(of) {
 function dibujarVirusOficina() {
 	const v = virusOficina;
 	if (v.oficina !== oficinaActual) return;
-	for (const a of anzuelosDe(oficinaActual.oficina)) dibujarAnzuelo(a.x - camara, alturaAnzuelo(a, v.relojAnzuelos));
+	const listos = virusListos(oficinaActual.oficina);
+	for (const a of anzuelosDe(oficinaActual.oficina)) dibujarAnzuelo(a.x - camara, listos ? alturaAnzuelo(a, v.relojAnzuelos) : ANZUELO.arriba);
 	for (const z of v.lista) {
 		const sx = z.x - camara;
 		if (sx < -60 || sx > W + 60) continue;

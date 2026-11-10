@@ -12,8 +12,21 @@
 // sopa junto a su parlante. Al fondo, además, hay invitados: unos más en
 // los grupos (un grupo de cada tres, sentado en una banca) y otros que
 // caminan de un lado a otro, más atrás. Quien habla se ríe dando saltitos.
+// Cada grupo con gente del equipo platica de un tema de la Inducción
+// (mundo.js → oficina.platicas): en su globo salen frases cortas y, al
+// acercarte, con E (o Hablar) escuchas la plática completa. Detrás de la
+// barra trabaja la barista, y en el cielo del atardecer pasa una guacamaya.
 
+// Reacciones de quien escucha (entre un turno y otro) y globos de los
+// grupos sin tema
 const FRASES_FONDO = ["jaja", "☕", "♪", "¡Qué bien!", "♥", "¿Y tú?", "¡Claro!", "jeje", "¡Salud!", "¡Ja ja ja!", "¡Qué rico!", "¡Eso!"];
+
+// Quién puede contar una plática: una persona del equipo (los compañeros de
+// las oficinas, con nombre y apellido), no la gente del camino de Talento
+// (Buena Vibra, Creativa...) ni los invitados sin nombre
+const NOMBRE_PERSONA = /^\p{Lu}\p{Ll}+( \p{Lu}\p{Ll}+)+$/u;
+const esPersonaDelEquipo = (n) => !npcs.includes(n) && NOMBRE_PERSONA.test(n.nombre || "");
+const primerNombre = (n) => n.nombre.split(" ")[0];
 
 // Toda la gente del juego (los compañeros de las oficinas y la del camino
 // de Talento), menos la de la misma Cafetería. Se arma la primera vez.
@@ -79,6 +92,18 @@ function gruposFondo(m) {
 		}
 		desde = Math.max(desde, b);
 	}
+	// Cada grupo con alguien del equipo se lleva una plática, en orden
+	// (mundo.js → oficina.platicas); "escuchadas" la va cambiando
+	const datos = MODULOS_DATOS[m.indice].oficina || {};
+	let tema = 0;
+	for (const g of grupos) {
+		g.hablantes = g.gente.filter(esPersonaDelEquipo);
+		g.tema = g.hablantes.length && datos.platicas && datos.platicas.length ? tema++ : -1;
+		g.escuchadas = 0;
+		g.oida = false;
+	}
+	of.platicas = datos.platicas || [];
+	of.conTema = tema; // cuántos grupos tienen plática
 	of.grupos = grupos;
 	of.genteFuera = Math.max(0, reales.length - k); // la prueba "cafeteria" revisa que sea 0 (los invitados no cuentan)
 	return grupos;
@@ -104,6 +129,42 @@ function globoChico(x, y, texto) {
 
 // Cómo se mueve el brazo de quien platica, cuadro por cuadro
 const GESTOS_PLATICA = ["quieto", "platica1", "platica2", "platica2", "platica1"];
+
+// La plática que tiene ahora un grupo (o null si no tiene tema)
+function platicaDe(of, g) {
+	if (g.tema < 0 || !of.platicas.length) return null;
+	return of.platicas[(g.tema + g.escuchadas * of.conTema) % of.platicas.length]; // la 2.ª vez, los temas que no tocó ningún grupo
+}
+
+// El último de un grupo de pie (de 3 o más) se va a servir otro café cada
+// VUELTA_CAFE segundos: camina hacia afuera desvaneciéndose, tarda un rato
+// y vuelve con su taza. Devuelve null mientras está en su lugar, o cuánto
+// se ve (alfa), cuánto se alejó (lejos: 0 a 1) y si ya trae la taza.
+const VUELTA_CAFE = 26;
+function vueltaPorCafe(g, j) {
+	if (g.sentados || g.gente.length < 3 || j !== g.gente.length - 1) return null;
+	const u = modulo(tiempo / VUELTA_CAFE + g.fase * 0.37, 1);
+	if (u < 0.55 || u >= 0.95) return null;
+	if (u < 0.62) return { alfa: 1 - (u - 0.55) / 0.07, lejos: (u - 0.55) / 0.07, taza: false };
+	if (u < 0.88) return { alfa: 0, lejos: 1, taza: false };
+	return { alfa: (u - 0.88) / 0.07, lejos: 1 - (u - 0.88) / 0.07, taza: true };
+}
+
+// Dos hilitos de vapor que suben de una taza (x, y: el borde de arriba)
+function vaporTaza(x, y, fase) {
+	ctx.strokeStyle = COLORES.blanco;
+	ctx.lineWidth = 1.3 * S;
+	for (let k = 0; k < 2; k++) {
+		const u = modulo(tiempo * 0.5 + fase + k * 0.5, 1);
+		const vx = x + (k - 0.5) * 3 * S + Math.sin(u * 6 + fase) * 2 * S;
+		ctx.globalAlpha = 0.6 * (1 - u);
+		ctx.beginPath();
+		ctx.moveTo(vx, y - u * 14 * S);
+		ctx.quadraticCurveTo(vx + 2.5 * S, y - (u * 14 + 4) * S, vx, y - (u * 14 + 8) * S);
+		ctx.stroke();
+	}
+	ctx.globalAlpha = 1;
+}
 
 // Invitados que caminan de un lado a otro del local, más atrás que los
 // grupos (más chicos y más arriba); dan la vuelta en las orillas
@@ -171,16 +232,43 @@ function dibujarFondoCafeteria(m) {
 			ctx.fillRect(sx - 10 * S, pie - 63 * S, 6 * S, 7 * S);
 			ctx.fillStyle = COLORES.verdeInstitucional;
 			ctx.fillRect(sx + 4 * S, pie - 63 * S, 6 * S, 7 * S);
+			vaporTaza(sx - 7 * S, pie - 64 * S, g.fase);
+			vaporTaza(sx + 7 * S, pie - 64 * S, g.fase + 0.4);
 		}
 		// Quién habla ahora (cambia cada 1.8 s): ese se ríe dando saltitos
 		const turno = Math.floor(tiempo / 1.8 + g.fase);
 		const hablando = modulo(tiempo / 1.8 + g.fase, 1) < 0.8;
 		const quien = turno % g.gente.length;
+		const fuera = g.gente.map((_, j) => vueltaPorCafe(g, j));
+		// Entre un turno y otro, quien sigue reacciona (y, de pie, levanta la mano)
+		const reacciona = hablando ? -1 : (quien + 1) % g.gente.length;
 		g.gente.forEach((n, j) => {
+			const vuelta = fuera[j];
+			if (vuelta) {
+				// Va a servirse (o vuelve): camina hacia afuera y hacia atrás
+				if (vuelta.alfa <= 0) return;
+				const lado = lugares[j] >= 0 ? 1 : -1;
+				const x = sx + lugares[j] + lado * vuelta.lejos * 60 * S;
+				const y = pie - vuelta.lejos * 10 * S;
+				const mira = vuelta.taza ? -lado : lado;
+				ctx.save();
+				ctx.globalAlpha = 0.9 * vuelta.alfa;
+				S = sAntes * k;
+				dibujarNpcFoto(x, y, n, mira, Math.floor(tiempo * 6) % 2 ? "caminando2" : "caminando", g.x + j * 7);
+				if (vuelta.taza) {
+					// La taza nueva, en la mano de adelante
+					ctx.fillStyle = COLORES.blanco;
+					ctx.fillRect(x + mira * 14 * S - 3 * S, y - 58 * S, 6 * S, 7 * S);
+				}
+				S = sAntes;
+				ctx.restore();
+				return;
+			}
 			const habla = hablando && j === quien;
-			const risa = habla ? Math.abs(Math.sin(tiempo * 9 + j)) * 4 * S : Math.abs(Math.sin(tiempo * 2.4 + g.fase + j * 1.3)) * 1.2 * S;
+			// Sentados no saltan (se veían subir y bajar de la banca)
+			const risa = g.sentados ? 0 : habla ? Math.abs(Math.sin(tiempo * 9 + j)) * 4 * S : Math.abs(Math.sin(tiempo * 2.4 + g.fase + j * 1.3)) * 1.2 * S;
 			// De pie, quien habla gesticula: sube y baja el antebrazo
-			const gesto = habla && !g.sentados ? GESTOS_PLATICA[Math.floor(tiempo * 5 + j) % GESTOS_PLATICA.length] : "quieto";
+			const gesto = g.sentados ? "quieto" : habla ? GESTOS_PLATICA[Math.floor(tiempo * 5 + j) % GESTOS_PLATICA.length] : j === reacciona ? "platica1" : "quieto";
 			const pose = g.sentados ? "sentado" : gesto;
 			ctx.save();
 			ctx.globalAlpha = 0.9;
@@ -202,9 +290,53 @@ function dibujarFondoCafeteria(m) {
 			ctx.fillRect(sx - 8 * S, mesita - 7 * S, 5 * S, 6 * S);
 			ctx.fillStyle = "#e0b84a";
 			ctx.fillRect(sx + 3 * S, mesita - 7 * S, 5 * S, 6 * S);
+			vaporTaza(sx - 5.5 * S, mesita - 8 * S, g.fase);
+			vaporTaza(sx + 5.5 * S, mesita - 8 * S, g.fase + 0.5);
 		}
-		if (hablando) globoChico(sx + lugares[quien], pie - (g.sentados ? 80 : 92) * S, FRASES_FONDO[(turno * 3 + quien) % FRASES_FONDO.length]);
+		// Su globo: una frase del tema que platican (o una genérica si no
+		// tienen tema); entre turnos, la reacción de quien escucha
+		const altoGlobo = pie - (g.sentados ? 80 : 92) * S;
+		const platica = platicaDe(m.oficina, g);
+		if (hablando && !fuera[quien]) globoChico(sx + lugares[quien], altoGlobo, platica ? platica.globos[turno % platica.globos.length] : FRASES_FONDO[(turno * 3 + quien) % FRASES_FONDO.length]);
+		else if (!hablando && !fuera[reacciona]) globoChico(sx + lugares[reacciona], altoGlobo, FRASES_FONDO[(turno * 5 + reacciona) % FRASES_FONDO.length]);
 	}
+}
+
+// ---------- Escuchar una plática ----------
+// El grupo con tema que tienes enfrente (en el piso, a su altura), o null
+function platicaCerca() {
+	const m = oficinaActual;
+	if (estado !== "oficina" || !m || !m.oficina.fondo || !m.oficina.grupos) return null;
+	return m.oficina.grupos.find((g) => platicaDe(m.oficina, g) && cercaDe(g.x, ((g.gente.length - 1) * PASO_GENTE) / 2 + 40)) || null;
+}
+
+// Abre la plática como un diálogo: cada página la dice, por turnos, alguien
+// del grupo. Cuando te alejas, el grupo pasa a hablar de otra cosa
+// (dibujarAvisoPlatica); si no te mueves, la puedes volver a escuchar.
+function abrirPlatica(g) {
+	const p = platicaDe(oficinaActual.oficina, g);
+	g.oida = true;
+	abrirDialogo({
+		nombre: `☕ ${p.tema}`,
+		inicial: "☕",
+		apariencia: g.hablantes[0].apariencia,
+		dialogo: p.lineas.map((t, k) => `${primerNombre(g.hablantes[k % g.hablantes.length])}: ${t}`),
+		x: g.x,
+		enOficina: true, // como los compañeros: escuchar no sube de nivel
+	});
+}
+
+// "E · Escuchar" sobre el grupo que tienes enfrente (lo llama
+// dibujarTerraza, que se dibuja después de la decoración y la barra)
+function dibujarAvisoPlatica() {
+	const g = platicaCerca();
+	if (estado === "oficina" && oficinaActual.oficina.grupos)
+		for (const otro of oficinaActual.oficina.grupos)
+			if (otro.oida && otro !== g) {
+				otro.oida = false;
+				otro.escuchadas++; // ya te alejaste: ahora platican de otro tema
+			}
+	if (g) dibujarGlobo(g.x - camara, SUELO - 122 * S, esTactil ? "Toca Hablar para escuchar" : "E · Escuchar", "#fffbea");
 }
 
 // Altura en pantalla de algo que está a "alto" sobre el piso (como heroe.y)
@@ -213,6 +345,7 @@ const pantallaY = (alto) => SUELO + 38 * S - alto * S;
 // La terraza alta: losa con baranda, columnas hasta el piso, plantas,
 // foquitos y Eber sentado con su sopa junto a su parlante (y notas de música)
 function dibujarTerraza(m) {
+	dibujarAvisoPlatica();
 	const t = m.oficina.terraza;
 	if (!t) return;
 	const sx = t.x - camara;
@@ -226,17 +359,18 @@ function dibujarTerraza(m) {
 		linea(sx + lado * (w - 14 * S), 34 * S, sx + lado * (w - 14 * S), y);
 		linea(sx + lado * (w - 40 * S), 34 * S, sx + lado * (w - 14 * S), y - 40 * S);
 	}
-	// Foquitos colgando del techo hasta la baranda
+	// Foquitos colgando del techo hasta la baranda (el cable se mece con el aire)
+	const meceY = y - 40 * S + Math.sin(tiempo * 0.9) * 6 * S;
 	ctx.strokeStyle = "#3a4446";
 	ctx.lineWidth = 1.5 * S;
 	ctx.beginPath();
 	ctx.moveTo(sx - w, 34 * S);
-	ctx.quadraticCurveTo(sx, y - 40 * S, sx + w, 34 * S);
+	ctx.quadraticCurveTo(sx, meceY, sx + w, 34 * S);
 	ctx.stroke();
 	for (let k = 1; k < 8; k++) {
 		const u = k / 8;
 		const fx = sx - w + u * 2 * w;
-		const fy = (1 - u) * (1 - u) * 34 * S + 2 * u * (1 - u) * (y - 40 * S) + u * u * 34 * S;
+		const fy = (1 - u) * (1 - u) * 34 * S + 2 * u * (1 - u) * meceY + u * u * 34 * S;
 		ctx.fillStyle = k % 2 ? "#fff1c1" : mezclar(COLORES.verdeInstitucional, "#ffffff", 0.5);
 		circulo(fx, fy + 4 * S, 3.5 * S);
 	}
@@ -256,7 +390,7 @@ function dibujarTerraza(m) {
 		ctx.fillStyle = "#3f9b5a";
 		for (let k = -2; k <= 2; k++) {
 			ctx.beginPath();
-			ctx.ellipse(px + k * 5 * S, y - 22 * S, 5 * S, 14 * S, k * 0.35, 0, Math.PI * 2);
+			ctx.ellipse(px + k * 5 * S, y - 22 * S, 5 * S, 14 * S, k * 0.35 + Math.sin(tiempo * 1.3 + k + lado) * 0.08, 0, Math.PI * 2);
 			ctx.fill();
 		}
 		ctx.fillStyle = COLORES.beige;
@@ -270,24 +404,31 @@ function dibujarTerraza(m) {
 		const mesa = y + puntoNpc(dj, "sentado", 0, meta.regazo).y - 6 * S; // justo arriba del regazo
 		const asiento = y + puntoNpc(dj, "sentado", 0, meta.asiento).y;
 		const rodilla = puntoNpc(dj, "sentado", 0.6, 0).x;
-		const boca = puntoNpc(dj, "sentado", 0.405, 0.205);
 		// Silla, detrás de él: respaldo, asiento y patas
 		ctx.fillStyle = "#6f5238";
 		ctx.fillRect(hx - 24 * S, asiento - 46 * S, 5 * S, y - asiento + 46 * S);
 		ctx.fillRect(hx + 10 * S, asiento, 4 * S, y - asiento);
 		ctx.fillStyle = "#a07c58";
 		ctx.fillRect(hx - 26 * S, asiento - 3 * S, 42 * S, 6 * S);
-		// Eber completo, sentado (sigue el ritmo con un saltito)
-		const ritmo = Math.abs(Math.sin(tiempo * 4)) * 1.5 * S;
-		dibujarNpcFoto(hx, y - ritmo, dj, 1, "sentado", t.x);
-		// Mesita adelante (las rodillas quedan debajo), con el tazón de sopa humeando
+		// Eber completo, sentado y quieto (no sube ni baja)
+		dibujarNpcFoto(hx, y, dj, 1, "sentado", t.x);
+		// Mesita adelante con mantel: tapa el regazo y la mano que en la foto
+		// cuelga sobre la rodilla
 		const tx = hx + rodilla - 4 * S;
-		ctx.fillStyle = "#6f5238";
-		ctx.fillRect(tx - 24 * S, mesa, 4 * S, y - mesa);
-		ctx.fillRect(tx + 20 * S, mesa, 4 * S, y - mesa);
+		const izqMesa = Math.min(tx - 30 * S, hx + puntoNpc(dj, "sentado", 0.46, 0).x);
 		ctx.fillStyle = "#c89b6d";
-		rectRedondo(tx - 30 * S, mesa - 3 * S, 60 * S, 7 * S, 3 * S);
+		rectRedondo(izqMesa, mesa - 3 * S, tx + 30 * S - izqMesa, 7 * S, 3 * S);
 		ctx.fill();
+		ctx.fillStyle = mezclar(COLORES.beige, COLORES.blanco, 0.55); // mantel
+		ctx.beginPath();
+		ctx.moveTo(izqMesa + 2 * S, mesa + 3 * S);
+		ctx.lineTo(tx + 28 * S, mesa + 3 * S);
+		ctx.lineTo(tx + 30 * S, y - 4 * S);
+		for (let k = 0; k <= 6; k++) ctx.lineTo(tx + 30 * S - ((tx + 30 * S - izqMesa) * k) / 6, y - 4 * S + (k % 2) * 3 * S); // orilla ondulada
+		ctx.closePath();
+		ctx.fill();
+		ctx.fillStyle = conAlfa(COLORES.verdeInstitucional, 0.55); // franja del mantel
+		ctx.fillRect(izqMesa + 2 * S, mesa + 9 * S, tx + 26 * S - izqMesa, 3 * S);
 		ctx.fillStyle = COLORES.blanco; // tazón
 		ctx.beginPath();
 		ctx.ellipse(tx, mesa - 6 * S, 11 * S, 7 * S, 0, 0, Math.PI);
@@ -305,20 +446,9 @@ function dibujarTerraza(m) {
 			linea(vx, mesa - 10 * S - u * 22 * S, vx + Math.sin(u * 6 + k + 1) * 3 * S, mesa - 16 * S - u * 22 * S);
 		}
 		ctx.globalAlpha = 1;
-		// La cuchara va del tazón a la boca y vuelve
-		const ida = (1 - Math.cos(tiempo * 2.4)) / 2; // 0 en el tazón, 1 en la boca
-		const cx = lerp(tx - 2 * S, hx + boca.x, ida);
-		const cy = lerp(mesa - 9 * S, y - ritmo + boca.y, ida);
-		ctx.strokeStyle = "#9aa3a5";
-		ctx.lineWidth = 2 * S;
-		linea(cx, cy, cx + 9 * S, cy + 4 * S);
-		ctx.fillStyle = "#9aa3a5";
-		ctx.beginPath();
-		ctx.ellipse(cx, cy, 3.5 * S, 2 * S, 0, 0, Math.PI * 2);
-		ctx.fill();
 		dibujarPlacaImportante(hx, y - 130 * S, `${dj.nombre} ♪`);
 		// Parlante
-		const px = sx + w * 0.75;
+		const px = sx - w * 0.55; // a la izquierda, lejos de su mesa (tapaba el tazón)
 		const late = 1 + 0.06 * Math.abs(Math.sin(tiempo * 10));
 		ctx.fillStyle = "#1c2526";
 		rectRedondo(px - 16 * S, y - 64 * S, 32 * S, 64 * S, 5 * S);
@@ -342,6 +472,13 @@ function dibujarTerraza(m) {
 	}
 }
 
+// La barista: sin nombre (no es una persona del equipo), con delantal café
+const BARISTA_CAFETERIA = {
+	nombre: "",
+	apariencia: { cuerpo: "chica", casco: COLORES.blanco, chaleco: "#936739", pelo: "#2b1a12", pantalon: "#2d3a4a" },
+};
+const BARISTA_CICLO = 9; // segundos entre preparar y atender
+
 // La barra de café al fondo (en vez de la computadora)
 function dibujarBarraCafe(m, sx, piso) {
 	const listo = cafeina > 0;
@@ -361,6 +498,12 @@ function dibujarBarraCafe(m, sx, piso) {
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	ctx.fillText("CAFÉ · CAPUCHINO · LATTE", sx, topY - 98 * S);
+	// La barista, detrás de la barra (sobre la tarima de atrás: la barra le
+	// tapa de la cintura para abajo): un rato
+	// mira a la máquina y mueve el brazo preparando, otro rato a la gente
+	const ciclo = modulo(tiempo, BARISTA_CICLO);
+	const prepara = ciclo < BARISTA_CICLO * 0.45;
+	dibujarNpcFoto(sx + 76 * S, piso - 34 * S, BARISTA_CAFETERIA, prepara ? -1 : 1, prepara ? GESTOS_PLATICA[Math.floor(tiempo * 3) % GESTOS_PLATICA.length] : "quieto", 0);
 	// Barra
 	ctx.fillStyle = "#8a6a4a";
 	ctx.fillRect(sx - 110 * S, topY, 220 * S, 78 * S);
@@ -461,27 +604,145 @@ const CIUDAD_AZOTEA = [0.12, 0.28].map((vel, capa) => ({
 		semilla: Math.floor(azarAzotea() * 1000),
 	})),
 }));
-const ESTRELLAS_AZOTEA = Array.from({ length: 40 }, () => ({ x: azarAzotea(), y: azarAzotea() * 0.45, fase: azarAzotea() * 6 }));
+const ESTRELLAS_AZOTEA = Array.from({ length: 40 }, () => ({ x: azarAzotea(), y: azarAzotea() * 0.3, fase: azarAzotea() * 6 }));
 const ANCHO_CIUDAD = 2100; // la franja de ciudad se repite cada tanto (a S = 1)
+// Nubes largas del atardecer: alto (fracción del horizonte), ancho y velocidad (a S = 1)
+const NUBES_AZOTEA = Array.from({ length: 5 }, (_, k) => ({ x: azarAzotea(), y: 0.22 + k * 0.1, w: 160 + azarAzotea() * 180, vel: 4 + azarAzotea() * 5 }));
+// Palomas sobre la baranda de vidrio (x desde la entrada, en el mundo)
+const PALOMAS_AZOTEA = [{ x: 760, fase: 0 }, { x: 790, fase: 1.7 }, { x: 2380, fase: 3.1 }, { x: 3560, fase: 4.4 }];
+const VUELO_GUACAMAYA = 30; // cada cuántos segundos cruza el cielo
+const COLORES_GUACAMAYA = { cuerpo: "#d7332a", ala: "#f2c230", punta: "#2f6fc2", cara: "#f4efe6" };
+
+// Los degradados de la azotea se arman una vez por tamaño de pantalla (no
+// en cada cuadro): la clave lleva las medidas de las que dependen
+const degradadosAzotea = new Map();
+function degradadoAzotea(clave, crear) {
+	let g = degradadosAzotea.get(clave);
+	if (!g) {
+		if (degradadosAzotea.size > 30) degradadosAzotea.clear(); // cambió el tamaño de la pantalla
+		g = crear();
+		degradadosAzotea.set(clave, g);
+	}
+	return g;
+}
+
+// Una paloma parada en la baranda: picotea de vez en cuando
+function dibujarPaloma(x, y, p) {
+	const dir = p.fase > 2 ? -1 : 1;
+	const pica = modulo(tiempo * 0.5 + p.fase * 0.3, 1) > 0.82 ? 3 * S : 0;
+	ctx.fillStyle = "#8d959c";
+	ctx.beginPath();
+	ctx.ellipse(x, y - 5 * S, 7 * S, 4.5 * S, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillStyle = "#6b737a"; // ala y cola
+	ctx.beginPath();
+	ctx.ellipse(x - dir * 2 * S, y - 5.5 * S, 5 * S, 3 * S, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillRect(x - dir * 10 * S - (dir < 0 ? 4 * S : 0), y - 6 * S, 4 * S, 2.5 * S);
+	ctx.fillStyle = "#9aa3aa"; // cabeza
+	circulo(x + dir * 6 * S, y - 9 * S + pica, 2.8 * S);
+	ctx.fillStyle = "#e0a24a"; // pico
+	ctx.fillRect(x + dir * 8.5 * S - (dir < 0 ? 2.5 * S : 0), y - 9 * S + pica, 2.5 * S, 1.2 * S);
+}
+
+// La guacamaya que cruza el cielo de derecha a izquierda, aleteando
+function dibujarGuacamaya(horizonte) {
+	const p = modulo(tiempo / VUELO_GUACAMAYA, 1);
+	if (p > 0.3) return;
+	let x = W + 80 * S - (p / 0.3) * (W + 160 * S);
+	let y = horizonte * 0.34 + Math.sin(p * 40) * 8 * S;
+	const c = COLORES_GUACAMAYA;
+	ctx.save();
+	ctx.translate(x, y); // se dibuja alrededor de (0, 0), un poco más grande
+	ctx.scale(1.5, 1.5);
+	x = 0;
+	y = 0;
+	const ala = Math.sin(tiempo * 12) * 11 * S; // arriba y abajo
+	ctx.fillStyle = c.cuerpo; // cola larga, hacia atrás
+	ctx.beginPath();
+	ctx.moveTo(x + 8 * S, y - 2 * S);
+	ctx.lineTo(x + 34 * S, y + 4 * S);
+	ctx.lineTo(x + 8 * S, y + 3 * S);
+	ctx.fill();
+	ctx.fillStyle = c.punta;
+	ctx.beginPath();
+	ctx.moveTo(x + 22 * S, y + 1.5 * S);
+	ctx.lineTo(x + 34 * S, y + 4 * S);
+	ctx.lineTo(x + 22 * S, y + 3.5 * S);
+	ctx.fill();
+	ctx.fillStyle = c.cuerpo; // cuerpo y cabeza
+	ctx.beginPath();
+	ctx.ellipse(x, y, 12 * S, 5 * S, -0.1, 0, Math.PI * 2);
+	ctx.fill();
+	circulo(x - 11 * S, y - 2 * S, 4.5 * S);
+	ctx.fillStyle = c.cara;
+	circulo(x - 12 * S, y - 2.5 * S, 2 * S);
+	ctx.fillStyle = "#2b2f33"; // pico
+	ctx.beginPath();
+	ctx.moveTo(x - 15 * S, y - 3.5 * S);
+	ctx.lineTo(x - 19 * S, y - 0.5 * S);
+	ctx.lineTo(x - 14.5 * S, y + 0.5 * S);
+	ctx.fill();
+	for (const [color, largo] of [[c.ala, 1], [c.punta, 0.55]]) {
+		// El ala: amarilla al centro y azul en la punta
+		ctx.fillStyle = color;
+		ctx.beginPath();
+		ctx.moveTo(x - 4 * S, y - 1 * S);
+		ctx.lineTo(x + 6 * S, y - 1 * S);
+		ctx.lineTo(x + (2 + 8 * largo) * S, y - 1 * S - ala * (0.45 + largo));
+		ctx.fill();
+	}
+	ctx.restore();
+}
 
 function dibujarFondoAzotea(m, dt) {
 	const of = m.oficina;
 	const cl = camara - of.x0;
 	const horizonte = SUELO - 70 * S;
-	// Cielo de la hora azul, más cálido abajo
-	const cielo = ctx.createLinearGradient(0, 0, 0, horizonte);
-	cielo.addColorStop(0, "#102a4c");
-	cielo.addColorStop(0.55, "#2c5b8c");
-	cielo.addColorStop(0.85, "#6f8fb0");
-	cielo.addColorStop(1, "#e9b98a");
-	ctx.fillStyle = cielo;
+	// Cielo del atardecer: azul arriba, malva y naranja hacia el horizonte
+	ctx.fillStyle = degradadoAzotea(`cielo|${horizonte}`, () => {
+		const g = ctx.createLinearGradient(0, 0, 0, horizonte);
+		g.addColorStop(0, "#132849");
+		g.addColorStop(0.45, "#33508a");
+		g.addColorStop(0.72, "#8f6a95");
+		g.addColorStop(0.9, "#e3876a");
+		g.addColorStop(1, "#f4c27c");
+		return g;
+	});
 	ctx.fillRect(0, 0, W, horizonte + 2);
 	for (const e of ESTRELLAS_AZOTEA) {
-		ctx.fillStyle = `rgba(255,255,255,${(0.35 + 0.35 * Math.sin(tiempo * 2 + e.fase)).toFixed(3)})`;
+		ctx.fillStyle = `rgba(255,255,255,${((0.3 + 0.3 * Math.sin(tiempo * 2 + e.fase)) * (1 - e.y * 2.5)).toFixed(3)})`;
 		ctx.fillRect(e.x * W, e.y * horizonte, 2 * S, 2 * S);
 	}
+	// El sol poniéndose detrás de las montañas, con su resplandor
+	const solX = W * 0.7 - cl * 0.015;
+	const solY = horizonte - 58 * S;
+	ctx.save();
+	ctx.translate(solX, solY);
+	ctx.fillStyle = degradadoAzotea(`sol|${S}`, () => {
+		const g = ctx.createRadialGradient(0, 0, 20 * S, 0, 0, 190 * S);
+		g.addColorStop(0, "rgba(255,214,140,0.55)");
+		g.addColorStop(1, "rgba(255,214,140,0)");
+		return g;
+	});
+	ctx.fillRect(-190 * S, -190 * S, 380 * S, 380 * S);
+	ctx.fillStyle = "#ffd98a";
+	circulo(0, 0, 30 * S);
+	ctx.restore();
+	// Nubes largas que se van moviendo, iluminadas por abajo
+	for (const n of NUBES_AZOTEA) {
+		const w = n.w * S;
+		const x = modulo(n.x * W + tiempo * n.vel * S - cl * 0.03, W + w * 2) - w;
+		const y = n.y * horizonte;
+		ctx.fillStyle = "rgba(255,196,170,0.28)";
+		rectRedondo(x, y, w, 9 * S, 4.5 * S);
+		ctx.fill();
+		ctx.fillStyle = "rgba(255,226,190,0.3)";
+		rectRedondo(x + w * 0.2, y + 5 * S, w * 0.6, 6 * S, 3 * S);
+		ctx.fill();
+	}
 	// Montañas lejanas
-	ctx.fillStyle = "#2b4a6b";
+	ctx.fillStyle = "#34446e";
 	ctx.beginPath();
 	ctx.moveTo(0, horizonte);
 	for (let x = 0; x <= W + 40; x += 40) ctx.lineTo(x, horizonte - (60 + 40 * Math.sin((x + cl * 0.05) * 0.004) + 20 * Math.sin((x + cl * 0.05) * 0.011)) * S);
@@ -497,6 +758,14 @@ function dibujarFondoAzotea(m, dt) {
 			const y = horizonte - alto;
 			ctx.fillStyle = c ? "#1b3555" : "#25466b";
 			ctx.fillRect(x, y, w, alto + 2);
+			if (!c && t.alto > 0.7) {
+				// Las torres más altas, con su antena y la luz roja que parpadea
+				ctx.fillRect(x + w / 2 - 1 * S, y - 16 * S, 2 * S, 16 * S);
+				if (modulo(tiempo + t.semilla * 0.01, 1.6) < 0.8) {
+					ctx.fillStyle = "#ff5a4a";
+					circulo(x + w / 2, y - 17 * S, 2.2 * S);
+				}
+			}
 			const az = crearAzar(t.semilla);
 			for (let wy = y + 8 * S; wy < horizonte - 6 * S; wy += 11 * S)
 				for (let wx = x + 5 * S; wx < x + w - 6 * S; wx += 9 * S)
@@ -510,6 +779,7 @@ function dibujarFondoAzotea(m, dt) {
 	// sin pintar y se veía corrido lo del cuadro anterior)
 	ctx.fillStyle = "#162d49";
 	ctx.fillRect(0, horizonte, W, SUELO - horizonte + 2);
+	dibujarGuacamaya(horizonte);
 	// Baranda de vidrio al fondo de la terraza
 	const tope = SUELO - 46 * S;
 	ctx.fillStyle = "rgba(200,232,240,0.18)";
@@ -524,6 +794,10 @@ function dibujarFondoAzotea(m, dt) {
 	}
 	ctx.fillStyle = "#3a4446";
 	ctx.fillRect(0, tope - 4 * S, W, 5 * S);
+	for (const p of PALOMAS_AZOTEA) {
+		const px = of.x0 + p.x - camara;
+		if (px > -20 && px < W + 20) dibujarPaloma(px, tope - 4 * S, p);
+	}
 
 	dibujarFondoCafeteria(m); // la gente conversando, detrás de la pérgola
 	dibujarPergola(m);
@@ -559,10 +833,12 @@ function dibujarPergola(m) {
 	}
 	ctx.fillStyle = "#2b2f33";
 	ctx.fillRect(0, viga, W, 12 * S);
-	const luz = ctx.createLinearGradient(0, viga + 12 * S, 0, viga + 90 * S);
-	luz.addColorStop(0, "rgba(255,206,120,0.35)");
-	luz.addColorStop(1, "rgba(255,206,120,0)");
-	ctx.fillStyle = luz;
+	ctx.fillStyle = degradadoAzotea(`luz|${viga}`, () => {
+		const g = ctx.createLinearGradient(0, viga + 12 * S, 0, viga + 90 * S);
+		g.addColorStop(0, "rgba(255,206,120,0.35)");
+		g.addColorStop(1, "rgba(255,206,120,0)");
+		return g;
+	});
 	ctx.fillRect(0, viga + 12 * S, W, 78 * S);
 	// Focos colgando entre los postes
 	const postes = postesPergola(of);
@@ -574,12 +850,13 @@ function dibujarPergola(m) {
 		ctx.lineWidth = 1.5 * S;
 		ctx.beginPath();
 		ctx.moveTo(a, viga + 12 * S);
-		ctx.quadraticCurveTo((a + b) / 2, viga + 80 * S, b, viga + 12 * S);
+		const cuelga = (68 + Math.sin(tiempo * 0.8 + k * 1.3) * 5) * S; // el cable se mece con el aire
+		ctx.quadraticCurveTo((a + b) / 2, viga + 12 * S + cuelga, b, viga + 12 * S);
 		ctx.stroke();
 		for (let f = 1; f < 10; f++) {
 			const u = f / 10;
 			const fx = a + (b - a) * u;
-			const fy = viga + 12 * S + 2 * u * (1 - u) * 68 * S;
+			const fy = viga + 12 * S + 2 * u * (1 - u) * cuelga;
 			ctx.fillStyle = `rgba(255,230,160,${(0.75 + 0.25 * Math.sin(tiempo * 3 + f + k)).toFixed(3)})`;
 			circulo(fx, fy + 4 * S, 3.5 * S);
 		}
@@ -597,10 +874,12 @@ function dibujarPergola(m) {
 
 // Piso de deck: tablas de madera con sus juntas y una línea de luz al borde
 function dibujarSueloAzotea(m) {
-	const g = ctx.createLinearGradient(0, SUELO, 0, H);
-	g.addColorStop(0, "#8a6240");
-	g.addColorStop(1, "#5a3e28");
-	ctx.fillStyle = g;
+	ctx.fillStyle = degradadoAzotea(`deck|${SUELO}|${H}`, () => {
+		const g = ctx.createLinearGradient(0, SUELO, 0, H);
+		g.addColorStop(0, "#8a6240");
+		g.addColorStop(1, "#5a3e28");
+		return g;
+	});
 	ctx.fillRect(0, SUELO, W, H - SUELO);
 	ctx.fillStyle = "rgba(255,214,140,0.5)"; // luz baja al borde del deck
 	ctx.fillRect(0, SUELO, W, 3 * S);
@@ -620,15 +899,23 @@ function dibujarSueloAzotea(m) {
 function dibujarDecoracionAzotea(tipo, sx, piso) {
 	if (tipo === "jardinera") {
 		// Jardinera larga con plantas y su luz cálida desde abajo
-		const halo = ctx.createRadialGradient(sx, piso - 40 * S, 5 * S, sx, piso - 40 * S, 90 * S);
-		halo.addColorStop(0, "rgba(255,206,120,0.45)");
-		halo.addColorStop(1, "rgba(255,206,120,0)");
-		ctx.fillStyle = halo;
-		ctx.fillRect(sx - 90 * S, piso - 130 * S, 180 * S, 130 * S);
+		// (el halo se arma una vez, en el origen, y se traslada a su lugar)
+		ctx.save();
+		ctx.translate(sx, piso - 40 * S);
+		ctx.fillStyle = degradadoAzotea(`halo|${S}`, () => {
+			const g = ctx.createRadialGradient(0, 0, 5 * S, 0, 0, 90 * S);
+			g.addColorStop(0, "rgba(255,206,120,0.45)");
+			g.addColorStop(1, "rgba(255,206,120,0)");
+			return g;
+		});
+		ctx.fillRect(-90 * S, -90 * S, 180 * S, 130 * S);
+		ctx.restore();
+		// Las hojas se mecen con el aire (fase según su lugar en el mundo)
+		const brisa = sx + camara;
 		for (let k = -5; k <= 5; k++) {
 			ctx.fillStyle = k % 2 ? "#3f8f55" : k % 3 ? "#5aa66a" : "#b5532f"; // alguna hoja rojiza
 			ctx.beginPath();
-			ctx.ellipse(sx + k * 11 * S, piso - 50 * S - Math.abs(Math.sin(k)) * 22 * S, 8 * S, 26 * S, k * 0.18, 0, Math.PI * 2);
+			ctx.ellipse(sx + k * 11 * S, piso - 50 * S - Math.abs(Math.sin(k)) * 22 * S, 8 * S, 26 * S, k * 0.18 + Math.sin(tiempo * 1.2 + k * 0.6 + brisa * 0.01) * 0.07, 0, Math.PI * 2);
 			ctx.fill();
 		}
 		ctx.fillStyle = "#2b2f33";

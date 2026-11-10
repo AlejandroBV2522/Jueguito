@@ -264,7 +264,7 @@ function vistaMarDeNubes(arriba, horizonte, abajo, cl) {
 }
 
 function dibujarAvioneta(x, y) {
-	const texto = "¡Bienvenido a Celaque!";
+	const texto = "¡Celaque te da la bienvenida!";
 	ctx.font = `700 ${12 * S}px ${FUENTE}`;
 	const ancho = ctx.measureText(texto).width + 20 * S;
 	const bx = x - 70 * S - ancho;
@@ -615,8 +615,9 @@ function dibujarFondoOficina(m, dt) {
 	}
 
 	dibujarFondoCafeteria(m); // la gente conversando al fondo, detrás de todo (cafeteria.js)
-	dibujarColumnasOficina(m);
+	// Lo que flota va detrás de las columnas: así nunca tapa la placa del logo
 	dibujarFlotantesOficina(m, cl);
+	dibujarColumnasOficina(m);
 
 	// Paredes de los extremos
 	ctx.fillStyle = COLORES.verdeProfundo;

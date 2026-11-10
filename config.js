@@ -54,7 +54,7 @@ window.CONFIG_JUEGO = {
     titulo: "Camino a Celaque",
     subtitulo: "Elige tu personaje y luego un mundo del mapa.",
     victoriaTitulo: "¿Estás listo?",
-    bienvenida: "¡Bienvenido a Celaque!", // título del final, sobre el nombre del jugador
+    bienvenida: "¡Ya eres parte de Celaque!", // título del final, sobre el nombre del jugador
     pideNombre: "¿Cómo te llamas?",
     victoriaTexto: "Completaste todos los módulos de tu capacitación.",
     contadorNpcs: "Personas conocidas",
@@ -232,12 +232,19 @@ window.TEMAS_OFICINA = {};
                          terraza: { nombre, cuerpo, frases: [...] }.
                   fondo: (opcional) true para que todos los personajes del
                          juego conversen al fondo.
+                  platicas: (opcional, con fondo) de qué platica cada grupo
+                         del fondo: [{ tema, globos: [frases cortas del globo],
+                         lineas: [páginas que escuchas al acercarte con E] }].
                   virus: (opcional) true para que crucen virus por la
                          oficina: se esquivan agachándose (los que vuelan) o
                          saltando (los que ruedan). Salen después de hablar
-                         con el anfitrión, cada vez más seguido y, pasada la
-                         mitad, a veces en pareja; mientras hablas con
+                         con el anfitrión, cada vez más seguido y, en el
+                         último tramo, a veces en pareja; mientras hablas con
                          alguien se detienen.
+                  companerosAlInicio: (opcional) true para que todos
+                         los compañeros esperen juntos junto a la entrada;
+                         virus y anzuelos empiezan cuando ya hablaste con
+                         todos, y el resto de la oficina es esquivar.
                   anzuelos: (opcional) true para que bajen del techo
                          anzuelos de phishing en los tramos libres: se pasa
                          por debajo cuando suben.
@@ -267,6 +274,18 @@ window.TEMAS_OFICINA = {};
                   práctica) que te empujan. Si te caes, caes hasta la
                   nube o el piso que te toque y vuelves a subir. Ese
                   mundo no lleva "comentarios" (A y B usan sus lugares).
+   - taller:      (opcional, IA) taller de prompts antes de la estación del
+                  fondo (alarga la oficina 1250 px): { rondas: [{ titulo,
+                  intro: [frases del anfitrión], piezas: { rol,
+                  instrucciones, contexto, objetivo }, trampas: [{ parte,
+                  texto, por }], respuesta: [frases del modelo] }] }. En
+                  cada ronda un dron suelta piezas: se atrapan las 4 (RICO)
+                  caminando o saltando. Las trampas se disfrazan de una
+                  pieza (parte) y, si las atrapas, dicen por qué no van
+                  (por) y quitan un corazón (en modo fácil, no). Sin
+                  corazones se repite solo esa ronda. Textos de pieza y
+                  trampa: 40 caracteres o menos (dos renglones). Velocidades
+                  y tiempos: TALLER en juego/oficina/taller-ia.js.
    - coleccionables: (opcional) mayitas (trofeos) escondidas en el aire. Solo
                   se alcanzan saltando DESDE algo (desde el piso no llegas).
                   Se ven en el apartado "Colección" del mapa. Cada una:

@@ -52,6 +52,23 @@ const LUGARES_COMPANEROS = [800, 1450, 2070];
 // Con 3 "comentarios" (4 personas) el hueco del medio se reparte entre dos
 const LUGARES_CUATRO = [800, 1370, 1560, 2070];
 const lugaresCompaneros = (cuantos) => (cuantos > LUGARES_COMPANEROS.length ? LUGARES_CUATRO : LUGARES_COMPANEROS);
+// Todos los compañeros seguidos desde la entrada (oficina.companerosAlInicio),
+// cada uno a SEPARACION_INICIO del anterior y sin quedar pegado a un mueble.
+// Devuelve las distancias desde la entrada, como LUGARES_COMPANEROS.
+const SEPARACION_INICIO = 240;
+function lugaresAlInicio(cuantos, obstaculos, x0) {
+	const lista = [];
+	let d = 480;
+	while (lista.length < cuantos) {
+		const choca = obstaculos.find((o) => Math.abs(x0 + d - o.x) < o.medioAncho + 70);
+		if (choca) d = choca.x - x0 + choca.medioAncho + 70;
+		else {
+			lista.push(d);
+			d += SEPARACION_INICIO;
+		}
+	}
+	return lista;
+}
 // Decoración que no estorba (se pasa por delante): libreros, sillones...
 const DECORACION_OFICINA = [
 	{ d: 300, tipo: "librero" },
@@ -179,7 +196,7 @@ function companeroOficina(d, i, k, x0, lugares) {
 		hablado: false,
 		dialogo:
 			k === 0
-				? d.intro && d.intro.length ? d.intro : [`Bienvenido al módulo ${d.nombre}.`]
+				? d.intro && d.intro.length ? d.intro : [`Te damos la bienvenida al módulo ${d.nombre}.`]
 				: datos.dialogo && datos.dialogo.length ? datos.dialogo : ["¡Hola!"],
 		apariencia: {
 			cuerpo,
@@ -296,6 +313,9 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 	// el mueble no se alcanza con un salto normal: hace falta el café.
 	const bajo = d.oficina && d.oficina.terraza ? obstaculos[d.oficina.terraza - 1] : null;
 	const terraza = bajo ? { x: bajo.x, alto: bajo.alto + 205, medioAncho: 120 } : null;
+	// Con oficina.companerosAlInicio (Seguridad) todos esperan juntos al
+	// principio, entre los muebles; el resto de la oficina queda para esquivar
+	if (d.oficina && d.oficina.companerosAlInicio) lugares.splice(0, lugares.length, ...lugaresAlInicio(cuantos, obstaculos, x0));
 	return {
 		...d,
 		indice: i,
@@ -312,9 +332,12 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 		fotoImg: d.foto ? (d.fotoBordes ? cargarImagenFundida(d.foto, d.fotoBordes) : cargarImagen(d.foto)) : null,
 		// Llevar algo del punto A al B (mundo.js → mision; ver mision.js)
 		mision: crearMision(d, i, x0),
+		// Taller de prompts antes de la computadora (mundo.js → taller; ver taller-ia.js)
+		taller: crearTallerIA(d, x0 + largo),
 		oficina: {
 			x0,
-			terminalX: x0 + largo,
+			terminalX: x0 + largo + extraTallerIA(d), // con taller de prompts, la computadora queda más allá
+
 			obstaculos: obra ? obstaculosObra(d, x0) : obstaculos,
 			terraza,
 			// Decoración propia (mundo.js → oficina.decoracion, en el mismo orden), o la de oficina; la obra no lleva
@@ -356,6 +379,7 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 			piso: (d.oficina && d.oficina.piso) || 0,
 			estacion: ESTACIONES[d.oficina && d.oficina.estacion] ? d.oficina.estacion : "computadora",
 			fondo: !!(d.oficina && d.oficina.fondo), // todos los personajes del juego conversando al fondo (cafeteria.js)
+			companerosAlInicio: !!(d.oficina && d.oficina.companerosAlInicio), // virus.js: los virus salen al hablar con todos
 			robots: d.oficina && d.oficina.estacion === "robot" ? robotsDe(d.oficina) : [],
 			virus: !!(d.oficina && d.oficina.virus), // virus que cruzan la oficina (virus.js)
 			anzuelos: !!(d.oficina && d.oficina.anzuelos), // anzuelos de phishing que bajan del techo (virus.js)

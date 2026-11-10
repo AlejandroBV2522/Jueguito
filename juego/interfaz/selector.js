@@ -110,6 +110,7 @@ function iniciarOficina(m) {
 	petalos = [];
 	oficinaActual = m;
 	virusOficina.oficina = null; // los virus (Seguridad) empiezan de cero
+	tallerIA.oficina = null; // el taller de prompts (IA) espera de nuevo, con las rondas ya hechas
 	// La obra de Proyectos: ya completa o en modo de pruebas, se repite desde el principio
 	if (m.oficina.exterior && (m.completo || modoPruebas())) reiniciarObra(m);
 	vidas = clamp(vidas, 1, vidasMax()); // los corazones vienen del mundo anterior
