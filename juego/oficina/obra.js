@@ -84,7 +84,7 @@ function actualizarRiesgosObra(dt) {
 // vez de "opciones" la pregunta es de ORDENAR: los pasos salen revueltos y
 // se tocan en orden. Equivocarse quita un corazón (no en modo fácil); sin
 // corazones se vuelve al inicio de la zona. Con "explicacion", al acertar se
-// lee antes de seguir (clic o E).
+// lee un momento y sigue sola (un clic o E la adelantan).
 const preguntaObra = { enemigo: null, continuar: null, sinVidas: false, cableada: false };
 
 // Se conecta la primera vez que se necesita (cuando ya existe la interfaz)
@@ -94,11 +94,8 @@ function cablearPreguntasObra() {
 	ui.dialogo.addEventListener("click", avanzarPreguntaObra);
 	window.addEventListener("keydown", (e) => {
 		if (estado !== "pregunta" || !preguntaObra.enemigo) return;
-		// 1, 2, 3... contestan
-		if (/^[1-9]$/.test(e.key)) {
-			const btn = ui.opciones.children[Number(e.key) - 1];
-			if (btn && !ui.opciones.hidden) btn.click();
-		} else if ([" ", "Enter", "e", "E"].includes(e.key) && (preguntaObra.continuar || preguntaObra.sinVidas) && !e.repeat) {
+		// (1, 2, 3... contestan, y ↑ ↓ eligen: lo hace controles.js para todas las preguntas)
+		if ([" ", "Enter", "e", "E"].includes(e.key) && (preguntaObra.continuar || preguntaObra.sinVidas) && !e.repeat) {
 			e.preventDefault();
 			avanzarPreguntaObra();
 		}
@@ -131,7 +128,7 @@ function abrirPreguntaObra(enemigo) {
 			btn.textContent = texto;
 			btn.addEventListener("click", (e) => {
 				e.stopPropagation(); // no debe disparar el clic de la caja (avanzarPreguntaObra)
-				resolverPreguntaObra(i === p.correcta, enemigo);
+				resolverPreguntaObra(i === p.correcta, enemigo, btn);
 			});
 			ui.opciones.appendChild(btn);
 		});
@@ -168,17 +165,20 @@ function armarOrdenObra(p, enemigo) {
 	}
 }
 
-function resolverPreguntaObra(acierto, enemigo) {
+function resolverPreguntaObra(acierto, enemigo, btn) {
 	const p = enemigo.preguntas[enemigo.preguntaActual];
 	if (acierto) {
 		sonar("acierto");
-		if (p.explicacion) {
-			ui.opciones.hidden = true;
-			ui.opciones.innerHTML = "";
-			ui.texto.textContent = `¡Correcto! ${p.explicacion}`;
-			ui.pista.textContent = "Continuar ▸";
-			preguntaObra.continuar = () => vencerPreguntaObra(enemigo);
-		} else vencerPreguntaObra(enemigo);
+		// Como en la computadora del final: la pregunta y las opciones se quedan, la correcta se
+		// pone verde, la explicación sale debajo y la pregunta sigue sola (sin pedir un clic).
+		if (btn) btn.classList.add("correcta");
+		ui.opciones.querySelectorAll("button").forEach((b) => (b.disabled = true));
+		ui.pista.textContent = ["¡Correcto!", p.explicacion].filter(Boolean).join(" ");
+		const seguir = () => vencerPreguntaObra(enemigo);
+		preguntaObra.continuar = seguir; // un clic en la caja o E la adelantan
+		setTimeout(() => {
+			if (estado === "pregunta" && preguntaObra.continuar === seguir) seguir();
+		}, p.explicacion ? Math.min(4500, 1500 + p.explicacion.length * 28) : 700);
 		return;
 	}
 	enemigo.atacando = true;

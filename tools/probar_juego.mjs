@@ -548,7 +548,12 @@ async function jugarObra(limite = 600000) {
 				await paso(300);
 				await foto(`riesgo-${q.zona + 1}-pregunta-${q.n + 1}`);
 			}
-			if (q.sinVidas || q.explicando) await tecla("Enter");
+			if (q.explicando) {
+				// Acertó y la explicación sigue sola (sin clic ni tecla): solo se espera
+				await paso(500);
+				continue;
+			}
+			if (q.sinVidas) await tecla("Enter");
 			else if (q.orden) for (let k = 0; k < q.orden; k++) await evalua(`document.querySelector('#dialogo-opciones button[data-paso="${k}"]').click()`);
 			else await evalua(`document.querySelectorAll("#dialogo-opciones button")[${q.correcta}].click()`);
 			await paso(700);
@@ -808,6 +813,12 @@ try {
 		await evalua(`(() => { const of = oficinaActual.oficina; of.companeros.forEach((n) => (n.hablado = true)); heroe.x = limiteFrenteRiesgo(of.enemigos[0]) + 1; })()`);
 		await paso(300);
 		console.log("pregunta abierta al llegar al riesgo:", await evalua('estado === "pregunta"'));
+		// Con el teclado: una respuesta mala con la tecla cuenta una sola vez (controles.js ya contesta con 1, 2, 3)
+		await evalua(`(() => { vidas = vidasMax(); })()`);
+		const malaTecla = await evalua(`(() => { const p = preguntaObra.enemigo.preguntas[0]; return p.opciones.findIndex((_, i) => i !== p.correcta) + 1; })()`);
+		await tecla(String(malaTecla));
+		await paso(500);
+		console.log("respuesta mala con la tecla: quita un solo corazón:", await evalua("vidas === vidasMax() - 1"), "· vidas:", await evalua("vidas"), "de", await evalua("vidasMax()"));
 		await evalua(`(() => { vidas = 1; const p = preguntaObra.enemigo.preguntas[0]; const mala = p.opciones.findIndex((_, i) => i !== p.correcta); document.querySelectorAll("#dialogo-opciones button")[mala].click(); })()`);
 		await paso(800);
 		console.log("sin vidas: la caja ofrece reintentar:", await evalua("preguntaObra.sinVidas"), "·", await texto("#dialogo-texto"));
@@ -831,7 +842,7 @@ try {
 		}
 	} else if (escenario === "oficina") {
 		// IA (mundo 6): la oficina que una caminata sencilla sí completa; Proyectos y Procesos son recorridos por zonas, SharePoint pide subir la torre de nubes y Seguridad, esquivar virus
-		await conProgreso({ completos: ["Talento", "Proyectos", "Procesos", "SharePoint", "Seguridad"], nivel: 7, personaje: "chica", nombre: "Prueba" });
+		await conProgreso({ completos: ["Talento", "Proyectos", "Procesos", "Plataformas", "Seguridad"], nivel: 7, personaje: "chica", nombre: "Prueba" });
 		await entrarAlMundo(5);
 		await foto("entrada");
 		console.log("terminal completada:", await jugarOficina(120000));
@@ -939,6 +950,102 @@ try {
 		if (process.env.SIN_HALCONES === "1") await evalua(`modulos[${i}].mision.halcones.length = 0`);
 		console.log(`mundo ${i + 1} completado:`, await jugarOficina(400000, `mundo${i + 1}`, Number(process.env.FOTO_CADA || 1500)));
 		console.log("misión:", await evalua(`modulos[${i}].mision.paso`), "· caídas:", await evalua(`modulos[${i}].mision.caidas || 0`));
+	} else if (escenario === "sharepoint") {
+		// SharePoint (mundo 4): capturas de la entrada, de quien pide la licencia y de cada etapa de la torre (el héroe se coloca en la nube de descanso)
+		// Una partida guardada con el nombre de antes ("SharePoint") sigue contando el mundo como completo
+		await conProgreso({ completos: ["Talento", "SharePoint"], nivel: 2, personaje: "chica", nombre: "Prueba" });
+		console.log("partida con el nombre anterior sigue completa:", await evalua("modulos[3].completo === true"));
+		await conProgreso({ completos: ["Talento", "Proyectos", "Procesos"], nivel: 5, personaje: "chica", nombre: "Prueba" });
+		await paso(2000);
+		await foto("mapa");
+		console.log("rótulo del mapa:", await evalua("modulos[3].nombre.toUpperCase()"));
+		await entrarAlMundo(3);
+		await foto("entrada");
+		await evalua(`(() => { oficinaActual.oficina.companeros.forEach((n) => (n.hablado = true)); estado = "oficina"; ui.dialogo.hidden = true; document.body.classList.remove("con-dialogo"); })()`);
+		const etapas = await evalua("oficinaActual.mision.etapas.length");
+		const nubes = await evalua("oficinaActual.mision.nubes.length");
+		const porEtapa = await evalua("NUBES_POR_ETAPA");
+		console.log("etapas:", etapas, "· nubes:", nubes, "· halcones:", await evalua("oficinaActual.mision.halcones.length"));
+		await evalua(`(() => { const mi = oficinaActual.mision; heroe.x = mi.bX - 120; heroe.y = 0; camara = heroe.x - W * 0.35; })()`);
+		await paso(900);
+		await foto("persona-b");
+		// Contesta las preguntas del banderín abierto (leyendo la respuesta del propio juego); con explicación, Enter sigue
+		const contestar = async () => {
+			let hechas = 0;
+			for (let guarda = 0; guarda < 40; guarda++) {
+				const q = await evalua(`(() => { if (estado !== "pregunta" || !preguntaTorre.activa) return null; const mi = oficinaActual.mision; const k = preguntaTorre.etapa; const p = mi.etapas[k].preguntas[mi.preguntaDe[k]]; return { correcta: p.correcta, sigue: !!preguntaTorre.continuar }; })()`);
+				if (!q) break;
+				if (q.sigue) {
+					// Acertó y la explicación sigue sola (sin clic ni tecla): solo se espera
+					await paso(500);
+					continue;
+				} else {
+					if (hechas === 0) await foto("pregunta");
+					await evalua(`document.querySelectorAll("#dialogo-opciones button")[${q.correcta}].click()`);
+					hechas++;
+				}
+				await paso(700);
+			}
+		};
+		for (let k = 0; k < etapas; k++) {
+			// A la nube de descanso de la etapa (la primera nube de la etapa siguiente espera hasta contestar)
+			await evalua(`(() => { const mi = oficinaActual.mision; mi.paso = "buscar"; const n = mi.nubes[${(k + 1) * porEtapa - 1}]; heroe.x = n.x; heroe.y = n.alto; heroe.velY = 0; camara = heroe.x - W * 0.5; })()`);
+			await paso(1600);
+			await foto(`etapa-${k + 1}`);
+			console.log(`etapa ${k + 1}: aviso para responder:`, await evalua("etapaPreguntable()") === k, "· la nube de arriba espera:", await evalua(`!oficinaActual.mision.nubes[${(k + 1) * porEtapa}].activa`));
+			await tecla("e");
+			await paso(500);
+			await contestar();
+			await paso(900);
+			console.log(`etapa ${k + 1}: contestada y se forman las nubes de arriba:`, await evalua(`oficinaActual.mision.hechas[${k}] && oficinaActual.mision.nubes[${(k + 1) * porEtapa}].activa`), "· estado:", await evalua("estado"));
+			if (k === 1) {
+				// Si te caes por debajo de la última nube de descanso, vuelves a ella
+				await evalua(`(() => { const mi = oficinaActual.mision; heroe.y = mi.control - 400; heroe.velY = 0; })()`);
+				await paso(400);
+				console.log("caída: vuelve a la nube de descanso:", await evalua("heroe.y === oficinaActual.mision.control"), "· caídas:", await evalua("oficinaActual.mision.caidas || 0"));
+			}
+			if (k + 1 < etapas) {
+				await evalua(`(() => { const mi = oficinaActual.mision; const n = mi.nubes[${(k + 1) * porEtapa + 4}]; heroe.x = n.x; heroe.y = n.alto; heroe.velY = 0; })()`);
+				await paso(1200);
+				await foto(`subida-${k + 2}`);
+			}
+		}
+		await evalua(`(() => { const mi = oficinaActual.mision; const n = mi.nubes[mi.nubes.length - 1]; heroe.x = n.x; heroe.y = n.alto; heroe.velY = 0; })()`);
+		await paso(1800);
+		await foto("punto-a");
+		console.log("paso de la misión en A:", await evalua("oficinaActual.mision.paso"));
+		// Licencia ya entregada: de ahí a la computadora, contestando todas las preguntas
+		await evalua(`(() => { const m = oficinaActual; m.mision.paso = "listo"; m.mision.persona.hablado = true; m.terminalVisitada = false; heroe.x = m.oficina.terminalX - 400; heroe.y = 0; heroe.velY = 0; camara = heroe.x - W * 0.35; })()`);
+		console.log("preguntas del módulo:", await evalua("preguntasDe(oficinaActual).length"));
+		console.log("terminal completada:", await jugarOficina(120000));
+		console.log("progreso:", await evalua(`localStorage.getItem(${JSON.stringify(CLAVE)})`));
+	} else if (escenario === "nubes-mueven") {
+		// SharePoint: el héroe quieto sobre una nube que va y viene; registra cuadro a cuadro dónde está respecto a la nube y a la cámara (¿tiembla?)
+		await conProgreso({ completos: ["Talento", "Proyectos", "Procesos"], nivel: 5, personaje: "chica", nombre: "Prueba" });
+		await entrarAlMundo(3);
+		const porEtapa = await evalua("NUBES_POR_ETAPA");
+		await evalua(`(() => { const m = oficinaActual; m.oficina.companeros.forEach((n) => (n.hablado = true)); estado = "oficina"; ui.dialogo.hidden = true; document.body.classList.remove("con-dialogo"); const mi = m.mision; mi.paso = "buscar"; mi.hechas[0] = true; })()`);
+		await paso(500);
+		const idx = porEtapa + 1; // en la 2.ª etapa, una de las que van y vienen
+		console.log("la nube se mueve:", await evalua(`oficinaActual.mision.nubes[${idx}].mueve > 0`));
+		await evalua(`(() => { const mi = oficinaActual.mision; const n = mi.nubes[${idx}]; heroe.x = n.x; heroe.y = n.alto; heroe.velY = 0; camara = heroe.x - W * 0.5; })()`);
+		await paso(1000);
+		await evalua(`(() => { window.__reg = []; const f = () => { const n = oficinaActual.mision.nubes[${idx}]; window.__reg.push([heroe.x - n.x, heroe.y - n.alto, camara, heroe.x, n.x, heroe.velY, heroe.sobre ? 1 : 0, tiempo, S]); if (window.__reg.length < 150) requestAnimationFrame(f); }; requestAnimationFrame(f); })()`);
+		await paso(4000);
+		const reg = await evalua("JSON.stringify(window.__reg)");
+		const filas = JSON.parse(reg || "[]");
+		const dif = filas.map((f) => f[0]);
+		const dx = filas.slice(1).map((f, k) => f[3] - filas[k][3]);
+		const dcam = filas.slice(1).map((f, k) => f[2] - filas[k][2]);
+		const media = dif.reduce((a, b) => a + b, 0) / (dif.length || 1);
+		console.log("cuadros:", filas.length, "· héroe − nube: mín", Math.min(...dif).toFixed(2), "máx", Math.max(...dif).toFixed(2), "· altura − nube: máx", Math.max(...filas.map((f) => Math.abs(f[1]))).toFixed(2));
+		console.log("avance del héroe por cuadro (primeros 30):", dx.slice(0, 30).map((v) => v.toFixed(1)).join(" "));
+		console.log("avance de la cámara por cuadro (primeros 30):", dcam.slice(0, 30).map((v) => v.toFixed(1)).join(" "));
+		console.log("héroe − nube, desviación de la media:", Math.max(...dif.map((v) => Math.abs(v - media))).toFixed(2));
+		// El balanceo en reposo del personaje (en píxeles): antes dependía de su posición (tiembla sobre una nube que se mueve), ahora solo del tiempo
+		const balanceo = (fase) => filas.map((f) => Math.sin(fase(f)) * 0.8 * f[8] * 1.15);
+		const saltoMax = (serie) => Math.max(...serie.slice(1).map((v, k) => Math.abs(v - serie[k])));
+		console.log("balanceo: salto máximo entre cuadros antes:", saltoMax(balanceo((f) => f[7] * 2 + f[3])).toFixed(2), "px · ahora:", saltoMax(balanceo((f) => f[7] * 2)).toFixed(2), "px");
 	} else if (escenario === "zoom") {
 		// Acerca y aleja un mundo cuadro por cuadro: escala, centro, pantalla
 		// y panel del centro, para ver si algo tiembla

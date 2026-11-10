@@ -39,7 +39,8 @@ function halconesTorre(nubes, etapas) {
 		for (const [n, fase] of [[2, 0], [5, 2.2], [7, 4.1]]) {
 			const nube = nubes[k * NUBES_POR_ETAPA + n];
 			if (!nube) continue;
-			lista.push({ nombre: e.halcon || "Mala práctica", alto: nube.alto + HALCON.sobreNube, velocidad: HALCON.velocidad + k * 35, fase: fase + k, x: 0, dir: 1 });
+			// +35 por etapa, hasta la 4.ª: una 5.ª etapa no vuela más rápido que la 4.ª
+			lista.push({ nombre: e.halcon || "Mala práctica", alto: nube.alto + HALCON.sobreNube, velocidad: HALCON.velocidad + Math.min(k, 3) * 35, fase: fase + k, x: 0, dir: 1 });
 		}
 	});
 	return lista;
@@ -50,13 +51,23 @@ function halconesTorre(nubes, etapas) {
 // Lo de lado (col, mueve) se mide desde el centro de la torre y se escala
 // por S como el ancho de las nubes: así los saltos miden lo mismo en
 // cualquier pantalla (la x de cada nube se calcula en moverNubesMision).
-function nubesTorre(etapas) {
+function nubesTorre(lista) {
+	const etapas = lista.length;
 	const total = etapas * NUBES_POR_ETAPA + 1;
 	return Array.from({ length: total }, (_, j) => {
 		const etapa = Math.min(etapas - 1, Math.floor(j / NUBES_POR_ETAPA));
 		const enEtapa = j % NUBES_POR_ETAPA;
 		const descanso = j === total - 1 || enEtapa === NUBES_POR_ETAPA - 1;
+		const plataformas = (lista[etapa] && lista[etapa].plataformas) || "nube"; // cómo son las nubes de la etapa (mundo.js)
 		return {
+			plataformas,
+			// "desvanece": dos nubes de la etapa se esfuman un rato (avisan parpadeando antes)
+			desvanece: plataformas === "desvanece" && !descanso && (enEtapa === 2 || enEtapa === 5),
+			// Hasta contestar el banderín de la etapa anterior esta nube no se forma (-1: libre)
+			bloqueo: Math.floor(j / NUBES_POR_ETAPA) - 1,
+			activa: true, // si sostiene ahora (moverNubesMision lo actualiza)
+			vis: 1, // cuánto se ve (0 a 1), que cambia con suavidad
+			tinte: enEtapa % 2,
 			col: COLUMNAS_TORRE[j % COLUMNAS_TORRE.length],
 			x: 0,
 			dx: 0,
@@ -73,7 +84,7 @@ function crearMision(d, i, x0) {
 	if (!d.mision) return null;
 	const b = d.mision.b || {};
 	const enNube = !!(d.mision.a && d.mision.a.nube);
-	const nubes = enNube ? nubesTorre(Math.max(1, (d.mision.etapas || []).length)) : [];
+	const nubes = enNube ? nubesTorre((d.mision.etapas || []).length ? d.mision.etapas : [{}]) : [];
 	const mi = {
 		...d.mision,
 		aX: x0 + LUGARES_COMPANEROS[2], // con torre, la nube de arriba (moverNubesMision)
@@ -115,7 +126,14 @@ function reiniciarMision(mi) {
 	mi.cartel = null; // { etapa, t }: el tema de la etapa, arriba en la pantalla
 	mi.empuje = 0; // velocidad de lado tras el golpe de un halcón
 	mi.inmune = 0;
+	// Las etapas con preguntas piden contestarlas en su banderín para que se formen las nubes que siguen
+	mi.hechas = (mi.etapas || []).map((e) => !(e.preguntas && e.preguntas.length));
+	mi.preguntaDe = (mi.etapas || []).map(() => 0); // por cuál pregunta va cada banderín
+	mi.control = 0; // altura de la última nube de descanso a la que se llegó: si te caes, vuelves ahí
+	mi.enBandera = false;
+	mi.etapaBandera = -1;
 	colocarNubes(mi);
+	actualizarEstadoNubes(mi, 0);
 }
 
 // Dónde va cada nube (y A) según el reloj y la escala de la pantalla
@@ -130,7 +148,30 @@ const sobreNube = (n, x) => Math.abs(x - n.x) < (n.medioAncho + 14) * S;
 function alturasNubesEn(x) {
 	const mi = oficinaActual && oficinaActual.mision;
 	if (!mi) return [];
-	return mi.nubes.filter((n) => sobreNube(n, x)).map((n) => n.alto);
+	return mi.nubes.filter((n) => n.activa && sobreNube(n, x)).map((n) => n.alto);
+}
+
+// Qué nubes sostienen ahora: las que esperan un banderín por contestar no se forman, y las que se
+// esfuman dejan de sostener un rato (parpadean antes de irse; en modo fácil no se van).
+// n.vis es lo que se ve: va hacia su meta con suavidad (dt = 0: de golpe).
+const DESVANECE = { ciclo: 5.4, aviso: 3.6, fuera: 4.4 };
+function actualizarEstadoNubes(mi, dt) {
+	for (const n of mi.nubes) {
+		const bloqueada = n.bloqueo >= 0 && !mi.hechas[n.bloqueo];
+		let activa = !bloqueada;
+		let meta = bloqueada ? 0.16 : 1;
+		if (n.desvanece && !bloqueada) {
+			const f = (((mi.reloj + n.fase * 2) % DESVANECE.ciclo) + DESVANECE.ciclo) % DESVANECE.ciclo;
+			if (!modoFacil()) {
+				if (f >= DESVANECE.fuera) {
+					activa = false;
+					meta = 0.1;
+				} else if (f >= DESVANECE.aviso) meta = Math.sin(mi.reloj * 22) > 0 ? 1 : 0.35;
+			}
+		}
+		n.activa = activa;
+		n.vis = dt > 0 ? n.vis + (meta - n.vis) * Math.min(1, dt * 9) : meta;
+	}
 }
 // Altura donde está A: arriba de su nube, o el piso
 const alturaPuntoA = (mi) => (mi.nubes.length ? mi.nubes[mi.nubes.length - 1].alto : 0);
@@ -148,6 +189,7 @@ function textoMision(m) {
 // Las nubes que van y vienen; si estás parado en una, te lleva con ella
 function moverNubesMision(mi, dt) {
 	mi.reloj += dt;
+	actualizarEstadoNubes(mi, dt);
 	for (const n of mi.nubes) {
 		const x = xNube(mi, n);
 		n.dx = x - n.x;
@@ -201,8 +243,8 @@ function vigilarTorre(mi) {
 		mi.apoyo = 0; // con el objeto en la mano se baja libre
 		return;
 	}
-	let n = mi.nubes.find((n) => n.alto === heroe.y && sobreNube(n, heroe.x));
-	const nubeAntes = mi.nubes.find((x) => x.alto === mi.apoyo);
+	let n = mi.nubes.find((n) => n.activa && n.alto === heroe.y && sobreNube(n, heroe.x));
+	const nubeAntes = mi.nubes.find((x) => x.activa && x.alto === mi.apoyo) || mi.nubes.find((x) => x.etapa >= 0 && x.alto === mi.control);
 	if (heroe.y < mi.apoyo - PASO_NUBES / 2 && modoFacil() && nubeAntes) {
 		// Modo fácil (ajustes.js): tu brillo te devuelve a la nube de donde caíste
 		heroe.x = nubeAntes.x;
@@ -225,7 +267,9 @@ function vigilarTorre(mi) {
 function vigilarBandera(mi, dt) {
 	const n = mi.nubes.find((x) => x.etapa >= 0 && sobreNube(x, heroe.x) && heroe.y >= x.alto && heroe.y < x.alto + 60);
 	mi.enBandera = !!n && (mi.paso === "pedir" || mi.paso === "buscar");
+	mi.etapaBandera = mi.enBandera ? n.etapa : -1;
 	if (mi.enBandera) {
+		if (n.alto > mi.control) mi.control = n.alto; // esta nube de descanso es ahora el punto al que se vuelve
 		if (!mi.cartel || mi.cartel.etapa !== n.etapa) {
 			mi.cartel = { etapa: n.etapa, t: 0, fuera: 0 };
 			sonar("pista");
@@ -233,6 +277,24 @@ function vigilarBandera(mi, dt) {
 		mi.cartel.fuera = 0;
 		mi.cartel.t += dt;
 	} else if (mi.cartel && (mi.cartel.fuera += dt) > 0.25) mi.cartel = null;
+}
+
+// Si te caes por debajo de la última nube de descanso a la que llegaste, no sigues cayendo hasta el
+// piso: vuelves a ella (con el modo fácil, vigilarTorre te devuelve a la nube de donde caíste)
+function volverAlDescanso(mi) {
+	if ((mi.paso !== "pedir" && mi.paso !== "buscar") || !mi.control || modoFacil()) return;
+	if (heroe.y >= mi.control - PASO_NUBES / 2) return;
+	const n = mi.nubes.find((x) => x.etapa >= 0 && x.alto === mi.control);
+	if (!n) return;
+	heroe.x = n.x;
+	heroe.y = n.alto;
+	heroe.velY = 0;
+	mi.apoyo = n.alto;
+	mi.empuje = 0;
+	mi.caidas = (mi.caidas || 0) + 1;
+	sonar("caida");
+	lanzarChispas(heroe.x, heroe.y + 60, 12, [COLORES.blanco, COLORES.fondoVerdeClaro, "#ffd23f"]);
+	avisos.push({ texto: "¡Te caíste! Vuelves a la última nube de descanso", t: 0 });
 }
 
 function actualizarMision(dt) {
@@ -244,6 +306,7 @@ function actualizarMision(dt) {
 	// Nada (nube que te lleva, halcón que te empuja) te saca de la oficina
 	heroe.x = clamp(heroe.x, m.oficina.x0 + 40, m.oficina.terminalX - 50);
 	if (mi.torre) vigilarBandera(mi, dt);
+	if (mi.torre) volverAlDescanso(mi);
 	if (!heroeEnSuelo()) return;
 	if (mi.torre) vigilarTorre(mi);
 	if (!m.oficina.companeros.every((n) => n.hablado)) return; // primero el anfitrión
@@ -308,8 +371,19 @@ function dibujarFolderMision(x, y, escala) {
 }
 
 // Una nube para pararse: la parte de arriba (plana) queda en arriba
-function dibujarNubeMision(x, arriba, medio) {
+function dibujarNubeMision(x, arriba, medio, n) {
 	if (x < -medio - 60 || x > W + medio + 60) return;
+	if (n && n.vis < 0.03) return;
+	if (n && n.vis < 0.999) {
+		ctx.save();
+		ctx.globalAlpha = n.vis;
+		dibujarNubeMision(x, arriba, medio, { ...n, vis: 1 });
+		ctx.restore();
+		return;
+	}
+	if (n && n.plataformas === "celdas") return dibujarCeldaMision(x, arriba, medio);
+	// Etapa "colores": las nubes alternan dos tintes (como los dos sitios de la lámina de intranets)
+	const tinte = n && n.plataformas === "colores" && n.tinte ? mezclar(COLORES.blanco, "#e07a2f", 0.45) : mezclar(COLORES.blanco, COLORES.verdeInstitucional, 0.3);
 	ctx.fillStyle = "rgba(4,37,35,0.10)"; // sombrita abajo
 	ctx.beginPath();
 	ctx.ellipse(x, arriba + 26 * S, medio * 0.9, 9 * S, 0, 0, Math.PI * 2);
@@ -317,7 +391,7 @@ function dibujarNubeMision(x, arriba, medio) {
 	ctx.fillStyle = COLORES.blanco;
 	for (const [dx, dy, r] of [[-0.62, 8, 20], [-0.25, 4, 27], [0.15, 2, 30], [0.55, 7, 22], [0, 14, 22]]) circulo(x + dx * medio, arriba + dy * S, r * S);
 	// Panza verde clarito: se distingue de las nubes del ventanal
-	ctx.fillStyle = mezclar(COLORES.blanco, COLORES.verdeInstitucional, 0.3);
+	ctx.fillStyle = tinte;
 	rectRedondo(x - medio, arriba + 8 * S, medio * 2, 14 * S, 7 * S);
 	ctx.fill();
 	ctx.fillStyle = COLORES.blanco;
@@ -325,24 +399,47 @@ function dibujarNubeMision(x, arriba, medio) {
 	ctx.fill();
 }
 
+// Etapa "celdas" (Parámetros de Excel): en vez de nubes, celdas de una hoja con su borde verde.
+// La parte de arriba, plana, queda en arriba (donde se para el héroe), como en las nubes.
+function dibujarCeldaMision(x, arriba, medio) {
+	ctx.fillStyle = "rgba(4,37,35,0.10)";
+	ctx.beginPath();
+	ctx.ellipse(x, arriba + 30 * S, medio * 0.85, 7 * S, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillStyle = "#f4f9f7";
+	rectRedondo(x - medio, arriba, medio * 2, 22 * S, 4 * S);
+	ctx.fill();
+	// Las divisiones de la hoja
+	ctx.strokeStyle = "rgba(72,132,120,0.35)";
+	ctx.lineWidth = 1.5 * S;
+	for (let k = 1; k < 3; k++) linea(x - medio + (k * medio * 2) / 3, arriba + 2 * S, x - medio + (k * medio * 2) / 3, arriba + 20 * S);
+	ctx.strokeStyle = COLORES.verdeInstitucional;
+	ctx.lineWidth = 2.5 * S;
+	rectRedondo(x - medio, arriba, medio * 2, 22 * S, 4 * S);
+	ctx.stroke();
+	// La barra de encabezado verde, a un lado
+	ctx.fillStyle = COLORES.verdeInstitucional;
+	ctx.fillRect(x - medio, arriba, medio * 2, 5 * S);
+}
+
 // Banderín con el número de la etapa, en la nube de descanso
-function dibujarBanderinEtapa(x, arriba, numero) {
+function dibujarBanderinEtapa(x, arriba, numero, hecha) {
 	const palo = arriba - 52 * S;
 	ctx.fillStyle = COLORES.verdeProfundo;
 	ctx.fillRect(x - 1.5 * S, palo, 3 * S, 52 * S);
 	const ondea = Math.sin(tiempo * 4 + numero) * 3 * S;
-	ctx.fillStyle = COLORES.verdeInstitucional;
+	ctx.fillStyle = hecha ? "#e7c25a" : COLORES.verdeInstitucional; // dorado una vez contestadas sus preguntas
 	ctx.beginPath();
 	ctx.moveTo(x + 1.5 * S, palo);
 	ctx.lineTo(x + 34 * S, palo + 10 * S + ondea);
 	ctx.lineTo(x + 1.5 * S, palo + 22 * S);
 	ctx.closePath();
 	ctx.fill();
-	ctx.fillStyle = COLORES.blanco;
+	ctx.fillStyle = hecha ? COLORES.verdeProfundo : COLORES.blanco;
 	ctx.font = `bold ${12 * S}px ${FUENTE}`;
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
-	ctx.fillText(String(numero), x + 12 * S, palo + 11 * S + ondea * 0.3);
+	ctx.fillText(hecha ? "✓" : String(numero), x + 12 * S, palo + 11 * S + ondea * 0.3);
 }
 
 // Un punto (en el piso o a cierta altura) con su letra y su letrero
@@ -381,8 +478,12 @@ function dibujarMision(m) {
 		const sx = n.x - camara;
 		const arriba = piso - n.alto * S;
 		if (arriba < -camaraY * S - 80 * S || arriba > H - camaraY * S + 40 * S) continue; // fuera de la pantalla
-		dibujarNubeMision(sx, arriba, n.medioAncho * S);
-		if (n.etapa >= 0) dibujarBanderinEtapa(sx + n.medioAncho * S * 0.6, arriba, n.etapa + 1);
+		dibujarNubeMision(sx, arriba, n.medioAncho * S, n);
+		if (n.etapa >= 0) {
+			dibujarBanderinEtapa(sx + n.medioAncho * S * 0.6, arriba, n.etapa + 1, !!mi.hechas[n.etapa] && (mi.etapas[n.etapa].preguntas || []).length > 0);
+			// Con preguntas por contestar en este banderín, el aviso para abrirlas
+			if (n.etapa === etapaPreguntable()) dibujarGlobo(sx, arriba - 150 * S, esTactil ? "Toca Hablar: responder" : "E · Responder", COLORES.fondoVerdeClaro);
+		}
 	}
 	if (ax > -200 && ax < W + 200) {
 		dibujarPuntoMision(ax, "A", (mi.a && mi.a.letrero) || "Punto A", mi.paso === "buscar", altoA);
@@ -416,11 +517,25 @@ function dibujarMision(m) {
 // torre (se dibuja fijo, antes que la oficina, que baja con camaraY)
 function dibujarCieloTorre() {
 	const alto = camaraY * S + 40 * S;
+	// El cielo cambia al subir: de día abajo a atardecer arriba (más profundo arriba, más cálido en el horizonte)
+	const tope = Math.max(1, alturaPuntoA(oficinaActual.mision));
+	const fArriba = clamp((camaraY + H / S) / (tope + 400), 0, 1) ** 1.6;
+	const fAbajo = clamp(camaraY / (tope + 400), 0, 1) ** 1.3;
 	const cielo = ctx.createLinearGradient(0, 0, 0, alto);
-	cielo.addColorStop(0, "#3f8fca");
-	cielo.addColorStop(1, "#e6f4fb");
+	cielo.addColorStop(0, mezclar("#3f8fca", "#233a78", fArriba));
+	cielo.addColorStop(1, mezclar("#e6f4fb", "#f3bf8e", fAbajo));
 	ctx.fillStyle = cielo;
 	ctx.fillRect(0, 0, W, alto);
+	// Ya anocheciendo, salen las primeras estrellas
+	if (fArriba > 0.5) {
+		const azar = crearAzar(77);
+		for (let k = 0; k < 36; k++) {
+			const ex = azar() * W;
+			const ey = azar() * alto * 0.7;
+			ctx.fillStyle = `rgba(255,255,255,${((fArriba - 0.5) * 1.6 * (0.5 + 0.5 * Math.sin(tiempo * 2 + k))).toFixed(3)})`;
+			ctx.fillRect(ex, ey, 2 * S, 2 * S);
+		}
+	}
 	// Nubes lejanas: bajan más despacio que la torre
 	for (let k = 0; k < 10; k++) {
 		const y = SUELO - (300 + k * 170 - camaraY * 0.6) * S;
