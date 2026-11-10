@@ -132,6 +132,8 @@ function reiniciarMision(mi) {
 	mi.control = 0; // altura de la última nube de descanso a la que se llegó: si te caes, vuelves ahí
 	mi.enBandera = false;
 	mi.etapaBandera = -1;
+	mi.paracaidas = false; // puesto en la cima (ponerParacaidas)
+	mi.brillo = 0;
 	colocarNubes(mi);
 	actualizarEstadoNubes(mi, 0);
 }
@@ -297,11 +299,53 @@ function volverAlDescanso(mi) {
 	avisos.push({ texto: "¡Te caíste! Vuelves a la última nube de descanso", t: 0 });
 }
 
+// ---------- El paracaídas de la cima ----------
+// Con la licencia en la mano, arriba de la torre hay dos formas de bajar: tirarte
+// (caída libre; con la licencia en la mano no cuesta corazones) o ponerte el
+// paracaídas (E o Enter en la cima) y dar un paso al vacío: se abre y bajas
+// despacio, dirigiéndote de lado, hasta el piso. Si pisas una nube en el camino
+// sigue puesto para el siguiente salto.
+const VEL_PARACAIDAS = 560; // lo más rápido que cae con el paracaídas abierto
+function ponerParacaidas() {
+	const mi = oficinaActual && oficinaActual.mision;
+	if (!mi || !mi.torre || estado !== "oficina" || mi.paso !== "llevar" || mi.paracaidas) return;
+	const cima = mi.nubes[mi.nubes.length - 1];
+	if (!cima || !heroeEnSuelo() || heroe.y !== cima.alto || !sobreNube(cima, heroe.x)) return;
+	mi.paracaidas = true;
+	sonar("recoger");
+	lanzarChispas(heroe.x, heroe.y + 90, 16, [COLORES.verdeInstitucional, COLORES.blanco, "#e7c25a"]);
+	avisos.push({ texto: "¡Paracaídas puesto! Da un paso al vacío", t: 0 });
+}
+
+function actualizarParacaidas(mi, dt) {
+	if (mi.paso !== "llevar") {
+		mi.paracaidas = false;
+		return;
+	}
+	if (heroe.velY < -VEL_PARACAIDAS) heroe.velY = -VEL_PARACAIDAS; // abierto, no cae más rápido que esto
+	if (heroeEnSuelo()) {
+		if (heroe.y === 0) {
+			mi.paracaidas = false; // ya en el piso se pliega
+			lanzarChispas(heroe.x, 90, 24, [COLORES.verdeInstitucional, COLORES.blanco, "#e7c25a", "#ffd23f"]);
+			sonar("pieza");
+			avisos.push({ texto: "¡Aterrizaje perfecto!", t: 0 });
+		}
+		return;
+	}
+	// Confeti de colores que se queda atrás mientras bajas
+	mi.brillo = (mi.brillo || 0) + dt;
+	if (mi.brillo > 0.12) {
+		mi.brillo = 0;
+		lanzarChispas(heroe.x + (Math.random() - 0.5) * 60, heroe.y + 170, 2, [COLORES.verdeInstitucional, COLORES.blanco, "#e7c25a"]);
+	}
+}
+
 function actualizarMision(dt) {
 	const m = oficinaActual;
 	if (!m || !m.mision || estado !== "oficina") return;
 	const mi = m.mision;
 	moverNubesMision(mi, dt);
+	if (mi.paracaidas) actualizarParacaidas(mi, dt);
 	if (mi.torre && mi.paso !== "listo") actualizarHalcones(mi, dt); // entregada la licencia, ya no estorban
 	// Nada (nube que te lleva, halcón que te empuja) te saca de la oficina
 	heroe.x = clamp(heroe.x, m.oficina.x0 + 40, m.oficina.terminalX - 50);
@@ -442,6 +486,85 @@ function dibujarBanderinEtapa(x, arriba, numero, hecha) {
 	ctx.fillText(hecha ? "✓" : String(numero), x + 12 * S, palo + 11 * S + ondea * 0.3);
 }
 
+// Cartel de madera sobre un poste que se apoya en piso (el suelo, o lo alto de la nube de la
+// cima): título y detalle; altura = qué tan arriba queda la tabla
+function dibujarRotuloTorre(x, piso, titulo, detalle, ancho = 214, altura = 96, flecha = 0) {
+	ancho *= S;
+	const alto = 54 * S;
+	const y = piso - altura * S;
+	ctx.fillStyle = "#6b4a2b"; // el poste
+	ctx.fillRect(x - 4 * S, y + alto - 4 * S, 8 * S, piso - (y + alto) + 4 * S);
+	ctx.fillStyle = "rgba(4,37,35,0.12)"; // sombra en el piso
+	ctx.beginPath();
+	ctx.ellipse(x, piso + 2 * S, 30 * S, 5 * S, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillStyle = "#d9b98a"; // la tabla
+	rectRedondo(x - ancho / 2, y, ancho, alto, 8 * S);
+	ctx.fill();
+	ctx.lineWidth = 3 * S;
+	ctx.strokeStyle = "#6b4a2b";
+	ctx.stroke();
+	ctx.fillStyle = COLORES.verdeProfundo;
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.font = `bold ${16 * S}px ${FUENTE}`;
+	ctx.fillText(titulo, x, y + 20 * S);
+	ctx.font = `${12 * S}px ${FUENTE}`;
+	ctx.fillText(detalle, x, y + 40 * S);
+	if (flecha) {
+		// Una flecha que se mece hacia arriba y al lado (flecha: 1 a la derecha, -1 a la izquierda)
+		const mece = Math.sin(tiempo * 4) * 6 * S;
+		ctx.save();
+		ctx.translate(x + flecha * (ancho / 2 + 34 * S + mece), y + alto / 2 - mece * 0.6);
+		ctx.scale(flecha, 1);
+		ctx.rotate(-0.6);
+		ctx.beginPath();
+		ctx.moveTo(-26 * S, -7 * S);
+		ctx.lineTo(4 * S, -7 * S);
+		ctx.lineTo(4 * S, -16 * S);
+		ctx.lineTo(28 * S, 0);
+		ctx.lineTo(4 * S, 16 * S);
+		ctx.lineTo(4 * S, 7 * S);
+		ctx.lineTo(-26 * S, 7 * S);
+		ctx.closePath();
+		ctx.fillStyle = COLORES.verdeInstitucional;
+		ctx.fill();
+		ctx.lineWidth = 3 * S;
+		ctx.strokeStyle = COLORES.blanco;
+		ctx.stroke();
+		ctx.restore();
+	}
+}
+
+// El paracaídas abierto sobre el héroe: domo de gajos verde, blanco y dorado, que se mece un poco
+function dibujarParacaidas(x, pie) {
+	const r = 62 * S;
+	const cx = x + Math.sin(tiempo * 3) * 4 * S;
+	const cy = pie - 215 * S; // la base del domo
+	ctx.strokeStyle = "rgba(4,37,35,0.55)";
+	ctx.lineWidth = 1.5 * S;
+	for (const k of [-1, -0.5, 0.5, 1]) linea(cx + k * r, cy, x + k * 9 * S, pie - 112 * S);
+	const colores = [COLORES.verdeInstitucional, COLORES.blanco, "#e7c25a", COLORES.blanco, COLORES.verdeInstitucional];
+	ctx.save();
+	ctx.translate(cx, cy);
+	ctx.scale(1, 0.78);
+	for (let i = 0; i < 5; i++) {
+		ctx.fillStyle = colores[i];
+		ctx.beginPath();
+		ctx.moveTo(0, 0);
+		ctx.arc(0, 0, r, Math.PI + (i * Math.PI) / 5, Math.PI + ((i + 1) * Math.PI) / 5);
+		ctx.closePath();
+		ctx.fill();
+	}
+	ctx.strokeStyle = COLORES.verdeProfundo;
+	ctx.lineWidth = 2.5 * S;
+	ctx.beginPath();
+	ctx.arc(0, 0, r, Math.PI, Math.PI * 2);
+	ctx.closePath();
+	ctx.stroke();
+	ctx.restore();
+}
+
 // Un punto (en el piso o a cierta altura) con su letra y su letrero
 function dibujarPuntoMision(x, letra, texto, activo, alto = 0) {
 	const piso = SUELO + 38 * S - alto;
@@ -474,6 +597,14 @@ function dibujarMision(m) {
 	// Punto A: en lo alto de la torre de nubes o en una mesita (en el piso)
 	const ax = mi.aX - camara;
 	const altoA = alturaPuntoA(mi) * S;
+	// Al pie de la torre, el cartel que dice que se sube por las nubes
+	if (mi.nubes.length && mi.paso !== "listo") {
+		// Más adelante que Aldo y los muebles del piso, bajo la torre, con la flecha hacia la primera nube (a su izquierda)
+		const rx = mi.cx + 60 * S - camara;
+		if (rx > -200 && rx < W + 200) dibujarRotuloTorre(rx, piso, "¡SUBE POR LAS NUBES!", "Salta de nube en nube hasta la cima", 250, 112, -1);
+	}
+	// Etapa en la que está el aviso de Enter: la primera con preguntas sin contestar
+	const etapaPendiente = mi.hechas.indexOf(false);
 	for (const n of mi.nubes) {
 		const sx = n.x - camara;
 		const arriba = piso - n.alto * S;
@@ -481,12 +612,22 @@ function dibujarMision(m) {
 		dibujarNubeMision(sx, arriba, n.medioAncho * S, n);
 		if (n.etapa >= 0) {
 			dibujarBanderinEtapa(sx + n.medioAncho * S * 0.6, arriba, n.etapa + 1, !!mi.hechas[n.etapa] && (mi.etapas[n.etapa].preguntas || []).length > 0);
-			// Con preguntas por contestar en este banderín, el aviso para abrirlas
-			if (n.etapa === etapaPreguntable()) dibujarGlobo(sx, arriba - 150 * S, esTactil ? "Toca Hablar: responder" : "E · Responder", COLORES.fondoVerdeClaro);
+			// Arriba de cada nivel con preguntas por contestar, el aviso de cómo seguir (Enter o E las abre)
+			if (n.etapa === etapaPendiente) dibujarGlobo(sx, arriba - 150 * S, esTactil ? "Toca Hablar para continuar" : "Presiona Enter para continuar", COLORES.fondoVerdeClaro);
 		}
 	}
 	if (ax > -200 && ax < W + 200) {
-		dibujarPuntoMision(ax, "A", (mi.a && mi.a.letrero) || "Punto A", mi.paso === "buscar", altoA);
+		// Ya con la licencia, en la cima el cartel de A cede su lugar al de cómo bajar
+		if (mi.nubes.length && mi.paso === "llevar")
+			dibujarRotuloTorre(
+				ax,
+				piso - altoA,
+				"¡Llegaste a la cima!",
+				mi.paracaidas ? "Paracaídas puesto: da un paso al vacío" : `Tírate, o baja en paracaídas (${esTactil ? "Hablar" : "Enter"})`,
+				300,
+				175
+			);
+		else dibujarPuntoMision(ax, "A", (mi.a && mi.a.letrero) || "Punto A", mi.paso === "buscar", altoA);
 		if (!mi.nubes.length) {
 			ctx.fillStyle = COLORES.verdeProfundo;
 			ctx.fillRect(ax - 30 * S, piso - 46 * S, 60 * S, 8 * S);
@@ -509,6 +650,8 @@ function dibujarMision(m) {
 		if (mi.paso === "pedir" || mi.paso === "llevar") dibujarGlobo(bx, arriba, "!", "#ffe066");
 		else if (mi.paso === "listo") dibujarFolderMision(bx + 22 * S, piso - 70 * S, 0.7);
 	}
+	// El paracaídas, ya abierto (cayendo con él puesto)
+	if (mi.paracaidas && !heroeEnSuelo() && heroe.velY < 0) dibujarParacaidas(heroe.x - camara, piso - heroe.y * S);
 	// Lo que lleva el héroe, flotando sobre su cabeza
 	if (mi.paso === "llevar") dibujarFolderMision(heroe.x - camara, piso - heroe.y * S - 150 * S + Math.sin(tiempo * 5) * 3 * S, 1);
 }

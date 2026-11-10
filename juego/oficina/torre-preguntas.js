@@ -18,15 +18,18 @@ function etapaPreguntable() {
 	return e && e.preguntas && e.preguntas.length && !mi.hechas[mi.etapaBandera] ? mi.etapaBandera : -1;
 }
 
-// E o Enter en la nube de descanso (Hablar, en pantallas táctiles); la barra espaciadora sigue siendo saltar
+// E o Enter en la nube de descanso (Hablar, en pantallas táctiles); la barra espaciadora sigue siendo saltar.
+// En la cima, con la licencia, la misma tecla pone el paracaídas.
 window.addEventListener("keydown", (e) => {
 	if (e.repeat || !["e", "E", "Enter"].includes(e.key) || e.target.tagName === "BUTTON") return;
 	const k = etapaPreguntable();
 	if (k >= 0) abrirPreguntaTorre(k);
+	else ponerParacaidas(); // en la cima, con la licencia (mision.js)
 });
 $("btn-hablar").addEventListener("pointerdown", () => {
 	const k = etapaPreguntable();
 	if (k >= 0) abrirPreguntaTorre(k);
+	else ponerParacaidas();
 });
 
 // Se conecta la primera vez que se necesita

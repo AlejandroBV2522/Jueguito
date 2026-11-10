@@ -31,6 +31,7 @@ const barra = {
 	cara: $("cara-jugador"),
 	corazones: $("corazones-jugador"),
 	nombre: $("barra-nombre"),
+	teclas: $("ayuda-teclas"),
 	vidas: -1,
 	dolor: 0, // tiempo que le queda a la cara de golpeado
 	feliz: 0,
@@ -53,6 +54,7 @@ function dibujarCorazonPixel(c, x, y, tam, colores) {
 function actualizarBarraJugador(dt) {
 	const ver = !ui.hud.hidden;
 	if (barra.cara.parentElement.hidden === ver) barra.cara.parentElement.hidden = !ver;
+	if (barra.teclas.hidden === ver) barra.teclas.hidden = !ver; // las teclas, debajo, se ven junto con la barrita
 	if (!ver) {
 		barra.vidas = -1;
 		return;
