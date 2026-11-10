@@ -90,7 +90,7 @@ function guardarProgreso() {
 function cargarProgreso() {
 	const d = leerGuardado();
 	if (d && Array.isArray(d.completos)) {
-		modulos.forEach((m) => (m.completo = d.completos.includes(m.nombre)));
+		modulos.forEach((m) => (m.completo = d.completos.includes(m.nombre) || !!(m.nombreAnterior && d.completos.includes(m.nombreAnterior))));
 		nivel = Math.max(0, Number(d.nivel) || 0);
 		// Sin corazones guardados (partidas de antes), llenos
 		vidas = Number.isFinite(d.vidas) ? clamp(Math.round(d.vidas), 1, vidasMax()) : vidasMax();
@@ -362,6 +362,7 @@ function abrirCarta(i) {
 						: "Conversa con todo el equipo, que está aquí reunido.",
 				...(m.mision ? [`Lleva ${m.mision.objeto} del punto A al punto B.`] : []),
 				...(m.taller ? [`Arma ${m.taller.rondas.length} prompts en el taller: atrapa un Rol, unas Instrucciones, un Contexto y un Objetivo.`] : []),
+				...(m.mision && (m.mision.etapas || []).some((e) => (e.preguntas || []).length) ? ["En cada banderín de la torre responde unas preguntas: así se forman las nubes que siguen."] : []),
 				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length, m),
 			];
 	ui.cartaLista.innerHTML = "";

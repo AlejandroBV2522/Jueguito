@@ -22,15 +22,14 @@ window.addEventListener("keydown", (e) => {
 	// Preguntas (antivalores de Talento, computadora de la oficina y repaso
 	// final): se responde con 1, 2, 3..., o se baja y sube con ↑ ↓ (o W, S)
 	// y se elige con Enter; también con clic
-	// Las preguntas de los riesgos de la obra y la fábrica tienen su propio
-	// listener (juego/oficina/obra.js): si también se respondieran aquí, una
-	// tecla equivocada contaría dos veces y quitaría 2 corazones
-	const preguntaDeObra = typeof preguntaObra !== "undefined" && preguntaObra.enemigo;
+	// Aquí se responden TODAS, también las de los riesgos de la obra y la
+	// fábrica: obra.js ya no lee los números (si los leyeran los dos, una
+	// tecla equivocada contaría dos veces y quitaría 2 corazones)
 	const opcionesAbiertas =
 		estado === "pregunta" && !ui.opciones.hidden ? ui.opciones : estado === "terminal" ? ui.terminalOpciones : estado === "repaso" ? uiRepaso.opciones : null;
 	if (opcionesAbiertas) {
 		if (/^[1-9]$/.test(e.key)) {
-			if (preguntaDeObra) return; // la responde obra.js
+			if (e.repeat) return; // mantener presionado un número no responde una y otra vez (cada error quita un corazón)
 			const btn = opcionesAbiertas.children[Number(e.key) - 1];
 			if (btn) btn.click();
 			return;
@@ -80,6 +79,9 @@ window.addEventListener("keydown", (e) => {
 				if (e.key === "e" || e.key === "E") {
 					e.preventDefault();
 					e.target.click();
+					// Que esta misma E no la lean también obra.js ni torre-preguntas.js: al
+					// acertar, avanzarían de una vez y la explicación no se vería
+					e.stopImmediatePropagation();
 				}
 				return;
 			}
@@ -247,7 +249,7 @@ ui.nombreJugador.addEventListener("input", () => {
 	} else if (antes && !modoPruebas()) {
 		// Sales del modo pruebas: vuelven los mundos que tenías completados
 		const d = leerGuardado();
-		modulos.forEach((m) => (m.completo = !!d && Array.isArray(d.completos) && d.completos.includes(m.nombre)));
+		modulos.forEach((m) => (m.completo = !!d && Array.isArray(d.completos) && (d.completos.includes(m.nombre) || !!(m.nombreAnterior && d.completos.includes(m.nombreAnterior)))));
 	}
 	ui.nombreEtiqueta.classList.remove("falta");
 	guardarProgreso();

@@ -232,6 +232,16 @@ window.TEMAS_OFICINA = {};
                          terraza: { nombre, cuerpo, frases: [...] }.
                   fondo: (opcional) true para que todos los personajes del
                          juego conversen al fondo.
+                  azotea: (opcional) true: al aire libre, en una terraza de
+                         noche (cielo, cerros con las luces de la ciudad,
+                         pérgolas con focos, jardineras y piso de deck).
+                  interior: (opcional, con azotea) desde cuántos px de la
+                         entrada es por dentro: una puerta de vidrio y luego
+                         el local (lámparas de papel, columnas con círculos
+                         verdes, cortinas, pantalla y piso de madera clara).
+                         La decoración "acapulco" y "sofa" van bien afuera;
+                         "chiavari" (sillas blancas en fila), "pizarra" y
+                         "plantaAlta", adentro.
                   platicas: (opcional, con fondo) de qué platica cada grupo
                          del fondo: [{ tema, globos: [frases cortas del globo],
                          lineas: [páginas que escuchas al acercarte con E] }].
@@ -261,7 +271,8 @@ window.TEMAS_OFICINA = {};
                   Caben 3 (el resto no se muestra).
    - mision:      (opcional) llevar algo del punto A al punto B antes de
                   la estación del fondo: { objeto: "la licencia",
-                  a: { letrero, nube }, etapas: [{ titulo, texto, halcon }],
+                  a: { letrero, nube }, etapas: [{ titulo, texto, halcon,
+                  preguntas, plataformas }],
                   b: { letrero, nombre, cuerpo, pide: [frases],
                   explica: [frases] } }. En B espera quien lo pide y, al
                   entregárselo, explica para qué sirve. Con a.nube: true,
@@ -269,7 +280,14 @@ window.TEMAS_OFICINA = {};
                   por etapa) que se sube saltando, con la cámara
                   subiendo detrás. Parado en el descanso de cada etapa
                   (la nube de la bandera) se lee un cartel con su titulo y
-                  texto, a salvo de los halcones; al salir se quita. En cada etapa
+                  texto, a salvo de los halcones; al salir se quita. Con E (o
+                  Hablar) se contestan sus "preguntas" (sin quitar corazones):
+                  al acabarlas se forman las nubes de la etapa siguiente y
+                  el banderín se dora. Si te caes, vuelves a la última nube de
+                  descanso. "plataformas": cómo son las nubes de la etapa:
+                  "nube" (por defecto), "desvanece" (dos se esfuman un rato,
+                  avisando), "colores" (alternan dos tintes) o "celdas" (de
+                  una hoja de Excel). En cada etapa
                   vuelan tres halcones con el nombre "halcon" (una mala
                   práctica) que te empujan. Si te caes, caes hasta la
                   nube o el piso que te toque y vuelves a subir. Ese

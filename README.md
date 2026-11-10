@@ -67,7 +67,7 @@ de luz marcan siempre a dónde ir.
 El juego empieza en un **mapa** (al estilo del de Super Mario Land 2): una
 meseta por módulo alrededor de la meseta central, donde está el rectángulo
 para elegir personaje. Son 6 mundos, uno por módulo: Talento, Proyectos,
-Procesos, SharePoint, Seguridad e IA. Solo el primero está abierto; los demás
+Procesos, Plataformas, Seguridad e IA. Solo el primero está abierto; los demás
 tienen **candado** hasta completar el anterior.
 
 Al elegir un mundo el mapa se **acerca** a su meseta. Al tocar su edificio
@@ -108,7 +108,7 @@ golpean y sonríe cuando ganas corazones.
 
 Cada mundo tiene un **personaje fijo** (con ★ y su nombre siempre a la
 vista): Nancy Larios en Talento (al inicio del camino), Nazareth Gallardo en
-Proyectos, Luis Morán en SharePoint, Sergio en Seguridad, Astrid en Procesos y Gracia en IA.
+Proyectos, Luis Morán en Plataformas, Sergio en Seguridad, Astrid en Procesos y Gracia en IA.
 Se ven en el mapa, en la carta y son quienes te reciben.
 
 Cada oficina es distinta: lo que se ve por el ventanal (obra con grúas,

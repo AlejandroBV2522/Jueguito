@@ -343,6 +343,8 @@ const modulos = MODULOS_DATOS.map((d, i) => {
 			// Decoración propia (mundo.js → oficina.decoracion, en el mismo orden), o la de oficina; la obra no lleva
 			decoracion: obra ? [] : DECORACION_OFICINA.map((o, k) => ({ x: x0 + Math.round(o.d * estirar), tipo: ((d.oficina && d.oficina.decoracion) || [])[k] || o.tipo })),
 			azotea: !!(d.oficina && d.oficina.azotea), // al aire libre: cielo, ciudad y pérgola (cafeteria.js)
+			// Con azotea: desde aquí (x del mundo) es por dentro, pasando la puerta de vidrio (cafeteria.js)
+			interior: d.oficina && d.oficina.azotea && d.oficina.interior ? x0 + Math.round(d.oficina.interior) : null,
 			// Obra al aire libre (Proyectos) y fábrica (Procesos): sus zonas y los riesgos que cierran el paso (obra.js)
 			exterior: obra,
 			zonas: obra ? d.oficina.zonas.map((z, k) => ({ ...z, x: inicioZonaObra(d, x0, k), ancho: anchoZonaObra(z), indice: k })) : [],

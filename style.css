@@ -1097,10 +1097,60 @@ kbd {
 	image-rendering: pixelated;
 }
 
+/* Teclas para mover al personaje: una cajita debajo de la barrita del jugador */
+#ayuda-teclas {
+	position: fixed;
+	top: 94px; /* debajo de #barra-jugador (14px + sus 72px de alto + un respiro) */
+	left: 16px;
+	z-index: 10;
+	display: grid;
+	gap: 5px;
+	padding: 8px 12px;
+	border: 2px solid var(--cel-verde-institucional);
+	border-radius: 14px;
+	background: rgba(4, 37, 35, 0.82);
+	color: var(--cel-blanco);
+	font-size: 0.85rem;
+	pointer-events: none;
+}
+
+#ayuda-teclas p {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin: 0;
+}
+
+#ayuda-teclas kbd {
+	min-width: 1.6em;
+	padding: 1px 6px;
+	border-radius: 6px;
+	background: var(--cel-blanco);
+	box-shadow: 0 2px 0 var(--cel-beige);
+	color: var(--cel-verde-profundo);
+	font-weight: 700;
+	text-align: center;
+}
+
+#ayuda-teclas kbd + :not(kbd) {
+	margin-left: 4px;
+}
+
 /* Pantallas angostas: debajo de la barra de progreso para no encimarse */
 @media (max-width: 1000px) {
 	#barra-jugador {
 		top: 92px;
+	}
+
+	#ayuda-teclas {
+		top: 172px;
+	}
+}
+
+/* En pantallas táctiles ya están los botones: no hace falta la cajita */
+@media (pointer: coarse) {
+	#ayuda-teclas {
+		display: none;
 	}
 }
 

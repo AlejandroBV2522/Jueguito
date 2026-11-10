@@ -23,8 +23,8 @@ const TALLER = {
 	desde: -80, // dónde empieza, desde el final de la oficina normal (después del último mueble)
 	ancho: 1000, // ancho del taller en px de mundo (en pantallas angostas, lo que quepa: W - 140)
 	extra: 1250, // cuánto se alarga la oficina para que quepa el taller (la computadora queda después)
-	caida: [58, 68, 78], // velocidad de caída de las piezas en cada ronda (unidades de S por segundo)
-	cada: [2.4, 2.1, 1.85], // segundos entre una pieza y la siguiente, por ronda
+	caida: [36, 42, 48], // velocidad de caída de las piezas en cada ronda (unidades de S por segundo); lenta para que se alcance a leer cada pieza
+	cada: [3.0, 2.7, 2.4], // segundos entre una pieza y la siguiente, por ronda (más espaciadas, para que no se amontonen al caer lento)
 	trampa: [0.3, 0.38, 0.45], // probabilidad de que la pieza que sale sea una trampa, por ronda
 	facil: 0.75, // modo fácil: caen a esta fracción de la velocidad y salen más espaciadas
 	maximo: 4, // piezas en el aire a la vez

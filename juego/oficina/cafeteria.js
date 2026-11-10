@@ -15,7 +15,7 @@
 // Cada grupo con gente del equipo platica de un tema de la Inducción
 // (mundo.js → oficina.platicas): en su globo salen frases cortas y, al
 // acercarte, con E (o Hablar) escuchas la plática completa. Detrás de la
-// barra trabaja la barista, y en el cielo del atardecer pasa una guacamaya.
+// barra trabaja la barista, y en el cielo de la noche pasa una guacamaya.
 
 // Reacciones de quien escucha (entre un turno y otro) y globos de los
 // grupos sin tema
@@ -55,7 +55,7 @@ const INVITADOS_EN_GRUPOS = 8; // los primeros van a los grupos; los demás cami
 // Lo que ya ocupa el piso (decoración, columnas, muebles, compañeros, la
 // terraza, la puerta y la barra): ahí no se para nadie del fondo, para que
 // no se vea encimado. Cada cosa: [desde, hasta] en x del mundo.
-const ANCHO_DECORACION = { librero: 60, sillon: 80, pizarra: 80, cafetera: 55, plantaAlta: 35, especial: 70, lampara: 30, jardinera: 85, sofa: 85, fogata: 65 };
+const ANCHO_DECORACION = { librero: 60, sillon: 80, pizarra: 80, cafetera: 55, plantaAlta: 35, especial: 70, lampara: 30, jardinera: 85, sofa: 85, fogata: 65, acapulco: 85, chiavari: 80 };
 function ocupadoEnCafeteria(of) {
 	const tramos = [
 		...of.decoracion.map((o) => [o.x - (ANCHO_DECORACION[o.tipo] || 60) - 20, o.x + (ANCHO_DECORACION[o.tipo] || 60) + 20]),
@@ -66,6 +66,7 @@ function ocupadoEnCafeteria(of) {
 		[of.terminalX - 170, of.terminalX + 200], // la barra
 	];
 	if (of.terraza) tramos.push([of.terraza.x - of.terraza.medioAncho - 25, of.terraza.x + of.terraza.medioAncho + 25]);
+	if (of.interior) tramos.push([of.interior - 60, of.interior + 150]); // la puerta de vidrio del local
 	return tramos.sort((a, b) => a[0] - b[0]);
 }
 
@@ -483,8 +484,24 @@ const BARISTA_CICLO = 9; // segundos entre preparar y atender
 function dibujarBarraCafe(m, sx, piso) {
 	const listo = cafeina > 0;
 	const topY = piso - 78 * S;
-	// Estante con tazas y el menú
-	ctx.fillStyle = "#6f5238";
+	// Como la cocina de la foto: gabinetes verdes arriba, con su luz cálida debajo
+	ctx.fillStyle = "#466f5d";
+	ctx.fillRect(sx - 140 * S, topY - 236 * S, 280 * S, 58 * S);
+	ctx.fillStyle = "#3a5e4f";
+	for (let k = 1; k < 4; k++) ctx.fillRect(sx - 140 * S + k * 70 * S, topY - 236 * S, 2 * S, 58 * S);
+	ctx.fillStyle = "#d9d3c7"; // jaladeras
+	for (let k = 0; k < 4; k++) ctx.fillRect(sx - 140 * S + k * 70 * S + 60 * S, topY - 200 * S, 2.5 * S, 14 * S);
+	ctx.fillStyle = degradadoAzotea(`led|${topY}|${S}`, () => {
+		const g = ctx.createLinearGradient(0, topY - 178 * S, 0, topY - 120 * S);
+		g.addColorStop(0, "rgba(255,214,140,0.45)");
+		g.addColorStop(1, "rgba(255,214,140,0)");
+		return g;
+	});
+	ctx.fillRect(sx - 140 * S, topY - 178 * S, 280 * S, 58 * S);
+	ctx.fillStyle = "#ffe2a6";
+	ctx.fillRect(sx - 136 * S, topY - 179 * S, 272 * S, 2 * S);
+	// Repisa de madera clara con tazas y el menú
+	ctx.fillStyle = "#c9a77c";
 	ctx.fillRect(sx - 100 * S, topY - 150 * S, 200 * S, 8 * S);
 	for (let k = 0; k < 6; k++) {
 		ctx.fillStyle = k % 2 ? COLORES.blanco : COLORES.verdeInstitucional;
@@ -504,14 +521,18 @@ function dibujarBarraCafe(m, sx, piso) {
 	const ciclo = modulo(tiempo, BARISTA_CICLO);
 	const prepara = ciclo < BARISTA_CICLO * 0.45;
 	dibujarNpcFoto(sx + 76 * S, piso - 34 * S, BARISTA_CAFETERIA, prepara ? -1 : 1, prepara ? GESTOS_PLATICA[Math.floor(tiempo * 3) % GESTOS_PLATICA.length] : "quieto", 0);
-	// Barra
-	ctx.fillStyle = "#8a6a4a";
+	// Barra: frente de roble claro con listones, cubierta blanca y zócalo verde
+	ctx.fillStyle = "#d2b48c";
 	ctx.fillRect(sx - 110 * S, topY, 220 * S, 78 * S);
-	ctx.fillStyle = "#a07c58";
-	for (let k = 0; k < 4; k++) ctx.fillRect(sx - 102 * S + k * 52 * S, topY + 10 * S, 44 * S, 60 * S);
-	ctx.fillStyle = "#c89b6d";
+	ctx.fillStyle = "#c2a37a";
+	for (let x = sx - 104 * S; x < sx + 104 * S; x += 13 * S) ctx.fillRect(x, topY + 6 * S, 4 * S, 62 * S);
+	ctx.fillStyle = COLORES.verdeInstitucional;
+	ctx.fillRect(sx - 110 * S, piso - 10 * S, 220 * S, 10 * S);
+	ctx.fillStyle = "#f2f0ea";
 	rectRedondo(sx - 118 * S, topY - 8 * S, 236 * S, 12 * S, 4 * S);
 	ctx.fill();
+	ctx.fillStyle = "rgba(0,0,0,0.1)";
+	ctx.fillRect(sx - 116 * S, topY + 3 * S, 232 * S, 2 * S);
 	// Máquina de espresso (brilla mientras no te tomes el café)
 	ctx.save();
 	if (!listo) {
@@ -591,27 +612,54 @@ function actualizarCafeteria() {
 }
 
 // ---------- La azotea (oficina.azotea) ----------
-// La Cafetería es una terraza en lo alto de Astria, al anochecer: cielo
-// de la hora azul, la ciudad con sus ventanas encendidas, una baranda de
-// vidrio, pérgola de madera con luces cálidas y piso de deck.
+// La Cafetería imita el lugar real (fotos de la terraza y del local). Primero
+// la terraza de noche: cielo oscuro, cerros llenos de luces de la ciudad, un
+// edificio blanco con sus luces rojas, pérgolas grises con focos, jardineras
+// de concreto con zacate y sofás con cojines amarillos. Pasando la puerta de
+// vidrio (oficina.interior) está el local: techo blanco con ductos a la
+// vista, lámparas de papel, columnas con círculos verdes, cortinas verdes,
+// una pantalla y piso de madera clara, con la barra al fondo.
 const azarAzotea = crearAzar(3107);
-const CIUDAD_AZOTEA = [0.12, 0.28].map((vel, capa) => ({
-	vel,
-	torres: Array.from({ length: 22 }, (_, k) => ({
-		x: k * 95 + azarAzotea() * 40,
-		w: 46 + azarAzotea() * 44,
-		alto: (capa ? 0.3 : 0.45) + azarAzotea() * (capa ? 0.35 : 0.4),
-		semilla: Math.floor(azarAzotea() * 1000),
-	})),
+const ANCHO_CIUDAD = 2100; // los cerros con luces se repiten cada tanto (a S = 1)
+// Dos capas de cerros (la lejana se mueve menos) con sus lucecitas: u es el
+// lugar en la franja (0 a ANCHO_CIUDAD) y v, qué tan abajo del borde del cerro
+const CERROS_AZOTEA = [
+	{ vel: 0.04, base: 64, a: 20, b: 9, color: "#0f1729", luces: 340, tam: 1.6, olas: [2, 5] },
+	{ vel: 0.1, base: 34, a: 12, b: 7, color: "#0a101e", luces: 230, tam: 2.2, olas: [3, 7] },
+].map((c) => ({
+	...c,
+	puntos: Array.from({ length: c.luces }, () => ({ u: azarAzotea() * ANCHO_CIUDAD, v: 0.08 + azarAzotea() ** 0.7 * 0.9, calida: azarAzotea() < 0.78, fase: azarAzotea() * 6 })),
 }));
-const ESTRELLAS_AZOTEA = Array.from({ length: 40 }, () => ({ x: azarAzotea(), y: azarAzotea() * 0.3, fase: azarAzotea() * 6 }));
-const ANCHO_CIUDAD = 2100; // la franja de ciudad se repite cada tanto (a S = 1)
-// Nubes largas del atardecer: alto (fracción del horizonte), ancho y velocidad (a S = 1)
-const NUBES_AZOTEA = Array.from({ length: 5 }, (_, k) => ({ x: azarAzotea(), y: 0.22 + k * 0.1, w: 160 + azarAzotea() * 180, vel: 4 + azarAzotea() * 5 }));
-// Palomas sobre la baranda de vidrio (x desde la entrada, en el mundo)
-const PALOMAS_AZOTEA = [{ x: 760, fase: 0 }, { x: 790, fase: 1.7 }, { x: 2380, fase: 3.1 }, { x: 3560, fase: 4.4 }];
+const altoCerro = (c, u) => c.base + c.a * Math.sin((u / ANCHO_CIUDAD) * Math.PI * 2 * c.olas[0]) + c.b * Math.sin((u / ANCHO_CIUDAD) * Math.PI * 2 * c.olas[1] + 1);
+// El edificio blanco de la foto (dos en cada franja), entre las dos capas de cerros
+const EDIFICIOS_AZOTEA = [
+	{ u: 520, w: 250, alto: 150, semilla: 11 },
+	{ u: 1500, w: 190, alto: 120, semilla: 29 },
+];
+const VEL_EDIFICIOS = 0.07;
+const ESTRELLAS_AZOTEA = Array.from({ length: 50 }, () => ({ x: azarAzotea(), y: azarAzotea() * 0.5, fase: azarAzotea() * 6 }));
+// Nubes oscuras de la noche: alto (fracción del horizonte), ancho y velocidad (a S = 1)
+const NUBES_AZOTEA = Array.from({ length: 5 }, (_, k) => ({ x: azarAzotea(), y: 0.12 + k * 0.12, w: 220 + azarAzotea() * 260, vel: 3 + azarAzotea() * 4 }));
+// Palomas sobre las jardineras del fondo (x desde la entrada, en el mundo)
+const PALOMAS_AZOTEA = [{ x: 760, fase: 0 }, { x: 790, fase: 1.7 }, { x: 1890, fase: 3.1 }];
 const VUELO_GUACAMAYA = 30; // cada cuántos segundos cruza el cielo
 const COLORES_GUACAMAYA = { cuerpo: "#d7332a", ala: "#f2c230", punta: "#2f6fc2", cara: "#f4efe6" };
+// Las pérgolas de la terraza: [desde, hasta] en px desde la entrada (como
+// en la foto, dos techos sueltos con cielo abierto entre ellos)
+const PERGOLAS_AZOTEA = [
+	[360, 1200],
+	[1540, 2340],
+];
+// El local por dentro (px desde oficina.interior)
+const COLUMNAS_LOCAL = [360, 1060]; // columnas blancas con círculos verdes
+const PANTALLA_LOCAL = 700; // la pantalla de proyección, entre las dos columnas (ahí no hay ventanal)
+const PARED_VERDE = 560; // los últimos px antes de la barra: pared verde de la cocina
+const LAMPARAS_LOCAL = Array.from({ length: 9 }, (_, k) => {
+	const az = crearAzar(500 + k);
+	const cuantas = 1 + Math.floor(az() * 3);
+	// Racimos de lámparas de papel, colgadas a distintas alturas
+	return { d: 130 + k * 215, bolas: Array.from({ length: cuantas }, (_, j) => ({ dx: (j - (cuantas - 1) / 2) * 44 + (az() - 0.5) * 12, cable: 40 + az() * 80, r: 16 + az() * 8 })) };
+});
 
 // Los degradados de la azotea se arman una vez por tamaño de pantalla (no
 // en cada cuadro): la clave lleva las medidas de las que dependen
@@ -619,14 +667,23 @@ const degradadosAzotea = new Map();
 function degradadoAzotea(clave, crear) {
 	let g = degradadosAzotea.get(clave);
 	if (!g) {
-		if (degradadosAzotea.size > 30) degradadosAzotea.clear(); // cambió el tamaño de la pantalla
+		if (degradadosAzotea.size > 40) degradadosAzotea.clear(); // cambió el tamaño de la pantalla
 		g = crear();
 		degradadosAzotea.set(clave, g);
 	}
 	return g;
 }
+// Un halo de luz redondo (radio r, a S actual), armado en el origen: se traslada a su lugar
+function haloAzotea(clave, r, color, alfa) {
+	return degradadoAzotea(`halo-${clave}|${S}`, () => {
+		const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r * S);
+		g.addColorStop(0, `rgba(${color},${alfa})`);
+		g.addColorStop(1, `rgba(${color},0)`);
+		return g;
+	});
+}
 
-// Una paloma parada en la baranda: picotea de vez en cuando
+// Una paloma parada en la jardinera: picotea de vez en cuando
 function dibujarPaloma(x, y, p) {
 	const dir = p.fase > 2 ? -1 : 1;
 	const pica = modulo(tiempo * 0.5 + p.fase * 0.3, 1) > 0.82 ? 3 * S : 0;
@@ -695,251 +752,677 @@ function dibujarGuacamaya(horizonte) {
 	ctx.restore();
 }
 
+// Dónde empieza el local, en pantalla (Infinity: todo es terraza)
+const bordeInterior = (of) => (of.interior ? of.interior - camara : Infinity);
+
 function dibujarFondoAzotea(m, dt) {
 	const of = m.oficina;
 	const cl = camara - of.x0;
-	const horizonte = SUELO - 70 * S;
-	// Cielo del atardecer: azul arriba, malva y naranja hacia el horizonte
-	ctx.fillStyle = degradadoAzotea(`cielo|${horizonte}`, () => {
+	const ix = bordeInterior(of);
+	const tope = SUELO - 46 * S; // donde empiezan las jardineras del fondo
+	const horizonte = tope - 6 * S;
+	if (ix > 0) {
+		ctx.save();
+		if (ix < W) {
+			ctx.beginPath();
+			ctx.rect(0, 0, ix, H);
+			ctx.clip();
+		}
+		dibujarNocheAzotea(of, cl, horizonte, tope);
+		ctx.restore();
+	}
+	if (ix < W) dibujarLocalPorDentro(of, Math.max(0, ix), tope);
+
+	dibujarFondoCafeteria(m); // la gente conversando, detrás de las pérgolas y las lámparas
+	if (ix > 0) dibujarPergolas(of, ix);
+	if (ix < W) dibujarLamparasLocal(of, ix);
+	if (ix > -130 * S && ix < W + 80 * S) dibujarPuertaLocal(ix); // el marco y el letrero llegan hasta ix + 122·S
+	dibujarFlotantesOficina(m, cl);
+
+	// Los extremos: la pared de la torre (con la salida) y el fin del local
+	ctx.fillStyle = "#c9c2b6";
+	const izq = of.x0 - camara;
+	if (izq > 0) ctx.fillRect(0, 0, izq, H);
+	const der = of.terminalX + 140 - camara;
+	if (der < W) {
+		if (of.interior) {
+			// Con local: la pared verde de la cocina sigue hasta el final (no un hueco liso)
+			ctx.fillStyle = "#4f7d67";
+			ctx.fillRect(der, 0, W - der, H);
+			ctx.fillStyle = "rgba(255,255,255,0.07)";
+			for (let xw = Math.ceil((of.terminalX + 140) / 18) * 18; xw - camara < W; xw += 18) ctx.fillRect(xw - camara, 0, 6 * S, SUELO);
+			ctx.fillStyle = "rgba(0,0,0,0.18)"; // la esquina
+			ctx.fillRect(der, 0, 8 * S, H);
+		} else {
+			ctx.fillStyle = COLORES.verdeProfundo;
+			ctx.fillRect(der, 0, W - der, H);
+		}
+	}
+}
+
+// ---------- La terraza de noche ----------
+function dibujarNocheAzotea(of, cl, horizonte, tope) {
+	ctx.fillStyle = degradadoAzotea(`noche|${horizonte}`, () => {
 		const g = ctx.createLinearGradient(0, 0, 0, horizonte);
-		g.addColorStop(0, "#132849");
-		g.addColorStop(0.45, "#33508a");
-		g.addColorStop(0.72, "#8f6a95");
-		g.addColorStop(0.9, "#e3876a");
-		g.addColorStop(1, "#f4c27c");
+		g.addColorStop(0, "#05070f");
+		g.addColorStop(0.55, "#0c1325");
+		g.addColorStop(0.85, "#18223a");
+		g.addColorStop(1, "#27324f");
 		return g;
 	});
 	ctx.fillRect(0, 0, W, horizonte + 2);
 	for (const e of ESTRELLAS_AZOTEA) {
-		ctx.fillStyle = `rgba(255,255,255,${((0.3 + 0.3 * Math.sin(tiempo * 2 + e.fase)) * (1 - e.y * 2.5)).toFixed(3)})`;
+		ctx.fillStyle = `rgba(255,255,255,${((0.25 + 0.25 * Math.sin(tiempo * 2 + e.fase)) * (1 - e.y * 1.6)).toFixed(3)})`;
 		ctx.fillRect(e.x * W, e.y * horizonte, 2 * S, 2 * S);
 	}
-	// El sol poniéndose detrás de las montañas, con su resplandor
-	const solX = W * 0.7 - cl * 0.015;
-	const solY = horizonte - 58 * S;
-	ctx.save();
-	ctx.translate(solX, solY);
-	ctx.fillStyle = degradadoAzotea(`sol|${S}`, () => {
-		const g = ctx.createRadialGradient(0, 0, 20 * S, 0, 0, 190 * S);
-		g.addColorStop(0, "rgba(255,214,140,0.55)");
-		g.addColorStop(1, "rgba(255,214,140,0)");
-		return g;
-	});
-	ctx.fillRect(-190 * S, -190 * S, 380 * S, 380 * S);
-	ctx.fillStyle = "#ffd98a";
-	circulo(0, 0, 30 * S);
-	ctx.restore();
-	// Nubes largas que se van moviendo, iluminadas por abajo
+	// Nubes oscuras que se van moviendo, apenas iluminadas por la ciudad
 	for (const n of NUBES_AZOTEA) {
 		const w = n.w * S;
 		const x = modulo(n.x * W + tiempo * n.vel * S - cl * 0.03, W + w * 2) - w;
 		const y = n.y * horizonte;
-		ctx.fillStyle = "rgba(255,196,170,0.28)";
-		rectRedondo(x, y, w, 9 * S, 4.5 * S);
+		ctx.fillStyle = "rgba(120,132,165,0.13)";
+		rectRedondo(x, y, w, 14 * S, 7 * S);
 		ctx.fill();
-		ctx.fillStyle = "rgba(255,226,190,0.3)";
-		rectRedondo(x + w * 0.2, y + 5 * S, w * 0.6, 6 * S, 3 * S);
+		ctx.fillStyle = "rgba(150,160,190,0.08)";
+		rectRedondo(x + w * 0.15, y + 9 * S, w * 0.7, 9 * S, 4.5 * S);
 		ctx.fill();
 	}
-	// Montañas lejanas
-	ctx.fillStyle = "#34446e";
+	dibujarGuacamaya(horizonte);
+	// Cerros con las luces de la ciudad; el edificio blanco, entre las dos capas
+	dibujarCerroAzotea(CERROS_AZOTEA[0], cl, horizonte);
+	dibujarEdificiosAzotea(cl, horizonte);
+	dibujarCerroAzotea(CERROS_AZOTEA[1], cl, horizonte);
+	ctx.fillStyle = "#0a101e"; // la base, hasta las jardineras
+	ctx.fillRect(0, horizonte, W, SUELO - horizonte + 2);
+	dibujarOrillaTerraza(of, tope);
+}
+
+function dibujarCerroAzotea(c, cl, horizonte) {
+	const franja = ANCHO_CIUDAD * S;
+	ctx.fillStyle = c.color;
 	ctx.beginPath();
-	ctx.moveTo(0, horizonte);
-	for (let x = 0; x <= W + 40; x += 40) ctx.lineTo(x, horizonte - (60 + 40 * Math.sin((x + cl * 0.05) * 0.004) + 20 * Math.sin((x + cl * 0.05) * 0.011)) * S);
-	ctx.lineTo(W, horizonte);
+	ctx.moveTo(0, horizonte + 2);
+	for (let x = 0; x <= W + 30; x += 30) ctx.lineTo(x, horizonte - altoCerro(c, x / S + cl * c.vel) * S);
+	ctx.lineTo(W + 30, horizonte + 2);
 	ctx.fill();
-	// La ciudad, en dos capas, con ventanas encendidas
-	CIUDAD_AZOTEA.forEach((capa, c) => {
-		for (const t of capa.torres) {
-			const x = modulo(t.x * S - cl * capa.vel, ANCHO_CIUDAD * S) - 100 * S;
-			const w = t.w * S;
-			if (x > W || x + w < 0) continue;
-			const alto = t.alto * (horizonte - 40 * S);
+	// Las luces, debajo del borde del cerro (unas cuantas titilan)
+	const corrido = modulo(cl * c.vel * S, franja);
+	for (const p of c.puntos) {
+		for (let x = p.u * S - corrido; x < W; x += franja) {
+			if (x < -5) continue;
+			const y = horizonte - altoCerro(c, p.u) * S * (1 - p.v);
+			ctx.globalAlpha = (0.55 + 0.35 * Math.sin(tiempo * 1.7 + p.fase)) * (p.calida ? 1 : 0.8);
+			ctx.fillStyle = p.calida ? "#ffcd82" : "#d7e8ff";
+			ctx.fillRect(x, y, c.tam * S, c.tam * S);
+		}
+	}
+	ctx.globalAlpha = 1;
+}
+
+// El edificio blanco de la foto: bloque con sus pisos, ventanas (algunas
+// encendidas), un ala más baja y luces rojas que parpadean en la azotea
+function dibujarEdificiosAzotea(cl, horizonte) {
+	const franja = ANCHO_CIUDAD * S;
+	const corrido = modulo(cl * VEL_EDIFICIOS * S, franja);
+	for (const e of EDIFICIOS_AZOTEA) {
+		for (let x = e.u * S - corrido; x < W; x += franja) {
+			const w = e.w * S;
+			if (x + w * 1.4 < 0) continue;
+			const alto = e.alto * S;
 			const y = horizonte - alto;
-			ctx.fillStyle = c ? "#1b3555" : "#25466b";
-			ctx.fillRect(x, y, w, alto + 2);
-			if (!c && t.alto > 0.7) {
-				// Las torres más altas, con su antena y la luz roja que parpadea
-				ctx.fillRect(x + w / 2 - 1 * S, y - 16 * S, 2 * S, 16 * S);
-				if (modulo(tiempo + t.semilla * 0.01, 1.6) < 0.8) {
-					ctx.fillStyle = "#ff5a4a";
-					circulo(x + w / 2, y - 17 * S, 2.2 * S);
+			const ala = { x: x + w * 0.72, w: w * 0.62, y: horizonte - alto * 0.62 };
+			for (const b of [ala, { x, w: w * 0.8, y }]) {
+				ctx.fillStyle = "#d4d9de";
+				ctx.fillRect(b.x, b.y, b.w, horizonte - b.y + 2);
+				ctx.fillStyle = "rgba(0,0,0,0.12)"; // sombra de un costado
+				ctx.fillRect(b.x + b.w - 8 * S, b.y, 8 * S, horizonte - b.y);
+				const az = crearAzar(e.semilla + Math.round(b.w));
+				for (let wy = b.y + 9 * S; wy < horizonte - 4 * S; wy += 12 * S) {
+					ctx.fillStyle = "#aeb6bf"; // la losa de cada piso
+					ctx.fillRect(b.x, wy - 3 * S, b.w, 1.5 * S);
+					for (let wx = b.x + 6 * S; wx < b.x + b.w - 12 * S; wx += 11 * S) {
+						const r = az();
+						ctx.fillStyle = r < 0.22 ? "#ffe3a8" : r < 0.3 ? "#cfe4ff" : "#3a4762";
+						ctx.fillRect(wx, wy, 7 * S, 6 * S);
+					}
 				}
 			}
-			const az = crearAzar(t.semilla);
-			for (let wy = y + 8 * S; wy < horizonte - 6 * S; wy += 11 * S)
-				for (let wx = x + 5 * S; wx < x + w - 6 * S; wx += 9 * S)
-					if (az() < 0.45) {
-						ctx.fillStyle = az() < 0.8 ? "rgba(255,214,140,0.85)" : "rgba(200,230,255,0.7)";
-						ctx.fillRect(wx, wy, 4 * S, 5 * S);
-					}
+			// Caseta de la azotea y las luces rojas
+			ctx.fillStyle = "#c3c9cf";
+			ctx.fillRect(x + w * 0.3, y - 12 * S, w * 0.22, 12 * S);
+			if (modulo(tiempo + e.semilla * 0.1, 1.6) < 0.9) {
+				ctx.fillStyle = "#ff4a3d";
+				for (const [lx, ly] of [[x + 4 * S, y], [x + w * 0.41, y - 12 * S], [x + w * 0.8 - 4 * S, y], [ala.x + ala.w - 4 * S, ala.y]]) circulo(lx, ly - 2 * S, 2.2 * S);
+			}
 		}
-	});
-	// La base de la ciudad (sin esto, entre la ciudad y el vidrio quedaba
-	// sin pintar y se veía corrido lo del cuadro anterior)
-	ctx.fillStyle = "#162d49";
-	ctx.fillRect(0, horizonte, W, SUELO - horizonte + 2);
-	dibujarGuacamaya(horizonte);
-	// Baranda de vidrio al fondo de la terraza
-	const tope = SUELO - 46 * S;
-	ctx.fillStyle = "rgba(200,232,240,0.18)";
-	ctx.fillRect(0, tope, W, SUELO - tope + 2);
-	const paso = 150 * S;
-	const off = modulo(camara, paso);
-	for (let x = -off; x < W + paso; x += paso) {
-		ctx.fillStyle = "rgba(255,255,255,0.12)";
-		ctx.fillRect(x + 20 * S, tope + 4 * S, 6 * S, SUELO - tope - 6 * S); // reflejo
-		ctx.fillStyle = "#3a4446";
-		ctx.fillRect(x - 2 * S, tope, 4 * S, SUELO - tope);
 	}
-	ctx.fillStyle = "#3a4446";
-	ctx.fillRect(0, tope - 4 * S, W, 5 * S);
+}
+
+// Al fondo de la terraza: jardineras de concreto con zacate que se mece,
+// arbolitos en maceta, sofás empotrados con cojines amarillos y palomas
+function dibujarOrillaTerraza(of, tope) {
+	const desde = of.x0 - camara;
+	const hasta = Math.min(W, (of.interior || of.terminalX + 140) - camara);
+	if (hasta < 0) return;
+	const caja = tope + 10 * S;
+	// Las hojas del zacate, alineadas al mundo (no tiemblan con la cámara)
+	const paso = 26;
+	for (let xw = Math.ceil(camara / paso) * paso; xw - camara < hasta; xw += paso) {
+		const sx = xw - camara;
+		if (sx < desde) continue;
+		const az = crearAzar(xw);
+		const mece = Math.sin(tiempo * 1.3 + xw * 0.013) * 4 * S;
+		ctx.lineWidth = 2.2 * S;
+		for (let k = 0; k < 3; k++) {
+			ctx.strokeStyle = ["#5f7f4c", "#7f9a5e", "#465f3c"][k];
+			const alto = (16 + az() * 16) * S;
+			const dx = (k - 1) * 6 * S;
+			ctx.beginPath();
+			ctx.moveTo(sx + dx, caja);
+			ctx.quadraticCurveTo(sx + dx + mece * 0.4, caja - alto * 0.6, sx + dx + (k - 1) * 5 * S + mece, caja - alto);
+			ctx.stroke();
+		}
+	}
+	// Arbolitos en maceta, cada tanto
+	for (let d = 280; of.x0 + d < (of.interior || of.terminalX); d += 820) {
+		const sx = of.x0 + d - camara;
+		if (sx < -40 * S || sx > hasta + 40 * S) continue;
+		ctx.fillStyle = "#6b5340";
+		ctx.fillRect(sx - 2.5 * S, caja - 40 * S, 5 * S, 40 * S);
+		ctx.fillStyle = "#3d6a3c";
+		ctx.beginPath();
+		ctx.ellipse(sx, caja - 60 * S, 15 * S, 30 * S, Math.sin(tiempo * 0.9 + d) * 0.03, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = "#4f7f4a";
+		ctx.beginPath();
+		ctx.ellipse(sx - 4 * S, caja - 66 * S, 8 * S, 20 * S, 0, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	// La jardinera corrida de concreto
+	ctx.fillStyle = "#8a8379";
+	ctx.fillRect(Math.max(0, desde), caja, hasta - Math.max(0, desde), SUELO - caja + 2);
+	ctx.fillStyle = "#a59d92";
+	ctx.fillRect(Math.max(0, desde), caja, hasta - Math.max(0, desde), 3 * S);
+	ctx.fillStyle = "rgba(0,0,0,0.15)"; // juntas entre una caja y otra
+	for (let xw = Math.ceil(camara / 240) * 240; xw - camara < hasta; xw += 240) if (xw - camara > desde) ctx.fillRect(xw - camara, caja, 2 * S, SUELO - caja);
+	// Sofás empotrados con cojines amarillos, delante de la jardinera
+	for (let d = 700; of.x0 + d + 200 < (of.interior || of.terminalX); d += 1000) { // lejos del sofá de adelante y de los postes
+		const sx = of.x0 + d - camara;
+		const w = 200 * S;
+		if (sx + w < 0 || sx > hasta) continue;
+		ctx.fillStyle = "#b9b8b1";
+		rectRedondo(sx, caja + 6 * S, w, SUELO - caja - 4 * S, 5 * S);
+		ctx.fill();
+		ctx.fillStyle = "#d3d2cb"; // asiento
+		ctx.fillRect(sx + 4 * S, SUELO - 18 * S, w - 8 * S, 8 * S);
+		for (let k = 0; k < 4; k++) {
+			ctx.fillStyle = k % 2 ? "#f0d36a" : "#e2b93f";
+			rectRedondo(sx + 16 * S + k * 46 * S, caja - 2 * S, 24 * S, 18 * S, 5 * S);
+			ctx.fill();
+		}
+	}
+	// Lucecitas al pie de la jardinera
+	for (let xw = Math.ceil(camara / 180) * 180 + 90; xw - camara < hasta; xw += 180) {
+		const sx = xw - camara;
+		if (sx < desde) continue;
+		ctx.save();
+		ctx.translate(sx, SUELO);
+		ctx.fillStyle = haloAzotea("pie", 34, "255,206,120", 0.35);
+		ctx.fillRect(-34 * S, -34 * S, 68 * S, 36 * S);
+		ctx.restore();
+		ctx.fillStyle = "#ffe2a6";
+		circulo(sx, SUELO - 3 * S, 2 * S);
+	}
 	for (const p of PALOMAS_AZOTEA) {
 		const px = of.x0 + p.x - camara;
-		if (px > -20 && px < W + 20) dibujarPaloma(px, tope - 4 * S, p);
+		if (px > -20 && px < hasta - 10) dibujarPaloma(px, caja, p);
 	}
-
-	dibujarFondoCafeteria(m); // la gente conversando, detrás de la pérgola
-	dibujarPergola(m);
-	dibujarFlotantesOficina(m, cl);
-
-	// Los extremos: la pared de la torre (con la salida) y el fin de la terraza
-	ctx.fillStyle = "#c9c2b6";
-	const izq = of.x0 - camara;
-	if (izq > 0) ctx.fillRect(0, 0, izq, H);
-	ctx.fillStyle = COLORES.verdeProfundo;
-	const der = of.terminalX + 140 - camara;
-	if (der < W) ctx.fillRect(der, 0, W - der, H);
 }
 
-// La pérgola: listones de madera arriba con su viga, una tira de luz
-// cálida, focos colgando y sus postes de metal (donde van las columnas
-// en las oficinas)
+// Las pérgolas: techo de listones grises sobre postes, con focos que
+// alumbran hacia abajo (como en la foto); solo en la terraza
 function postesPergola(of) {
 	const lista = [];
-	for (let x = of.x0 + 520; x < of.terminalX - 200; x += 630) lista.push(x);
+	for (const [a, b] of PERGOLAS_AZOTEA) {
+		if (of.interior && of.x0 + b > of.interior - 40) continue; // la pérgola tiene que acabar antes de la puerta
+		lista.push(of.x0 + a + 14, of.x0 + b - 14);
+	}
 	return lista;
 }
-function dibujarPergola(m) {
-	const of = m.oficina;
-	const viga = 46 * S;
-	const paso = 34 * S;
-	const off = modulo(camara, paso);
-	for (let x = -off; x < W + paso; x += paso) {
-		ctx.fillStyle = "#9a6a3a";
-		ctx.fillRect(x, 0, 14 * S, viga);
-		ctx.fillStyle = "#c08a50";
-		ctx.fillRect(x, 0, 4 * S, viga);
-	}
-	ctx.fillStyle = "#2b2f33";
-	ctx.fillRect(0, viga, W, 12 * S);
-	ctx.fillStyle = degradadoAzotea(`luz|${viga}`, () => {
-		const g = ctx.createLinearGradient(0, viga + 12 * S, 0, viga + 90 * S);
-		g.addColorStop(0, "rgba(255,206,120,0.35)");
-		g.addColorStop(1, "rgba(255,206,120,0)");
-		return g;
-	});
-	ctx.fillRect(0, viga + 12 * S, W, 78 * S);
-	// Focos colgando entre los postes
-	const postes = postesPergola(of);
-	for (let k = 0; k + 1 < postes.length; k++) {
-		const a = postes[k] - camara;
-		const b = postes[k + 1] - camara;
-		if (b < -50 || a > W + 50) continue;
-		ctx.strokeStyle = "#3a4446";
-		ctx.lineWidth = 1.5 * S;
+function dibujarPergolas(of, ix) {
+	const viga = 40 * S;
+	const piso = SUELO + 40 * S;
+	ctx.save();
+	if (ix < W) {
 		ctx.beginPath();
-		ctx.moveTo(a, viga + 12 * S);
-		const cuelga = (68 + Math.sin(tiempo * 0.8 + k * 1.3) * 5) * S; // el cable se mece con el aire
-		ctx.quadraticCurveTo((a + b) / 2, viga + 12 * S + cuelga, b, viga + 12 * S);
-		ctx.stroke();
-		for (let f = 1; f < 10; f++) {
-			const u = f / 10;
-			const fx = a + (b - a) * u;
-			const fy = viga + 12 * S + 2 * u * (1 - u) * cuelga;
-			ctx.fillStyle = `rgba(255,230,160,${(0.75 + 0.25 * Math.sin(tiempo * 3 + f + k)).toFixed(3)})`;
-			circulo(fx, fy + 4 * S, 3.5 * S);
+		ctx.rect(0, 0, ix, H);
+		ctx.clip();
+	}
+	for (const [a, b] of PERGOLAS_AZOTEA) {
+		if (of.interior && of.x0 + b > of.interior - 40) continue; // la pérgola tiene que acabar antes de la puerta
+		const sa = of.x0 + a - camara;
+		const sb = of.x0 + b - camara;
+		if (sb < -20 || sa > W + 20) continue;
+		// Techo: listones vistos desde abajo y su orilla
+		ctx.fillStyle = "#4a5054";
+		ctx.fillRect(sa, 0, sb - sa, viga);
+		ctx.fillStyle = "#8d9497";
+		for (let xw = Math.ceil((of.x0 + a) / 22) * 22; xw < of.x0 + b; xw += 22) ctx.fillRect(xw - camara, 0, 9 * S, viga - 10 * S);
+		ctx.fillStyle = "#c7cccd";
+		ctx.fillRect(sa - 6 * S, viga - 10 * S, sb - sa + 12 * S, 10 * S);
+		ctx.fillStyle = "#9aa1a3";
+		ctx.fillRect(sa - 6 * S, viga - 2 * S, sb - sa + 12 * S, 2 * S);
+		// Focos: un punto blanco con su halo y un cono de luz muy suave
+		for (let d = a + 70; d < b - 40; d += 125) {
+			const fx = of.x0 + d - camara;
+			if (fx < -60 * S || fx > W + 60 * S) continue;
+			ctx.save();
+			ctx.translate(fx, viga);
+			ctx.fillStyle = degradadoAzotea(`cono|${viga}|${S}`, () => {
+				const g = ctx.createLinearGradient(0, 0, 0, 170 * S);
+				g.addColorStop(0, "rgba(255,240,205,0.16)");
+				g.addColorStop(1, "rgba(255,240,205,0)");
+				return g;
+			});
+			ctx.beginPath();
+			ctx.moveTo(-6 * S, 0);
+			ctx.lineTo(6 * S, 0);
+			ctx.lineTo(50 * S, 170 * S);
+			ctx.lineTo(-50 * S, 170 * S);
+			ctx.fill();
+			ctx.fillStyle = haloAzotea("foco", 26, "255,246,220", 0.7);
+			ctx.fillRect(-26 * S, -26 * S, 52 * S, 52 * S);
+			ctx.restore();
+			ctx.fillStyle = "#fffbea";
+			circulo(fx, viga + 1 * S, 3.6 * S);
+		}
+		// Postes
+		for (const px of [sa + 14 * S, sb - 14 * S]) {
+			ctx.fillStyle = "#b9bfc0";
+			ctx.fillRect(px - 7 * S, viga, 14 * S, piso - viga);
+			ctx.fillStyle = "rgba(255,255,255,0.18)";
+			ctx.fillRect(px - 7 * S, viga, 4 * S, piso - viga);
 		}
 	}
-	const piso = SUELO + 40 * S;
-	for (const x0 of postes) {
-		const sx = x0 - camara;
-		if (sx < -30 || sx > W + 30) continue;
-		ctx.fillStyle = "#2b2f33";
-		ctx.fillRect(sx - 7 * S, viga, 14 * S, piso - viga);
-		ctx.fillStyle = "rgba(255,255,255,0.08)";
-		ctx.fillRect(sx - 7 * S, viga, 4 * S, piso - viga);
+	ctx.restore();
+}
+
+// ---------- El local por dentro ----------
+// x: donde empieza en pantalla (0 si la puerta ya quedó atrás)
+function dibujarLocalPorDentro(of, x, tope) {
+	const techo = 60 * S;
+	const iw = of.interior;
+	// Pared de fondo, cálida
+	ctx.fillStyle = "#ebe4d8";
+	ctx.fillRect(x, 0, W - x, SUELO + 2);
+	// Ventanales con la noche afuera y cortinas verdes a los lados
+	const arribaV = techo + 26 * S;
+	const abajoV = tope - 6 * S;
+	const tramos = [0, ...COLUMNAS_LOCAL, of.terminalX - PARED_VERDE - iw];
+	for (let k = 0; k + 1 < tramos.length; k++) {
+		if (PANTALLA_LOCAL > tramos[k] && PANTALLA_LOCAL < tramos[k + 1]) continue; // pared lisa para la pantalla
+		const a = iw + tramos[k] + 70;
+		const b = iw + tramos[k + 1] - 70;
+		if (b - a < 120) continue;
+		const sa = Math.max(x, a - camara);
+		const sb = Math.min(W, b - camara);
+		if (sb <= sa) continue;
+		ctx.fillStyle = degradadoAzotea(`vidrio|${arribaV}|${abajoV}`, () => {
+			const g = ctx.createLinearGradient(0, arribaV, 0, abajoV);
+			g.addColorStop(0, "#0b1222");
+			g.addColorStop(1, "#24304b");
+			return g;
+		});
+		ctx.fillRect(sa, arribaV, sb - sa, abajoV - arribaV);
+		// Luces lejanas de la ciudad en el vidrio
+		for (let xw = Math.ceil(a / 14) * 14; xw < b; xw += 14) {
+			const sx = xw - camara;
+			if (sx < sa || sx > sb - 3) continue;
+			const az = crearAzar(xw);
+			const y = abajoV - (6 + az() * 34) * S;
+			if (az() < 0.6) {
+				ctx.fillStyle = az() < 0.75 ? "rgba(255,205,130,0.75)" : "rgba(215,232,255,0.6)";
+				ctx.fillRect(sx, y, 2 * S, 2 * S);
+			}
+		}
+		ctx.fillStyle = "rgba(255,255,255,0.06)"; // reflejo
+		for (let xw = Math.ceil(a / 160) * 160; xw < b; xw += 160) if (xw - camara > sa && xw - camara < sb - 20 * S) ctx.fillRect(xw - camara, arribaV, 14 * S, abajoV - arribaV);
+		ctx.fillStyle = "#c9c1b3"; // marco
+		ctx.fillRect(sa, arribaV - 4 * S, sb - sa, 4 * S);
+		ctx.fillRect(sa, abajoV, sb - sa, 4 * S);
+		// Cortinas verdes (salvia), con sus pliegues
+		for (const [cx, lado] of [[a - camara, 1], [b - camara, -1]]) {
+			const cw = 38 * S;
+			const c0 = lado > 0 ? cx - 6 * S : cx - cw + 6 * S;
+			if (c0 + cw < x || c0 > W) continue;
+			const desdeC = Math.max(x, c0);
+			ctx.fillStyle = "#7fa58e";
+			ctx.fillRect(desdeC, arribaV - 8 * S, c0 + cw - desdeC, abajoV - arribaV + 22 * S);
+			ctx.fillStyle = "#6b927b";
+			for (let p = 0; p < 4; p++) {
+				const px = c0 + 4 * S + p * 9 * S + Math.sin(tiempo * 0.7 + p + cx * 0.01) * 0.8 * S;
+				if (px > x) ctx.fillRect(px, arribaV - 8 * S, 3 * S, abajoV - arribaV + 22 * S);
+			}
+		}
+	}
+	// La pared verde de la cocina, antes de la barra
+	const verde = of.terminalX - PARED_VERDE - camara;
+	if (verde < W) {
+		const vx = Math.max(x, verde);
+		ctx.fillStyle = "#5c8a73";
+		ctx.fillRect(vx, techo, W - vx, SUELO - techo + 2);
+		ctx.fillStyle = "rgba(255,255,255,0.07)"; // listones
+		for (let xw = Math.ceil((of.terminalX - PARED_VERDE) / 18) * 18; xw - camara < W; xw += 18) if (xw - camara > vx) ctx.fillRect(xw - camara, techo, 6 * S, SUELO - techo);
+	}
+	// La pantalla de proyección, con una lámina de bienvenida
+	const px = iw + PANTALLA_LOCAL - camara;
+	if (px + 140 * S > x && px - 140 * S < W) {
+		const pw = 240 * S;
+		const ph = 136 * S;
+		const py = techo + 34 * S;
+		ctx.fillStyle = "#3a4446";
+		ctx.fillRect(px - pw / 2 - 6 * S, py - 8 * S, pw + 12 * S, 8 * S);
+		ctx.save();
+		ctx.shadowColor = "rgba(190,230,220,0.6)";
+		ctx.shadowBlur = 24 * S;
+		ctx.fillStyle = COLORES.verdeProfundo;
+		ctx.fillRect(px - pw / 2, py, pw, ph);
+		ctx.restore();
+		ctx.fillStyle = COLORES.verdeInstitucional;
+		ctx.fillRect(px - pw / 2, py + ph - 8 * S, pw, 8 * S);
+		dibujarLogoOEspacio(logoCelaqueBlanco, px, py + 46 * S, 140 * S, 30 * S, true);
+		ctx.fillStyle = COLORES.blanco;
+		ctx.font = `700 ${Math.max(11, 14 * S)}px ${FUENTE}`; // en celular no baja de 11 px
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText("¡Bienvenido al equipo!", px, py + 92 * S);
+	}
+	// Columnas blancas con los círculos verdes de la foto
+	for (const d of COLUMNAS_LOCAL) {
+		const cx = iw + d - camara;
+		const cw = 70 * S;
+		if (cx + cw / 2 < x || cx - cw / 2 > W) continue;
+		ctx.fillStyle = "#f4f2ec";
+		ctx.fillRect(cx - cw / 2, techo, cw, SUELO - techo + 2);
+		ctx.fillStyle = "rgba(0,0,0,0.06)";
+		ctx.fillRect(cx + cw / 2 - 6 * S, techo, 6 * S, SUELO - techo);
+		for (let fy = techo + 16 * S, fila = 0; fy < SUELO - 8 * S; fy += 19 * S, fila++)
+			for (let c = 0; c < 3; c++) {
+				ctx.fillStyle = (fila + c) % 3 ? "#6f9f83" : "#8db69d";
+				circulo(cx + (c - 1) * 20 * S, fy, 7.5 * S);
+				ctx.fillStyle = "rgba(255,255,255,0.25)";
+				circulo(cx + (c - 1) * 20 * S - 2 * S, fy - 2 * S, 2.5 * S);
+			}
+	}
+	// El techo blanco con los ductos a la vista
+	ctx.fillStyle = "#f3f2ee";
+	ctx.fillRect(x, 0, W - x, techo);
+	ctx.fillStyle = "#dcdbd5"; // ducto grande
+	ctx.fillRect(x, 12 * S, W - x, 22 * S);
+	ctx.fillStyle = "#fbfbf9";
+	ctx.fillRect(x, 14 * S, W - x, 5 * S);
+	ctx.fillStyle = "#c4c3bc";
+	ctx.fillRect(x, 30 * S, W - x, 4 * S);
+	ctx.fillStyle = "#d3d2cc"; // tubo delgado
+	ctx.fillRect(x, 44 * S, W - x, 6 * S);
+	ctx.fillStyle = "#a9a8a2";
+	for (let xw = Math.ceil(Math.max(iw, camara) / 160) * 160; xw - camara < W; xw += 160) {
+		const sx = xw - camara;
+		if (sx < x) continue;
+		ctx.fillRect(sx - 1 * S, 0, 2 * S, 12 * S); // soportes del ducto
+		ctx.fillRect(sx - 4 * S, 32 * S, 8 * S, 3 * S); // abrazadera
+		ctx.fillRect(sx + 60 * S, 50 * S, 2 * S, 8 * S); // rociador
+		ctx.fillRect(sx + 57 * S, 57 * S, 8 * S, 2 * S);
+	}
+	ctx.fillStyle = "#d9d3c7";
+	ctx.fillRect(x, techo, W - x, 3 * S);
+}
+
+// Las lámparas de papel: racimos de bolas blancas que brillan cálido,
+// colgadas a distintas alturas (se mecen un poquito)
+function dibujarLamparasLocal(of, ix) {
+	const techo = 60 * S;
+	for (const l of LAMPARAS_LOCAL) {
+		const lx = of.interior + l.d;
+		if (lx > of.terminalX - 120 || Math.abs(l.d - PANTALLA_LOCAL) < 170) continue; // sin tapar la pantalla
+		const sx = lx - camara;
+		if (sx < Math.max(ix, 0) - 120 * S || sx > W + 120 * S) continue;
+		for (const bola of l.bolas) {
+			const bx = sx + bola.dx * S + Math.sin(tiempo * 0.8 + l.d) * 1.5 * S;
+			if (bx < ix + bola.r * S) continue;
+			const by = techo + bola.cable * S;
+			const r = bola.r * S;
+			ctx.strokeStyle = "#8f8c84";
+			ctx.lineWidth = 1.2 * S;
+			linea(sx + bola.dx * S, techo, bx, by - r);
+			ctx.save();
+			ctx.translate(bx, by);
+			ctx.fillStyle = haloAzotea("farol", 70, "255,226,160", 0.32);
+			ctx.fillRect(-70 * S, -70 * S, 140 * S, 140 * S);
+			ctx.fillStyle = "#fff5de";
+			ctx.beginPath();
+			ctx.ellipse(0, 0, r, r * 0.9, 0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.strokeStyle = "rgba(214,196,160,0.7)"; // las costillas del papel
+			ctx.lineWidth = 1 * S;
+			for (const f of [-0.55, -0.2, 0.2, 0.55]) {
+				ctx.beginPath();
+				ctx.ellipse(0, f * r * 0.9, r * Math.sqrt(1 - f * f), r * 0.12, 0, 0, Math.PI * 2);
+				ctx.stroke();
+			}
+			ctx.restore();
+		}
 	}
 }
 
-// Piso de deck: tablas de madera con sus juntas y una línea de luz al borde
+// La entrada al local desde la terraza: el muro, la puerta de vidrio abierta y su letrero
+function dibujarPuertaLocal(ix) {
+	ctx.fillStyle = "#d6d0c6";
+	ctx.fillRect(ix - 16 * S, 0, 32 * S, SUELO + 2);
+	ctx.fillStyle = "rgba(0,0,0,0.12)";
+	ctx.fillRect(ix - 16 * S, 0, 5 * S, SUELO);
+	const alto = 176 * S;
+	const y = SUELO - alto;
+	const pw = 92 * S;
+	const px = ix + 16 * S;
+	ctx.fillStyle = "rgba(255,226,170,0.22)"; // la luz del local que sale por la puerta
+	ctx.fillRect(px, y, pw, alto);
+	ctx.strokeStyle = "#3a4446";
+	ctx.lineWidth = 5 * S;
+	ctx.strokeRect(px, y, pw, alto);
+	ctx.fillStyle = "rgba(200,232,240,0.28)"; // la hoja de vidrio, abierta hacia la terraza
+	ctx.beginPath();
+	ctx.moveTo(px, y);
+	ctx.lineTo(px - 34 * S, y + 10 * S);
+	ctx.lineTo(px - 34 * S, SUELO - 4 * S);
+	ctx.lineTo(px, SUELO);
+	ctx.fill();
+	ctx.lineWidth = 3 * S;
+	ctx.stroke();
+	ctx.fillStyle = "#3a4446";
+	ctx.fillRect(px - 30 * S, y + alto * 0.5, 3 * S, 22 * S); // jaladera
+	// Letrero
+	const ly = y - 34 * S;
+	ctx.fillStyle = COLORES.verdeProfundo;
+	rectRedondo(px - 14 * S, ly, pw + 28 * S, 24 * S, 6 * S);
+	ctx.fill();
+	ctx.fillStyle = COLORES.blanco;
+	ctx.font = `700 ${Math.max(11, 12 * S)}px ${FUENTE}`; // en celular no baja de 11 px
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText("Cafetería", px + pw / 2, ly + 12 * S);
+}
+
+// ---------- El piso ----------
+// Deck de madera gris en la terraza y madera clara en el local
 function dibujarSueloAzotea(m) {
-	ctx.fillStyle = degradadoAzotea(`deck|${SUELO}|${H}`, () => {
-		const g = ctx.createLinearGradient(0, SUELO, 0, H);
-		g.addColorStop(0, "#8a6240");
-		g.addColorStop(1, "#5a3e28");
-		return g;
-	});
-	ctx.fillRect(0, SUELO, W, H - SUELO);
-	ctx.fillStyle = "rgba(255,214,140,0.5)"; // luz baja al borde del deck
-	ctx.fillRect(0, SUELO, W, 3 * S);
-	ctx.strokeStyle = "rgba(0,0,0,0.18)";
+	const of = m.oficina;
+	const ix = Math.max(0, Math.min(W, bordeInterior(of) - 16 * S)); // cambia justo donde empieza el muro de la puerta
+	if (ix > 0) {
+		ctx.fillStyle = degradadoAzotea(`deck|${SUELO}|${H}`, () => {
+			const g = ctx.createLinearGradient(0, SUELO, 0, H);
+			g.addColorStop(0, "#857261");
+			g.addColorStop(1, "#4f4135");
+			return g;
+		});
+		ctx.fillRect(0, SUELO, ix, H - SUELO);
+		ctx.fillStyle = "rgba(255,214,140,0.4)"; // luz baja al borde del deck
+		ctx.fillRect(0, SUELO, ix, 3 * S);
+		tablasPiso(0, ix, 16 * S, 170 * S, "rgba(0,0,0,0.2)");
+	}
+	if (ix < W) {
+		ctx.fillStyle = degradadoAzotea(`roble|${SUELO}|${H}`, () => {
+			const g = ctx.createLinearGradient(0, SUELO, 0, H);
+			g.addColorStop(0, "#d2b68f");
+			g.addColorStop(1, "#a68762");
+			return g;
+		});
+		ctx.fillRect(ix, SUELO, W - ix, H - SUELO);
+		ctx.fillStyle = "#c2b6a4"; // zócalo
+		ctx.fillRect(ix, SUELO, W - ix, 4 * S);
+		tablasPiso(ix, W, 12 * S, 120 * S, "rgba(90,60,30,0.16)");
+	}
+}
+function tablasPiso(x0, x1, alto, paso, color) {
+	ctx.strokeStyle = color;
 	ctx.lineWidth = 1.5 * S;
-	const alto = 16 * S;
 	for (let y = SUELO + alto, fila = 0; y < H + alto; y += alto, fila++) {
-		linea(0, y, W, y);
-		const paso = 160 * S;
+		linea(x0, y, x1, y);
 		const off = modulo(camara + fila * 70 * S, paso);
-		for (let x = -off; x < W; x += paso) linea(x, y - alto, x, y);
+		for (let x = -off; x < x1; x += paso) if (x > x0) linea(x, y - alto, x, y);
 	}
 }
 
+// ---------- La decoración ----------
 // Lo propio de la azotea (mundo.js → oficina.decoracion). Devuelve false
 // si el tipo no es de aquí, para que dibujarDecoracionOficina siga.
 function dibujarDecoracionAzotea(tipo, sx, piso) {
 	if (tipo === "jardinera") {
-		// Jardinera larga con plantas y su luz cálida desde abajo
-		// (el halo se arma una vez, en el origen, y se traslada a su lugar)
+		// Jardinera de concreto con zacate, un arbolito y su luz cálida desde abajo
 		ctx.save();
 		ctx.translate(sx, piso - 40 * S);
-		ctx.fillStyle = degradadoAzotea(`halo|${S}`, () => {
-			const g = ctx.createRadialGradient(0, 0, 5 * S, 0, 0, 90 * S);
-			g.addColorStop(0, "rgba(255,206,120,0.45)");
-			g.addColorStop(1, "rgba(255,206,120,0)");
-			return g;
-		});
+		ctx.fillStyle = haloAzotea("jardinera", 90, "255,206,120", 0.4);
 		ctx.fillRect(-90 * S, -90 * S, 180 * S, 130 * S);
 		ctx.restore();
-		// Las hojas se mecen con el aire (fase según su lugar en el mundo)
-		const brisa = sx + camara;
-		for (let k = -5; k <= 5; k++) {
-			ctx.fillStyle = k % 2 ? "#3f8f55" : k % 3 ? "#5aa66a" : "#b5532f"; // alguna hoja rojiza
+		const brisa = sx + camara; // las hojas se mecen según su lugar en el mundo
+		ctx.fillStyle = "#3d6a3c";
+		ctx.beginPath();
+		ctx.ellipse(sx + 30 * S, piso - 92 * S, 18 * S, 36 * S, Math.sin(tiempo + brisa * 0.01) * 0.03, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.lineWidth = 2.5 * S;
+		for (let k = -8; k <= 8; k++) {
+			ctx.strokeStyle = k % 3 ? (k % 2 ? "#6f8f55" : "#8aa264") : "#4f6f44";
+			const alto = (24 + Math.abs(Math.sin(k * 1.7)) * 20) * S;
+			const mece = Math.sin(tiempo * 1.2 + k * 0.5 + brisa * 0.01) * 4 * S;
 			ctx.beginPath();
-			ctx.ellipse(sx + k * 11 * S, piso - 50 * S - Math.abs(Math.sin(k)) * 22 * S, 8 * S, 26 * S, k * 0.18 + Math.sin(tiempo * 1.2 + k * 0.6 + brisa * 0.01) * 0.07, 0, Math.PI * 2);
-			ctx.fill();
+			ctx.moveTo(sx + k * 7 * S, piso - 38 * S);
+			ctx.quadraticCurveTo(sx + k * 7 * S + mece * 0.4, piso - 38 * S - alto * 0.6, sx + k * 9 * S + mece, piso - 38 * S - alto);
+			ctx.stroke();
 		}
-		ctx.fillStyle = "#2b2f33";
-		ctx.fillRect(sx - 70 * S, piso - 38 * S, 140 * S, 38 * S);
+		ctx.fillStyle = "#8a8379";
+		ctx.fillRect(sx - 70 * S, piso - 40 * S, 140 * S, 40 * S);
+		ctx.fillStyle = "#a59d92";
+		ctx.fillRect(sx - 70 * S, piso - 40 * S, 140 * S, 4 * S);
 		ctx.fillStyle = "rgba(255,214,140,0.9)";
 		for (const dx of [-45, 0, 45]) circulo(sx + dx * S, piso - 6 * S, 3 * S);
 		return true;
 	}
 	if (tipo === "sofa") {
-		// Sofá de exterior con cojines
-		ctx.fillStyle = "#3b4a5c";
-		rectRedondo(sx - 75 * S, piso - 56 * S, 150 * S, 26 * S, 9 * S);
+		// Sofá gris de exterior con cojines amarillos (como en la foto)
+		ctx.fillStyle = "#9d9c95";
+		rectRedondo(sx - 78 * S, piso - 58 * S, 156 * S, 30 * S, 8 * S);
 		ctx.fill();
-		rectRedondo(sx - 80 * S, piso - 36 * S, 160 * S, 30 * S, 9 * S);
+		ctx.fillStyle = "#c3c2bb";
+		rectRedondo(sx - 82 * S, piso - 34 * S, 164 * S, 28 * S, 8 * S);
 		ctx.fill();
-		ctx.fillStyle = "#c9cfd6";
-		rectRedondo(sx - 62 * S, piso - 62 * S, 34 * S, 24 * S, 7 * S);
+		for (const [dx, color, giro] of [[-52, "#e2b93f", -0.12], [-14, "#f0d36a", 0.05], [40, "#e2b93f", 0.1]]) {
+			ctx.save();
+			ctx.translate(sx + dx * S, piso - 50 * S);
+			ctx.rotate(giro);
+			ctx.fillStyle = color;
+			rectRedondo(-15 * S, -13 * S, 30 * S, 26 * S, 7 * S);
+			ctx.fill();
+			ctx.restore();
+		}
+		ctx.fillStyle = "#3a4446";
+		ctx.fillRect(sx - 74 * S, piso - 6 * S, 8 * S, 6 * S);
+		ctx.fillRect(sx + 66 * S, piso - 6 * S, 8 * S, 6 * S);
+		return true;
+	}
+	if (tipo === "acapulco") {
+		// Dos sillas acapulco blancas (de hilo, redondas) y una mesita de
+		// concreto con su maceta, como en la foto de la terraza
+		const sillaAcapulco = (cx, mira) => {
+			ctx.strokeStyle = "#e9ecea";
+			ctx.lineWidth = 2.5 * S;
+			ctx.beginPath(); // patas
+			ctx.moveTo(cx - 18 * S, piso);
+			ctx.lineTo(cx - 6 * S * mira, piso - 34 * S);
+			ctx.lineTo(cx + 18 * S, piso);
+			ctx.moveTo(cx - 8 * S, piso);
+			ctx.lineTo(cx + 4 * S * mira, piso - 30 * S);
+			ctx.stroke();
+			ctx.save();
+			ctx.translate(cx, piso - 52 * S);
+			ctx.rotate(-0.35 * mira); // inclinada hacia atrás
+			ctx.fillStyle = "rgba(233,236,234,0.12)";
+			ctx.beginPath();
+			ctx.ellipse(0, 0, 18 * S, 30 * S, 0, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.lineWidth = 2.5 * S;
+			ctx.stroke();
+			ctx.lineWidth = 1 * S; // el tejido de hilo
+			for (let k = -2; k <= 2; k++) {
+				linea(k * 7 * S, -28 * S * Math.sqrt(1 - (k / 2.6) ** 2), k * 7 * S, 28 * S * Math.sqrt(1 - (k / 2.6) ** 2));
+				linea(-17 * S * Math.sqrt(1 - (k / 2.6) ** 2), k * 11 * S, 17 * S * Math.sqrt(1 - (k / 2.6) ** 2), k * 11 * S);
+			}
+			ctx.restore();
+		};
+		sillaAcapulco(sx - 52 * S, 1);
+		sillaAcapulco(sx + 52 * S, -1);
+		ctx.fillStyle = "#b8ad9c"; // mesita
+		ctx.beginPath();
+		ctx.ellipse(sx, piso - 26 * S, 24 * S, 6 * S, 0, 0, Math.PI * 2);
 		ctx.fill();
-		ctx.fillStyle = COLORES.beige;
-		rectRedondo(sx + 26 * S, piso - 62 * S, 34 * S, 24 * S, 7 * S);
-		ctx.fill();
-		ctx.fillStyle = "#2b2f33";
-		ctx.fillRect(sx - 72 * S, piso - 6 * S, 8 * S, 6 * S);
-		ctx.fillRect(sx + 64 * S, piso - 6 * S, 8 * S, 6 * S);
+		ctx.fillRect(sx - 20 * S, piso - 26 * S, 40 * S, 26 * S);
+		ctx.fillStyle = "#9e9383";
+		ctx.fillRect(sx - 20 * S, piso - 8 * S, 40 * S, 8 * S);
+		ctx.fillStyle = "#d7d3cb"; // maceta con una planta
+		ctx.fillRect(sx - 6 * S, piso - 40 * S, 12 * S, 12 * S);
+		ctx.fillStyle = "#5f8f55";
+		for (let k = -1; k <= 1; k++) {
+			ctx.beginPath();
+			ctx.ellipse(sx + k * 4 * S, piso - 46 * S, 3 * S, 8 * S, k * 0.4, 0, Math.PI * 2);
+			ctx.fill();
+		}
+		return true;
+	}
+	if (tipo === "chiavari") {
+		// Una fila de sillas blancas con cojín, como en la foto del local:
+		// respaldo de barrotes, asiento acolchado y patas delgadas
+		for (let k = 0; k < 4; k++) {
+			const cx = sx - 57 * S + k * 38 * S;
+			const asiento = piso - 46 * S;
+			ctx.fillStyle = "#dfe3e1"; // sombra de las patas de atrás
+			ctx.fillRect(cx - 10 * S, asiento, 3 * S, piso - asiento);
+			ctx.fillRect(cx + 7 * S, asiento, 3 * S, piso - asiento);
+			ctx.fillStyle = "#f2f4f2";
+			ctx.fillRect(cx - 15 * S, asiento - 44 * S, 4 * S, 44 * S); // postes del respaldo
+			ctx.fillRect(cx + 11 * S, asiento - 44 * S, 4 * S, 44 * S);
+			rectRedondo(cx - 16 * S, asiento - 48 * S, 32 * S, 6 * S, 3 * S); // copete
+			ctx.fill();
+			ctx.fillRect(cx - 15 * S, asiento - 22 * S, 30 * S, 3 * S); // travesaño del respaldo
+			for (const dx of [-6, 0, 6]) ctx.fillRect(cx + dx * S - 1 * S, asiento - 42 * S, 2 * S, 20 * S); // barrotes
+			ctx.fillStyle = "#fbfbf9"; // cojín
+			rectRedondo(cx - 17 * S, asiento - 4 * S, 34 * S, 10 * S, 4 * S);
+			ctx.fill();
+			ctx.fillStyle = "rgba(0,0,0,0.08)";
+			ctx.fillRect(cx - 15 * S, asiento + 6 * S, 30 * S, 2 * S);
+			ctx.fillStyle = "#f2f4f2"; // patas de adelante y travesaño
+			ctx.fillRect(cx - 15 * S, asiento + 6 * S, 3.5 * S, piso - asiento - 6 * S);
+			ctx.fillRect(cx + 11.5 * S, asiento + 6 * S, 3.5 * S, piso - asiento - 6 * S);
+			ctx.fillRect(cx - 14 * S, piso - 14 * S, 28 * S, 2.5 * S);
+		}
 		return true;
 	}
 	if (tipo === "fogata") {

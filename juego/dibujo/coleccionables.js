@@ -25,8 +25,9 @@ modulos.forEach((m) =>
 		const { zona, base } = baseColeccionable(m, c);
 		if (!base) return; // apunta a algo que no existe: no se crea
 		// El id (lo que se guarda) sale de dónde está, no del nombre: así
-		// cambiar el nombre (todavía borrador) no borra lo ya encontrado
-		const id = `${m.nombre}|${c.sobre || "mueble"}${c.n || 1}`;
+		// cambiar el nombre (todavía borrador) no borra lo ya encontrado. Si el
+		// mundo cambió de nombre (nombreAnterior), el id sigue con el de antes
+		const id = `${m.nombreAnterior || m.nombre}|${c.sobre || "mueble"}${c.n || 1}`;
 		// imagen: la del equipo en assets/trofeos/ (sin imagen, la guacamaya dibujada)
 		const img = c.imagen ? cargarImagen(c.imagen) : null;
 		COLECCIONABLES.push({ id, nombre: c.nombre, modulo: m, zona, base, sobre: c.sobre || "mueble", altura: Number(c.altura) || 200, img, pista: false });

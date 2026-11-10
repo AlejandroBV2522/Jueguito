@@ -538,13 +538,14 @@ function dibujarHeroeSprite(x, pie, o, sprites, t) {
 	// pie y sube entre medio. Con 1 solo cuadro, 2 golpecitos por ciclo.
 	const marcha = enMarcha ? Math.max(o.marcha, 0.3) : 0;
 	const subida = N > 1 ? (1 - Math.cos(o.fase * (N > 2 ? 2 : 1))) / 2 : Math.abs(Math.sin(o.fase));
-	// Vaivén sutil en reposo (fase de MUNDO, no de pantalla, para que no
-	// tiemble con la cámara al moverse — ver nota en dibujarEnemigoSprite).
+	// Vaivén sutil en reposo: depende solo del tiempo. Con la posición en la
+	// fase (como en los NPC), al ir sobre una nube o plataforma que se mueve
+	// la fase corría muy rápido y el personaje temblaba.
 	const rebote = enMarcha
 		? subida * (1.5 + 4.5 * marcha) * s
 		: o.moviendo
 		? 0
-		: Math.sin(tiempo * 2 + x + camara) * 0.8 * s;
+		: Math.sin(tiempo * 2) * 0.8 * s;
 	const altoDeseado = 100 * s * embestida * factorAgachado * factorEscalaPropio;
 
 	ctx.save();
