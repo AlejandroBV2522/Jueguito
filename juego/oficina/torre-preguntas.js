@@ -19,7 +19,7 @@ function etapaPreguntable() {
 }
 
 // E o Enter en la nube de descanso (Hablar, en pantallas táctiles); la barra espaciadora sigue siendo saltar.
-// En la cima, con la licencia, la misma tecla pone el paracaídas.
+// Sobre la celda de la cima (con la licencia), la misma tecla agarra el paracaídas.
 window.addEventListener("keydown", (e) => {
 	if (e.repeat || !["e", "E", "Enter"].includes(e.key) || e.target.tagName === "BUTTON") return;
 	const k = etapaPreguntable();

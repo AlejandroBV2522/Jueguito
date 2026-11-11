@@ -75,7 +75,7 @@ window.MODULOS.push({
         escena: "caseta",
         // Compañeros de cada zona: personas del equipo (✏️ confirmar con Nazareth quién explica cada zona)
         companero: {
-          nombre: "Estefanía Amador",
+          nombre: "Estefanía",
           cuerpo: "chica",
           dialogo: [
             "En Celaque los proyectos no se piden por WhatsApp ni de palabra: todo entra por Wrike.",
@@ -123,10 +123,10 @@ window.MODULOS.push({
         // Una zanja muy ancha para saltarla y una plataforma sobre rieles que va y viene: hay que subirse, dejarse llevar y bajarse al otro lado
         peligro: { tipo: "zanja" },
         companero: {
-          nombre: "Keydi Rodriguez",
+          nombre: "Keydi",
           cuerpo: "chica",
           dialogo: [
-            "Soy Keydi Rodriguez y también administro Proyectos TI.",
+            "Soy Keydi y también administro Proyectos TI.",
             "El requerimiento de usuario explica qué necesitas: objetivo, descripción de la necesidad y priorización.",
             "La historia de usuario es obligatoria y lleva tres palabras clave: «Como», «Quiero» y «Para qué».",
             "Por ejemplo: como usuario final, quiero un buscador fácil de usar, para encontrar rápido lo que necesito.",
@@ -171,7 +171,7 @@ window.MODULOS.push({
         tema: "El flujo de la solicitud",
         escena: "reunion",
         companero: {
-          nombre: "Carlos Jimenez",
+          nombre: "Carlos",
           cuerpo: "chico",
           dialogo: [
             "Después de la solicitud empieza un camino de 10 pasos. Los dos primeros son del área solicitante: crear la solicitud y llenar el requerimiento.",

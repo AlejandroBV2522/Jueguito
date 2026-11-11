@@ -48,7 +48,7 @@ window.MODULOS.push({
   comentarios: [
     {
       // Nivel 1 · Personal: accesos
-      nombre: "Mario Flores",
+      nombre: "Mario",
       cuerpo: "chico",
       dialogo: [
         "Nivel 1, lo personal: tus contraseñas van en Bitwarden, nuestra bóveda de contraseñas, nunca en un papel ni en un archivo.",
@@ -58,7 +58,7 @@ window.MODULOS.push({
     },
     {
       // Nivel 2 · Local: tu equipo
-      nombre: "Melida Ordoñez",
+      nombre: "Melida",
       cuerpo: "chica",
       dialogo: [
         "Nivel 2, tu equipo: trabajas con un perfil corporativo y solo se instalan aplicaciones con permiso.",
@@ -68,7 +68,7 @@ window.MODULOS.push({
     },
     {
       // Nivel 3 · Perimetral: la red
-      nombre: "Allan Pineda",
+      nombre: "Allan",
       cuerpo: "chico",
       dialogo: [
         "Nivel 3, la red: antes de escribir tus datos en una página, revisa que tenga el candado (SSL).",

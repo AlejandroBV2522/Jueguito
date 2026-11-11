@@ -63,7 +63,7 @@ window.MODULOS.push({
         escena: "moldes",
         peligro: { tipo: "prensa" },
         companero: {
-          nombre: "Juan Flores",
+          nombre: "Juan",
           cuerpo: "chico",
           dialogo: [
             "Las plantillas son procesos secuenciales: se activan por un evento, no con una frecuencia fija.",
@@ -135,7 +135,7 @@ window.MODULOS.push({
         escena: "etiquetado",
         peligro: { tipo: "cinta" },
         companero: {
-          nombre: "Andrea Ortiz",
+          nombre: "Andrea",
           cuerpo: "chica",
           dialogo: [
             "Cada proceso lleva un código en su nombre. En «T-RH-4-1 Revisión Mensual Talento», la T es el departamento (Talento) y RH es el macroproceso.",
@@ -161,7 +161,7 @@ window.MODULOS.push({
         nombre: "Control de calidad",
         escena: "calidad",
         companero: {
-          nombre: "Franklin Matute",
+          nombre: "Franklin",
           cuerpo: "chico",
           dialogo: [
             "Antes de dar un proceso por terminado, tres cosas: deja la evidencia de lo que hiciste, revisa que no queden subtareas activas y corre el proceso en un día específico.",

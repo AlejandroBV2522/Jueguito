@@ -174,10 +174,10 @@ window.MODULOS.push({
     ],
     b: {
       letrero: "Solicitante",
-      nombre: "Aldo Anduray",
+      nombre: "Aldo",
       cuerpo: "chico",
       pide: [
-        "¡Hola! Soy Aldo Anduray y todavía no tengo acceso a nada.",
+        "¡Hola! Soy Aldo y todavía no tengo acceso a nada.",
         "Mi licencia está en lo más alto de la nube: el punto A. Sube saltando de nube en nube, sin caerte. ¿Me la traes?",
       ],
       // ✏️ Revisar con Luis Morán (sobre todo cómo se solicita la licencia)
