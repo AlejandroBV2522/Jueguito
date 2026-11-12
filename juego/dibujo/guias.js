@@ -35,10 +35,58 @@ function objetivoActual() {
 	return null;
 }
 
+// Qué tan arriba está el objetivo (en unidades de alto, sin escalar): los NPC del camino de
+// Talento esperan sobre un andamio (npcs-y-andamios.js), no en el piso. Los demás, en el piso.
+function altoObjetivo() {
+	if (estado !== "jugando") return 0;
+	const npc = npcs.find((n) => !n.hablado && n.x > heroe.x - 400);
+	return npc ? npc.alto || 0 : 0;
+}
+
+// Si el NPC por conocer está en un andamio más alto que el héroe: el escalón más cercano al que
+// puede saltar (de 15 a 190 más arriba; un salto sube ~175). null si no hace falta subir.
+// Se usa la altura base del escalón (alto0): los que suben y bajan no hacen parpadear la guía.
+function escalonParaSubir() {
+	if (estado !== "jugando") return null;
+	const npc = npcs.find((n) => !n.hablado && n.x > heroe.x - 400);
+	if (!npc || (npc.alto || 0) <= heroe.y + 30) return null;
+	let mejor = null;
+	for (const pl of PLATAFORMAS) {
+		if (pl === heroe.sobre || Math.abs(pl.x0 - npc.x) > 420 || pl.alto0 <= heroe.y + 15 || pl.alto0 > heroe.y + 190) continue;
+		if (!mejor || Math.abs(pl.x - heroe.x) < Math.abs(mejor.x - heroe.x)) mejor = pl;
+	}
+	return mejor;
+}
+
+// Debajo del escalón: tres flechas que suben sobre la cabeza del héroe ("salta")
+function dibujarFlechasArriba() {
+	const sx = heroe.x - camara;
+	const base = SUELO + 38 * S - heroe.y * S - 150 * S;
+	ctx.save();
+	ctx.lineCap = "round";
+	ctx.lineJoin = "round";
+	ctx.shadowColor = COLORES.verdeInstitucional;
+	ctx.shadowBlur = 16 * S;
+	ctx.lineWidth = 6.5 * S;
+	for (let k = 0; k < 3; k++) {
+		// La ola de luz sube, como la de las flechas de lado
+		const a = 0.35 + 0.65 * Math.max(0, Math.sin(tiempo * 6 - k * 1.1));
+		const y = base - k * 21 * S;
+		ctx.strokeStyle = `rgba(230,255,250,${Math.min(1, a * 1.15).toFixed(3)})`;
+		ctx.beginPath();
+		ctx.moveTo(sx - 13 * S, y + 8 * S);
+		ctx.lineTo(sx, y - 6 * S);
+		ctx.lineTo(sx + 13 * S, y + 8 * S);
+		ctx.stroke();
+	}
+	ctx.restore();
+}
+
 // Columna de luz sobre el objetivo, con una flecha que rebota encima
 // ("aquí"), + flechas luminosas a los pies del héroe apuntando hacia él
 // (se apagan al llegar). Más brillantes que antes: en la reunión pidieron
-// guías más iluminadas para quien no juega seguido.
+// guías más iluminadas para quien no juega seguido. Con un NPC en un andamio,
+// la columna y la flecha suben con él (si no, la flecha señalaría el andamio).
 function dibujarGuias() {
 	const objetivo = objetivoActual();
 	if (objetivo === null) return;
@@ -46,14 +94,15 @@ function dibujarGuias() {
 	const fx = objetivo - camara;
 	if (fx > -80 && fx < W + 80) {
 		const pulso = 0.5 + 0.5 * Math.sin(tiempo * 3);
-		const luz = ctx.createLinearGradient(0, SUELO + 40 * S, 0, SUELO - 380 * S);
+		const elevar = altoObjetivo() * S;
+		const luz = ctx.createLinearGradient(0, SUELO + 40 * S - elevar, 0, SUELO - 380 * S - elevar);
 		luz.addColorStop(0, conAlfa(COLORES.verdeInstitucional, 0.6 + 0.25 * pulso));
 		luz.addColorStop(0.6, conAlfa(COLORES.fondoVerdeClaro, 0.18 + 0.1 * pulso));
 		luz.addColorStop(1, conAlfa(COLORES.verdeInstitucional, 0));
 		ctx.fillStyle = luz;
-		ctx.fillRect(fx - 42 * S, SUELO - 380 * S, 84 * S, 420 * S);
-		// Flecha hacia abajo que rebota sobre el objetivo
-		const ay = SUELO - 250 * S + Math.abs(Math.sin(tiempo * 3.2)) * 18 * S;
+		ctx.fillRect(fx - 42 * S, SUELO - 380 * S - elevar, 84 * S, 420 * S);
+		// Flecha hacia abajo que rebota sobre el objetivo (sin salirse por arriba de la pantalla)
+		const ay = Math.max(SUELO - 250 * S - elevar, 64 * S) + Math.abs(Math.sin(tiempo * 3.2)) * 18 * S;
 		ctx.save();
 		ctx.shadowColor = COLORES.verdeInstitucional;
 		ctx.shadowBlur = 18 * S;
@@ -71,10 +120,15 @@ function dibujarGuias() {
 		ctx.restore();
 	}
 
-	const dist = objetivo - heroe.x;
-	if (Math.abs(dist) < 100) return;
+	// Con el NPC en un andamio más alto, las flechas de los pies llevan al siguiente escalón
+	const escalon = escalonParaSubir();
+	const meta = escalon ? escalon.x : objetivo;
+	const dist = meta - heroe.x;
+	const cerca = escalon ? 70 : 100; // a esa distancia ya llegaste
+	if (escalon && Math.abs(dist) < cerca) return dibujarFlechasArriba();
+	if (Math.abs(dist) < cerca) return;
 	const dir = Math.sign(dist);
-	const alfa = clamp((Math.abs(dist) - 100) / 160, 0, 1);
+	const alfa = clamp((Math.abs(dist) - cerca) / 160, 0, 1);
 	const pie = SUELO + 38 * S - heroe.y * S;
 	const y = pie - 16 * S;
 	const x0 = heroe.x - camara + dir * 40 * S;
@@ -171,6 +225,14 @@ function dibujarEnemigoSprite(x, pie, o, sprites) {
 	return true;
 }
 
+// Lo alto que llega un enemigo con foto sobre sus pies, si flota (el murciélago: anclaY lo levanta
+// del piso). Sale de las mismas cuentas que dibujarEnemigoSprite. 0 si no flota.
+function altoFlotante(e, sprites) {
+	const m = sprites && sprites.quieto;
+	if (!m || m.anclaY === undefined || m.anclaY <= m.abajo) return 0;
+	return (100 * S * 1.15 * (e.escala || 1) * (m.anclaY - m.arriba)) / (m.abajo - m.arriba);
+}
+
 function dibujarEnemigos() {
 	const pie = SUELO + 36 * S;
 	for (const e of enemigos) {
@@ -196,7 +258,9 @@ function dibujarEnemigos() {
 		const yaDibujado = sprites && dibujarEnemigoSprite(sx, pie, o, sprites);
 		if (!yaDibujado) dibujarPersona(sx, pie, o);
 
-		const arriba = pie - 110 * S * (e.escala || 1) + Math.sin(tiempo * 3 + e.x) * 3 * S;
+		// Los rótulos van sobre la cabeza; si el enemigo vuela (el murciélago), sobre donde llega él
+		const alto = Math.max(110 * S * (e.escala || 1), yaDibujado ? altoFlotante(e, sprites) + 8 * S : 0);
+		const arriba = pie - alto + Math.sin(tiempo * 3 + e.x) * 3 * S;
 		if (!e.derrotado && e.cayendo === 0) {
 			dibujarGlobo(sx, arriba, esTactil ? "Toca para pelear" : "E · Pelear", "#ffb3b3");
 			// Lo que se combate: un antivalor (mundos/talento/cueva.js → antivalor)
