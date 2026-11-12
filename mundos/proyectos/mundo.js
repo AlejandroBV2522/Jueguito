@@ -73,7 +73,7 @@ window.MODULOS.push({
         nombre: "La caseta de solicitudes",
         tema: "Emitir la solicitud en Wrike",
         escena: "caseta",
-        // Compañeros de cada zona: personas del equipo (✏️ confirmar con Nazareth quién explica cada zona)
+        // Los compañeros de cada zona tienen nombres genéricos (✏️ se pueden cambiar por personas del equipo)
         companero: {
           nombre: "Estefanía",
           cuerpo: "chica",
@@ -81,7 +81,7 @@ window.MODULOS.push({
             "En Celaque los proyectos no se piden por WhatsApp ni de palabra: todo entra por Wrike.",
             "En Wrike toca el signo + de arriba a la derecha, elige «Solicitud» y busca el formulario «S - Nuevo Proyecto».",
             "Llena todos los campos obligatorios: nombre, objetivo, departamento responsable, responsable, cronograma de hitos, fecha de inicio y de finalización.",
-            "El formulario también pregunta si el proyecto requiere apoyo de Sistemas y si involucra a otro departamento. ¡Mira las capturas de arriba!",
+            "El formulario también pregunta si el proyecto requiere apoyo de Sistemas y si involucra a otro departamento. ¡Mira los pantallazos de arriba!",
           ],
         },
         enemigo: {
@@ -95,7 +95,7 @@ window.MODULOS.push({
               pregunta: "Tu área necesita un proyecto nuevo de Sistemas. ¿Cómo lo solicitas?",
               opciones: [
                 "Le escribo a alguien de Sistemas por WhatsApp o por correo para que lo anote.",
-                "Lo pido en Wrike: signo +, «Solicitud» y «S - Nuevo Proyecto».",
+                "En Wrike: signo +, «Solicitud» y «S - Nuevo Proyecto».",
                 "Se lo comento a mi jefe en la reunión para que él lo recuerde después.",
                 "Espero a que Sistemas me pregunte qué necesito para empezar a hacerlo.",
               ],
@@ -126,12 +126,8 @@ window.MODULOS.push({
           nombre: "Keydi",
           cuerpo: "chica",
           dialogo: [
-            "Soy Keydi y también administro Proyectos TI.",
-            "El requerimiento de usuario explica qué necesitas: objetivo, descripción de la necesidad y priorización.",
-            "La historia de usuario es obligatoria y lleva tres palabras clave: «Como», «Quiero» y «Para qué».",
-            "Por ejemplo: como usuario final, quiero un buscador fácil de usar, para encontrar rápido lo que necesito.",
-            "También lleva los criterios de aceptación: qué debe cumplirse para dar por bueno el resultado.",
-            "Y suma los reportes que necesitas, imágenes guía de lo que esperas y las áreas impactadas.",
+            "El requerimiento de usuario explica qué necesitas: el objetivo, la descripción de la necesidad y la priorización.",
+            "Se completa con los criterios de aceptación —qué debe cumplirse para dar por bueno el resultado—, los reportes que necesitas, imágenes guía de lo que esperas y las áreas que se ven impactadas.",
           ],
         },
         enemigo: {
@@ -150,18 +146,7 @@ window.MODULOS.push({
                 "Cambiar la fecha del proyecto cuando el área lo prefiera.",
               ],
               correcta: 1,
-              explicacion: "Por ejemplo: los casos de uso que se van a probar y que el área funcional quede de acuerdo.",
-            },
-            {
-              pregunta: "Estás llenando el requerimiento. ¿Cuál historia de usuario está bien escrita?",
-              opciones: [
-                "Necesito un buscador para el sistema, lo antes posible.",
-                "Como usuario final, quiero un buscador fácil, para encontrar rápido lo que necesito.",
-                "Quiero que Sistemas haga un buscador como el de otra empresa.",
-                "Buscador nuevo: urgente, prioridad alta, pedido por mi área.",
-              ],
-              correcta: 1,
-              explicacion: "«Como» es el rol, «Quiero» lo que necesita y «Para qué» el beneficio que busca.",
+              explicacion: "Por ejemplo: los casos de uso que se van a probar y que todos queden ok del lado del área funcional.",
             },
           ],
         },
@@ -178,7 +163,7 @@ window.MODULOS.push({
             "Tercero, la reunión inicial entre Sistemas y tu área, donde se define el alcance. Cuarto, Sistemas entrega la propuesta de solución.",
             "Quinto: ¿se acepta la propuesta? Si se rechaza, se vuelve a definir el alcance. Si se aprueba, Sistemas prepara los documentos.",
             "Luego Sistemas registra el proyecto en el portafolio, genera su ID, planifica el cronograma y entrega la fecha final.",
-            "Y ojo: el alcance debe ser revisado y aprobado por el N3 de tu departamento. Si no, no avanza.",
+            "Y ojo: el alcance debe ser revisado y aprobado por tu N3, que es el gerente de tu área. Si no, no avanza.",
           ],
         },
         enemigo: {
@@ -220,16 +205,13 @@ window.MODULOS.push({
         // Una talanquera (compuerta de obra) que baja y sube: hay que esperar a que se abra
         peligro: { tipo: "talanquera" },
         companero: {
-          nombre: "Líder de Calidad", // ✏️ nombre genérico
+          nombre: "Líder de Calidad",
           cuerpo: "chico",
           dialogo: [
             "Ya con el proyecto en marcha viene su gestión, que tiene 5 fases: inicio, planificación, ejecución, monitoreo y control, y cierre.",
-            "En el inicio se define el alcance, se identifica a los interesados y se hace el kickoff.",
-            "En la planificación se arman el cronograma, la matriz de pruebas y el documento técnico.",
-            "En la ejecución hay demos, certificación de calidad (QA) y control de cambios.",
-            "En monitoreo y control se da seguimiento, se actualizan los cronogramas y se hace el Daily Scrum.",
-            "Tu área participa: va a las reuniones de seguimiento y ayuda a ejecutar las pruebas.",
-            "Y cualquier cambio pasa por el control de cambios.",
+            "En el inicio está el alcance definido y el kick off. En planificación, el cronograma, la matriz de pruebas y el documento técnico.",
+            "En ejecución hay demos, certificación de calidad (QA) y control de cambios. En monitoreo y control, seguimiento y Daily Scrum.",
+            "Tu área participa: va a las reuniones de seguimiento y ayuda a ejecutar las pruebas. Cualquier cambio pasa por el control de cambios.",
             "Y al final, el cierre: se oficializa con el acta de cierre y la encuesta de calidad.",
           ],
         },
@@ -248,7 +230,7 @@ window.MODULOS.push({
             {
               pregunta: "Durante las pruebas del proyecto, ¿qué se espera del área solicitante?",
               opciones: [
-                "Que vaya a las reuniones de seguimiento y ayude con las pruebas.",
+                "Que esté atenta a las reuniones de seguimiento y participe en la ejecución de pruebas.",
                 "Que espere a que Sistemas pruebe todo sin involucrarse.",
                 "Que apruebe el proyecto sin probarlo, para ahorrar tiempo.",
                 "Que revise el resultado solo hasta el cierre.",
@@ -280,7 +262,7 @@ window.MODULOS.push({
       "¡Hola! Soy Nazareth Gallardo, administradora de Proyectos TI, y te doy la bienvenida al módulo de Proyectos.",
       "Recorre la obra del Distrito Artemisa: cada zona es un paso para pedir y llevar un proyecto en Celaque.",
       "Un proyecto es un esfuerzo temporal para crear un producto, servicio o resultado único. Tiene inicio y fin, un propósito claro y requiere planificación.",
-      "Al final de cada zona te espera un riesgo que te cierra el paso. Responde bien sus preguntas para seguir. ¡Adelante!",
+      "Al final de cada zona te espera un riesgo que te cierra el paso. Respóndele bien para seguir. ¡Adelante!",
     ],
   },
   // Mayitas ocultas en el aire, con un valor de Celaque o una emoción alegre (✏️ Borrador: nombres por validar).
@@ -289,7 +271,7 @@ window.MODULOS.push({
   coleccionables: [
     { nombre: "Mayita Logradora", sobre: "mueble", n: 4, altura: 260, imagen: "assets/trofeos/mayita.png" }, // valor: Logrador
   ],
-  intro: ["Te damos la bienvenida al módulo de Proyectos."],
+  intro: ["Bienvenido al módulo de Proyectos."],
   // En la obra las personas de cada zona están en oficina.zonas[].companero
   comentarios: [],
   // Las preguntas están en los enemigos de cada zona (oficina.zonas[].enemigo.preguntas)
