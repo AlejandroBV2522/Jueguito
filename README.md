@@ -162,7 +162,8 @@ sugeridos. Mientras estén vacías, el juego usa sus guacamayas dibujadas y
 sus sonidos propios.
 
 **Para probar:** con el nombre **Kojima** se abren todos los mundos de una
-vez (se cambia o apaga en `config.js` → `nombrePruebas`). Con ese nombre
+vez (se cambia o apaga en `config.js` → `nombrePruebas`). Los nombres de
+`superUsuarios` (hoy **James V** y **Cristian B**) entran igual. Con ese nombre
 aparecen también el botón **"★ Ver bienvenida"** (la tarjeta final, sin
 terminar nada) y el botón **"Estadísticas"**: qué preguntas se fallan más,
 con lo que se jugó en ese navegador (lo de Kojima no se cuenta).
@@ -179,6 +180,7 @@ Lo general está en **`config.js`**:
 - `colores`: paleta oficial de Celaque (también en `style.css` como
   `--cel-...`).
 - `nombrePruebas`: el nombre que abre todos los mundos (por defecto Kojima).
+  `superUsuarios`: más nombres que entran igual que Kojima.
   `preguntasPorModulo` dice cuántas hace la computadora.
 - `PROYECTOS_CELAQUE`: torres de fondo (Zorzales, Astria, Céfiro).
 - La explicación de cada campo de un mundo (sección "Módulos de capacitación").

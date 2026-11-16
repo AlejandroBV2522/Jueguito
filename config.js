@@ -19,6 +19,7 @@ window.CONFIG_JUEGO = {
   velocidadTexto: 45,        // letras por segundo al escribir los diálogos
   preguntasPorModulo: 2,     // cuántas preguntas hace la computadora de cada oficina (módulo)
   nombrePruebas: "Kojima",   // con este nombre se abren todos los mundos y aparecen "Estadísticas" y "Ver bienvenida" (para probar); "" lo apaga
+  superUsuarios: ["James V", "Cristian B"], // estos nombres también entran como Kojima (sin importar mayúsculas, espacios de más ni un punto al final)
 
   /* Un poco de barba en los NPC hombres (cuerpo "chico"); el protagonista
      nunca. sinBarba: quienes no la llevan (se compara el primer nombre, sin

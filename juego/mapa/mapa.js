@@ -37,9 +37,14 @@ const mapa = {
 	delfin: { t: -1, x: 0, y: 0, dir: 1, proxima: 6, cx: 0, cy: 0 },
 	bajoPuntero: null, // ave, delfín, nube o isla bajo el puntero (dibujo-mapa.js → punteroMapa)
 };
-// Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
-// los mundos, pero ninguno queda completado: se pueden jugar una y otra vez.
-const modoPruebas = () => !!CFG.nombrePruebas && nombreJugador.toLowerCase() === CFG.nombrePruebas.toLowerCase();
+// Con el nombre de pruebas (config.js → nombrePruebas, o uno de sus
+// superUsuarios) se abren todos los mundos, pero ninguno queda completado:
+// se pueden jugar una y otra vez.
+const nombreComparable = (n) => String(n || "").trim().replace(/\.$/, "").replace(/\s+/g, " ").toLowerCase(); // "james  v." = "James V"
+const modoPruebas = () => {
+	const n = nombreComparable(nombreJugador);
+	return !!n && [CFG.nombrePruebas, ...(CFG.superUsuarios || [])].some((s) => s && nombreComparable(s) === n);
+};
 // Los mundos extra (mundo.js → extra, como la Cafetería) son opcionales:
 // se abren al completar el de "abreDespues", no suben de nivel ni cuentan
 // para terminar la capacitación.
