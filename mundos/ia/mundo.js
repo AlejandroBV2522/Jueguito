@@ -118,7 +118,7 @@ window.MODULOS.push({
   intro: ["Te damos la bienvenida al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [
     {
-      nombre: "Keidy Duron",
+      nombre: "Keidy",
       cuerpo: "chica",
       dialogo: [
         "La calidad del prompt determina la calidad del resultado.",
@@ -127,7 +127,7 @@ window.MODULOS.push({
       ],
     },
     {
-      nombre: "James Velasquez",
+      nombre: "James",
       cuerpo: "chico",
       dialogo: [
         "La IA no sustituye el criterio humano ni los datos actuales: revisa siempre lo que genera.",
@@ -136,7 +136,7 @@ window.MODULOS.push({
       ],
     },
     {
-      nombre: "Cristian Betancourth",
+      nombre: "Cristian",
       cuerpo: "chico",
       dialogo: [
         "En Celaque usamos ChatGPT, Gemini, Claude, Copilot, Canva, Power Automate, Enscape y TestFit, entre otras.",

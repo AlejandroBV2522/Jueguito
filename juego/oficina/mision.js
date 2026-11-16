@@ -113,6 +113,8 @@ function crearMision(d, i, x0) {
 			},
 		},
 	};
+	// A la altura de la nube de la cima (sin torre no hay celda)
+	mi.celda = nubes.length ? { x: 0, alto: nubes[nubes.length - 1].alto, medioAncho: 46, vis: 0 } : null;
 	reiniciarMision(mi);
 	return mi;
 }
@@ -132,17 +134,24 @@ function reiniciarMision(mi) {
 	mi.control = 0; // altura de la última nube de descanso a la que se llegó: si te caes, vuelves ahí
 	mi.enBandera = false;
 	mi.etapaBandera = -1;
-	mi.paracaidas = false; // puesto en la cima (ponerParacaidas)
+	mi.paracaidas = false; // agarrado en la celda de la cima (ponerParacaidas)
 	mi.brillo = 0;
+	if (mi.celda) mi.celda.vis = 0;
 	colocarNubes(mi);
 	actualizarEstadoNubes(mi, 0);
 }
+
+// La celda del paracaídas: una plataforma aparte, al lado de la nube de la cima, que aparece
+// cuando recoges la licencia (ver ponerParacaidas)
+const COLUMNA_CELDA = 215; // a la derecha del centro de la torre
+const celdaActiva = (mi) => !!mi.celda && mi.paso === "llevar";
 
 // Dónde va cada nube (y A) según el reloj y la escala de la pantalla
 const xNube = (mi, n) => mi.cx + (n.col + Math.sin(mi.reloj * VUELTA_NUBES + n.fase) * n.mueve) * S;
 function colocarNubes(mi) {
 	for (const n of mi.nubes) n.x = xNube(mi, n);
 	if (mi.nubes.length) mi.aX = mi.nubes[mi.nubes.length - 1].x;
+	if (mi.celda) mi.celda.x = mi.cx + COLUMNA_CELDA * S;
 }
 
 // Alturas de las nubes que hay en x (para pararse encima; ver alturasPlataformaEn)
@@ -150,7 +159,9 @@ const sobreNube = (n, x) => Math.abs(x - n.x) < (n.medioAncho + 14) * S;
 function alturasNubesEn(x) {
 	const mi = oficinaActual && oficinaActual.mision;
 	if (!mi) return [];
-	return mi.nubes.filter((n) => n.activa && sobreNube(n, x)).map((n) => n.alto);
+	const alturas = mi.nubes.filter((n) => n.activa && sobreNube(n, x)).map((n) => n.alto);
+	if (celdaActiva(mi) && sobreNube(mi.celda, x)) alturas.push(mi.celda.alto);
+	return alturas;
 }
 
 // Qué nubes sostienen ahora: las que esperan un banderín por contestar no se forman, y las que se
@@ -199,6 +210,10 @@ function moverNubesMision(mi, dt) {
 		n.x = x;
 	}
 	if (mi.nubes.length) mi.aX = mi.nubes[mi.nubes.length - 1].x;
+	if (mi.celda) {
+		mi.celda.x = mi.cx + COLUMNA_CELDA * S;
+		mi.celda.vis += ((celdaActiva(mi) ? 1 : 0) - mi.celda.vis) * Math.min(1, dt * 6); // aparece con suavidad
+	}
 	// Halcones: van y vienen de lado a lado de la torre
 	for (const h of mi.halcones) {
 		const fase = (mi.reloj * h.velocidad) / HALCON.vuelo + h.fase;
@@ -301,20 +316,20 @@ function volverAlDescanso(mi) {
 
 // ---------- El paracaídas de la cima ----------
 // Con la licencia en la mano, arriba de la torre hay dos formas de bajar: tirarte
-// (caída libre; con la licencia en la mano no cuesta corazones) o ponerte el
-// paracaídas (E o Enter en la cima) y dar un paso al vacío: se abre y bajas
-// despacio, dirigiéndote de lado, hasta el piso. Si pisas una nube en el camino
-// sigue puesto para el siguiente salto.
+// (caída libre; con la licencia en la mano no cuesta corazones) o agarrar el
+// paracaídas, que espera sobre una celda aparte junto a la cima (E o Enter encima
+// de ella), y dar un paso al vacío: se abre y bajas despacio, dirigiéndote de
+// lado, hasta el piso. Si pisas una nube en el camino sigue puesto para el
+// siguiente salto.
 const VEL_PARACAIDAS = 560; // lo más rápido que cae con el paracaídas abierto
+const enCeldaParacaidas = (mi) => celdaActiva(mi) && heroeEnSuelo() && heroe.y === mi.celda.alto && sobreNube(mi.celda, heroe.x);
 function ponerParacaidas() {
 	const mi = oficinaActual && oficinaActual.mision;
-	if (!mi || !mi.torre || estado !== "oficina" || mi.paso !== "llevar" || mi.paracaidas) return;
-	const cima = mi.nubes[mi.nubes.length - 1];
-	if (!cima || !heroeEnSuelo() || heroe.y !== cima.alto || !sobreNube(cima, heroe.x)) return;
+	if (!mi || !mi.torre || estado !== "oficina" || mi.paracaidas || !enCeldaParacaidas(mi)) return;
 	mi.paracaidas = true;
 	sonar("recoger");
 	lanzarChispas(heroe.x, heroe.y + 90, 16, [COLORES.verdeInstitucional, COLORES.blanco, "#e7c25a"]);
-	avisos.push({ texto: "¡Paracaídas puesto! Da un paso al vacío", t: 0 });
+	avisos.push({ texto: "¡Agarraste el paracaídas! Salta al vacío", t: 0 });
 }
 
 function actualizarParacaidas(mi, dt) {
@@ -365,6 +380,11 @@ function actualizarMision(dt) {
 		avisos.push({ texto: `¡Ya tienes ${mi.objeto}! ${mi.torre ? "Baja" : "Ve"} al punto B`, t: 0 });
 		sonar("recoger");
 		lanzarChispas(heroe.x, heroe.y + 60, 14, [COLORES.blanco, COLORES.fondoVerdeClaro, "#ffd23f"]);
+		if (mi.celda) {
+			// Con la licencia aparece, junto a la cima, la celda con el paracaídas
+			lanzarChispas(mi.celda.x, mi.celda.alto + 40, 18, ["#ffd23f", "#fff1c1", COLORES.blanco]);
+			avisos.push({ texto: "¡Mira: una celda con un paracaídas!", t: 0 });
+		}
 		actualizarHudOficina();
 	} else if (mi.paso === "llevar" && enB) {
 		mi.paso = "listo";
@@ -536,6 +556,53 @@ function dibujarRotuloTorre(x, piso, titulo, detalle, ancho = 214, altura = 96, 
 	}
 }
 
+// La mochila del paracaídas, cerrada: base = y de su parte de abajo
+function dibujarMochilaParacaidas(x, base) {
+	const w = 26 * S;
+	const h = 34 * S;
+	ctx.strokeStyle = COLORES.verdeProfundo; // las tiras de arriba
+	ctx.lineWidth = 3 * S;
+	linea(x - 7 * S, base - h, x - 7 * S, base - h - 8 * S);
+	linea(x + 7 * S, base - h, x + 7 * S, base - h - 8 * S);
+	ctx.fillStyle = COLORES.verdeInstitucional;
+	rectRedondo(x - w / 2, base - h, w, h, 6 * S);
+	ctx.fill();
+	ctx.lineWidth = 2.5 * S;
+	ctx.stroke();
+	ctx.fillStyle = COLORES.blanco;
+	ctx.fillRect(x - w / 2 + 4 * S, base - h * 0.64, w - 8 * S, 6 * S);
+	ctx.fillStyle = "#e7c25a"; // la hebilla
+	circulo(x, base - h * 0.3, 4 * S);
+}
+
+// La celda del paracaídas: una celda de hoja con brillo dorado, la mochila encima y su rotulito
+function dibujarCeldaParacaidas(mi, piso) {
+	const c = mi.celda;
+	const x = c.x - camara;
+	if (x < -250 || x > W + 250) return;
+	const arriba = piso - c.alto * S;
+	ctx.save();
+	ctx.globalAlpha = Math.min(1, c.vis);
+	ctx.fillStyle = conAlfa("#ffd23f", 0.16 + 0.14 * (0.5 + 0.5 * Math.sin(tiempo * 4)));
+	ctx.beginPath();
+	ctx.ellipse(x, arriba + 12 * S, c.medioAncho * S * 1.3, 18 * S, 0, 0, Math.PI * 2);
+	ctx.fill();
+	dibujarCeldaMision(x, arriba, c.medioAncho * S);
+	if (!mi.paracaidas) dibujarMochilaParacaidas(x - 14 * S, arriba - 2 * S - Math.abs(Math.sin(tiempo * 3)) * 4 * S);
+	// El rotulito: poste en el lado derecho de la celda para no tapar la mochila
+	dibujarRotuloTorre(
+		x + 26 * S,
+		arriba,
+		mi.paracaidas ? "¡Paracaídas listo!" : "¡AGARRA EL PARACAÍDAS!",
+		mi.paracaidas ? "Salta al vacío: se abre solo" : `Párate aquí y ${esTactil ? "toca Hablar" : "presiona Enter"}`,
+		250,
+		140
+	);
+	if (!mi.paracaidas && heroe.y === c.alto && sobreNube(c, heroe.x))
+		dibujarGlobo(x, arriba - 215 * S, esTactil ? "Toca Hablar para agarrarlo" : "Presiona Enter para agarrarlo", COLORES.fondoVerdeClaro);
+	ctx.restore();
+}
+
 // El paracaídas abierto sobre el héroe: domo de gajos verde, blanco y dorado, que se mece un poco
 function dibujarParacaidas(x, pie) {
 	const r = 62 * S;
@@ -623,9 +690,9 @@ function dibujarMision(m) {
 				ax,
 				piso - altoA,
 				"¡Llegaste a la cima!",
-				mi.paracaidas ? "Paracaídas puesto: da un paso al vacío" : `Tírate, o baja en paracaídas (${esTactil ? "Hablar" : "Enter"})`,
+				mi.paracaidas ? "Paracaídas listo: da un paso al vacío" : "Tírate, o ve por el paracaídas →",
 				300,
-				175
+				195
 			);
 		else dibujarPuntoMision(ax, "A", (mi.a && mi.a.letrero) || "Punto A", mi.paso === "buscar", altoA);
 		if (!mi.nubes.length) {
@@ -650,8 +717,12 @@ function dibujarMision(m) {
 		if (mi.paso === "pedir" || mi.paso === "llevar") dibujarGlobo(bx, arriba, "!", "#ffe066");
 		else if (mi.paso === "listo") dibujarFolderMision(bx + 22 * S, piso - 70 * S, 0.7);
 	}
+	// La celda del paracaídas, junto a la cima (aparece con la licencia)
+	if (mi.celda && mi.celda.vis > 0.02) dibujarCeldaParacaidas(mi, piso);
 	// El paracaídas, ya abierto (cayendo con él puesto)
 	if (mi.paracaidas && !heroeEnSuelo() && heroe.velY < 0) dibujarParacaidas(heroe.x - camara, piso - heroe.y * S);
+	// Ya agarrado y todavía en tierra: la mochila a la espalda
+	else if (mi.paracaidas) dibujarMochilaParacaidas(heroe.x - camara - heroe.dir * 20 * S, piso - heroe.y * S - 46 * S);
 	// Lo que lleva el héroe, flotando sobre su cabeza
 	if (mi.paso === "llevar") dibujarFolderMision(heroe.x - camara, piso - heroe.y * S - 150 * S + Math.sin(tiempo * 5) * 3 * S, 1);
 }
