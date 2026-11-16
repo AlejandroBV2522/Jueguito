@@ -22,9 +22,10 @@
 const FRASES_FONDO = ["jaja", "☕", "♪", "¡Qué bien!", "♥", "¿Y tú?", "¡Claro!", "jeje", "¡Salud!", "¡Ja ja ja!", "¡Qué rico!", "¡Eso!"];
 
 // Quién puede contar una plática: una persona del equipo (los compañeros de
-// las oficinas, con nombre y apellido), no la gente del camino de Talento
-// (Buena Vibra, Creativa...) ni los invitados sin nombre
-const NOMBRE_PERSONA = /^\p{Lu}\p{Ll}+( \p{Lu}\p{Ll}+)+$/u;
+// las oficinas, con su nombre: con o sin apellido, porque a los secundarios
+// se les quitó), no la gente del camino de Talento (Buena Vibra,
+// Creativa...), ni los roles ("Líder de Calidad"), ni los invitados sin nombre
+const NOMBRE_PERSONA = /^\p{Lu}\p{Ll}+( \p{Lu}\p{Ll}+)*$/u;
 const esPersonaDelEquipo = (n) => !npcs.includes(n) && NOMBRE_PERSONA.test(n.nombre || "");
 const primerNombre = (n) => n.nombre.split(" ")[0];
 
