@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Solo se permite cargar archivos de este mismo proyecto: nada de terceros. -->
+    <!-- Solo se permite cargar archivos de este mismo proyecto: nada de terceros.
+         connect-src es la excepción: el backend (juego/base/api.js → API_BASE). Si
+         API_BASE cambia al desplegar, esta dirección debe cambiar junto con ella. -->
     <meta http-equiv="Content-Security-Policy"
-          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+          content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src http://127.0.0.1:8000; base-uri 'none'; form-action 'none'">
     <title>Camino a Celaque</title>
     <link rel="stylesheet" href="style.css">
     <script defer src="config.js"></script>
@@ -47,6 +49,7 @@
     <script defer src="juego/camino/decoracion-cueva.js"></script>
     <script defer src="juego/base/estado.js"></script>
     <script defer src="juego/interfaz/interfaz.js"></script>
+    <script defer src="juego/base/api.js"></script>
     <script defer src="juego/interfaz/dialogos.js"></script>
     <script defer src="juego/interfaz/estadisticas.js"></script>
     <script defer src="juego/interfaz/repaso.js"></script>
@@ -145,6 +148,11 @@
             <span id="nombre-pregunta"></span>
             <input id="nombre-jugador" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Escribe tu nombre">
         </label>
+        <!-- Obligatorio: el juego necesita el servidor (juego/base/api.js) para guardar el progreso -->
+        <label id="correo-etiqueta" class="campo-nombre" for="correo-jugador">
+            <span>Tu correo</span>
+            <input id="correo-jugador" type="email" maxlength="120" autocomplete="off" spellcheck="false" placeholder="tu.correo@celaque.com">
+        </label>
         <!-- Para quien no juega seguido (juego/base/ajustes.js) -->
         <button id="btn-facil" class="interruptor" role="switch" aria-checked="false">
             <span class="interruptor-riel" aria-hidden="true"><span class="interruptor-bola"></span></span>
@@ -172,6 +180,15 @@
             <p class="ayuda-controles solo-teclado"><kbd>←</kbd><kbd>→</kbd> Caminar · <kbd>Espacio</kbd> Saltar · <kbd>Q</kbd> Correr · <kbd>E</kbd> Hablar</p>
             <p class="ayuda-controles solo-tactil">Usa los botones de la pantalla para caminar, saltar, correr y hablar.</p>
             <button id="ayuda-cerrar" class="boton boton-grande">¡A jugar! <span class="boton-icono" aria-hidden="true">▶</span></button>
+        </div>
+    </div>
+
+    <!-- Sin esto no se puede jugar: el servidor guarda el progreso (juego/base/api.js) -->
+    <div id="sin-conexion" hidden role="alertdialog" aria-modal="true" aria-labelledby="sin-conexion-titulo">
+        <div class="carta sin-conexion-carta">
+            <h2 id="sin-conexion-titulo">Sin conexión con el servidor</h2>
+            <p id="sin-conexion-texto">No se pudo conectar con el servidor. Tu progreso no se puede guardar hasta que vuelva la conexión.</p>
+            <button id="sin-conexion-reintentar" class="boton boton-grande">Reintentar</button>
         </div>
     </div>
 

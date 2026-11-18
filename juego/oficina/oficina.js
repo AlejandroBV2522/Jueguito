@@ -148,6 +148,7 @@ function mostrarPreguntaTerminal(m) {
 function responderTerminal(indice, m, btn) {
 	if (btn.disabled) return;
 	const p = preguntasDe(m)[m.preguntaActual];
+	enviarIntentoJuego(m.nombre, p.pregunta, [indice]);
 	if (indice !== p.correcta) {
 		btn.classList.add("incorrecta");
 		btn.disabled = true;

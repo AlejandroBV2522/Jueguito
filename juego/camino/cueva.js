@@ -243,6 +243,7 @@ function abrirPregunta(enemigo) {
 
 function responder(indice, enemigo) {
 	const p = enemigo.preguntas[enemigo.preguntaActual];
+	enviarIntentoJuego(moduloTalento ? moduloTalento.nombre : "Talento", p.pregunta, [indice]);
 	if (indice === p.correcta) {
 		sonar("acierto");
 		// Cierra la caja ya, para que se vea la pelea en el canvas

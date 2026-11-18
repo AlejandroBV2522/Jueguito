@@ -19,6 +19,11 @@ const ui = {
 	btnAyuda: $("btn-ayuda"),
 	nombreJugador: $("nombre-jugador"),
 	nombreEtiqueta: $("nombre-etiqueta"),
+	correoJugador: $("correo-jugador"),
+	correoEtiqueta: $("correo-etiqueta"),
+	sinConexion: $("sin-conexion"),
+	sinConexionTexto: $("sin-conexion-texto"),
+	sinConexionReintentar: $("sin-conexion-reintentar"),
 	victoriaNombre: $("victoria-nombre"),
 	victoriaModulos: $("victoria-modulos"),
 	victoriaFecha: $("victoria-fecha"),
@@ -75,6 +80,7 @@ $("victoria-texto").textContent = CFG.textos.victoriaTexto;
 $("victoria-bienvenida").textContent = CFG.textos.bienvenida || "¡Bienvenido a Celaque!";
 $("nombre-pregunta").textContent = CFG.textos.pideNombre || "Tu nombre";
 let nombreJugador = ""; // se pide en el mapa antes de entrar al primer mundo
+let correoJugador = ""; // opcional: si se llena, sincroniza el progreso con el servidor (juego/base/api.js)
 document.title = CFG.textos.titulo;
 
 const esTactil = window.matchMedia("(pointer: coarse)").matches;
