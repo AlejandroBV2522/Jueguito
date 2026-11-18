@@ -25,6 +25,12 @@ function actualizarAves(dt, activas) {
 	for (const a of aves) {
 		a.x += a.dir * a.vel * S * dt - dCam * 0.35; // vuelo + parallax
 		a.fase += dt * a.aleteo;
+		// Asustada (en el mapa, al pasarle el puntero): aletea rápido y sube
+		if (a.susto > 0) {
+			a.susto = Math.max(0, a.susto - dt);
+			a.fase += dt * a.aleteo * 1.5;
+			a.y -= 70 * S * dt * a.susto;
+		}
 	}
 	aves = aves.filter((a) => a.x > -150 * S && a.x < W + 150 * S);
 	proximaBandada -= dt;

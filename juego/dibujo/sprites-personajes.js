@@ -93,23 +93,46 @@ for (const clave in CUADROS_CORRER) {
 const RUTA_MASCARAS = RUTA_PERSONAJE + "mascaras/";
 const ZONAS_NPC = { casco: "Casco", chaleco: "Chaleco", pantalon: "Pantalon", pelo: "Pelo" };
 const CUERPOS_NPC = {
-	chico: { letra: "H", meta: SPRITES_HEROE_CHICO.quieto, lum: { casco: 0.295, chaleco: 0.532, pantalon: 0.16, pelo: 0.129 } },
-	chica: { letra: "M", meta: SPRITES_HEROE_CHICA.quieto, lum: { casco: 0.266, chaleco: 0.5, pantalon: 0.141, pelo: 0.121 } },
+	chico: { letra: "H", sprites: SPRITES_HEROE_CHICO, lum: { casco: 0.295, chaleco: 0.532, pantalon: 0.16, pelo: 0.129 } },
+	chica: { letra: "M", sprites: SPRITES_HEROE_CHICA, lum: { casco: 0.266, chaleco: 0.5, pantalon: 0.141, pelo: 0.121 } },
 };
-for (const c of Object.values(CUERPOS_NPC)) {
-	c.mascaras = {};
-	for (const z in ZONAS_NPC) c.mascaras[z] = cargarImagen(RUTA_MASCARAS + "Personaje" + c.letra + ZONAS_NPC[z] + ".png");
+// Poses de los NPC: la foto y el nombre de sus máscaras. Las de caminar
+// salen de tools/mascaras_npc.py y la de sentado (armada desde la de pie,
+// con las piernas dobladas) de tools/pose_sentado.py, que también da sus
+// medidas: "regazo" es la fila de arriba de los muslos (ahí va una mesa),
+// "asiento" la de abajo (ahí va la banca) y "proporcion" el ancho entre el
+// alto de la foto (es más ancha: las rodillas salen hacia adelante). La cara
+// queda donde estaba, así que la barba también. Las de platicar (el
+// antebrazo doblado, de tools/pose_platica.py) son la foto de pie con
+// otro brazo: usan sus mismas máscaras y medidas.
+const POSES_NPC = { quieto: "", caminando: "Caminando", caminando2: "Caminando2", sentado: "Sentado", platica1: "", platica2: "" };
+const SENTADO_NPC = {
+	chico: { archivo: "PersonajeHSentado.png", anclaX: 0.349, arriba: 0.0163, abajo: 0.8027, regazo: 0.5443, asiento: 0.625, proporcion: 1344 / 1536 },
+	chica: { archivo: "PersonajeMSentado.png", anclaX: 0.3352, arriba: 0.0254, abajo: 0.8014, regazo: 0.541, asiento: 0.651, proporcion: 1344 / 1536 },
+};
+for (const [clave, c] of Object.entries(CUERPOS_NPC)) {
+	c.poses = {};
+	for (const [pose, sufijo] of Object.entries(POSES_NPC)) {
+		const archivo = pose === "sentado" ? SENTADO_NPC[clave].archivo : pose.startsWith("platica") ? `Personaje${c.letra}Platica${pose.slice(-1)}.png` : "";
+		const base = pose === "sentado" ? SENTADO_NPC[clave] : c.sprites[pose] || c.sprites.quieto;
+		const meta = archivo ? { ...base, archivo, cargando: cargarImagen(RUTA_PERSONAJE + archivo) } : base;
+		const mascaras = {};
+		for (const z in ZONAS_NPC) mascaras[z] = cargarImagen(RUTA_MASCARAS + "Personaje" + c.letra + sufijo + ZONAS_NPC[z] + ".png");
+		c.poses[pose] = { meta, mascaras };
+	}
 }
 const ALTO_FOTO_NPC = 420; // resolución del lienzo teñido (sobra para su tamaño en pantalla)
 
-// Devuelve (y guarda en el NPC) el lienzo con la foto ya teñida, o null
-// si las imágenes todavía no terminan de cargar.
-function fotoNpc(n) {
-	if (n.foto) return n.foto;
+// Devuelve (y guarda en el NPC) el lienzo con la foto ya teñida en esa
+// pose, o null si las imágenes todavía no terminan de cargar.
+function fotoNpc(n, pose = "quieto") {
+	n.fotos = n.fotos || {};
+	if (n.fotos[pose]) return n.fotos[pose];
 	const cuerpo = CUERPOS_NPC[n.apariencia.cuerpo] || CUERPOS_NPC.chico;
-	const base = cuerpo.meta.cargando.elemento;
+	const { meta, mascaras } = cuerpo.poses[pose] || cuerpo.poses.quieto;
+	const base = meta.cargando.elemento;
 	if (!base) return null;
-	for (const z in ZONAS_NPC) if (!cuerpo.mascaras[z].elemento) return null;
+	for (const z in ZONAS_NPC) if (!mascaras[z].elemento) return null;
 
 	const h = ALTO_FOTO_NPC;
 	const w = Math.round((h * base.naturalWidth) / base.naturalHeight);
@@ -137,12 +160,44 @@ function fotoNpc(n) {
 		c.fillStyle = tinte;
 		c.fillRect(0, 0, w, h);
 		c.globalCompositeOperation = "destination-in";
-		c.drawImage(cuerpo.mascaras[z].elemento, 0, 0, w, h);
+		c.drawImage(mascaras[z].elemento, 0, 0, w, h);
 		g.drawImage(capa, 0, 0);
 	}
-	if (conBarba(n)) dibujarBarbaNpc(g, w, h, n.apariencia.pelo);
-	n.foto = { lienzo, meta: cuerpo.meta };
-	return n.foto;
+	// La barba está medida en la cara de la foto de pie: sentado, la cara
+	// solo bajó; caminando cambia de lugar (son chicos, del fondo: sin barba)
+	if (conBarba(n) && !pose.startsWith("caminando")) dibujarBarbaNpc(g, w, h, n.apariencia.pelo);
+	n.fotos[pose] = { lienzo, meta, escaladas: new Map() };
+	return n.fotos[pose];
+}
+
+// La foto ya achicada al tamaño en que se dibuja (con buena calidad, una
+// sola vez). Achicarla en cada cuadro desde 420 px de alto la hacía
+// "chispear" al moverse la cámara (la gente del fondo temblaba al correr).
+function fotoEscalada(f, ancho, alto) {
+	const clave = Math.round(alto * DPR);
+	let c = f.escaladas.get(clave);
+	if (!c) {
+		if (f.escaladas.size > 6) f.escaladas.clear(); // cambió el tamaño de la pantalla
+		c = document.createElement("canvas");
+		c.width = Math.max(1, Math.round(ancho * DPR));
+		c.height = clave;
+		const g = c.getContext("2d");
+		g.imageSmoothingQuality = "high";
+		// Por pasos de la mitad: así el achicado no se salta pixeles
+		let fuente = f.lienzo;
+		while (fuente.height / 2 > c.height) {
+			const medio = document.createElement("canvas");
+			medio.width = Math.round(fuente.width / 2);
+			medio.height = Math.round(fuente.height / 2);
+			const gm = medio.getContext("2d");
+			gm.imageSmoothingQuality = "high";
+			gm.drawImage(fuente, 0, 0, medio.width, medio.height);
+			fuente = medio;
+		}
+		g.drawImage(fuente, 0, 0, c.width, c.height);
+		f.escaladas.set(clave, c);
+	}
+	return c;
 }
 
 // ¿Este NPC lleva barba? (config.js → barbas)
@@ -160,8 +215,8 @@ function conBarba(n) {
 const BARBA_NPC = [[484, 245], [476, 280], [492, 312], [520, 336], [545, 348], [565, 346], [582, 332], [590, 318], [578, 311], [555, 307], [535, 303], [518, 297], [504, 282], [496, 250]];
 const BIGOTE_NPC = [[538, 292], [560, 286], [584, 284], [588, 289], [566, 293], [540, 297]];
 function dibujarBarbaNpc(g, w, h, pelo) {
-	const kx = w / 1024;
 	const ky = h / 1536;
+	const kx = ky; // en px de la foto de pie (las más anchas, como sentado, solo crecen a la derecha)
 	g.save();
 	g.globalCompositeOperation = "source-atop";
 	g.filter = `blur(${(2.5 * kx).toFixed(2)}px)`;

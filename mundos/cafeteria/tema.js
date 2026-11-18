@@ -9,7 +9,7 @@ window.TEMAS_OFICINA.cafe = {
 	// Cada cosa que flota (ya centrada en su lugar: dibuja alrededor de 0, 0)
 	flotante(f) {
 		if (f.tipo) {
-			// Nota de música (la de Heber llega hasta acá)
+			// Nota de música (la de Eber llega hasta acá)
 			ctx.fillStyle = COLORES.verdeInstitucional;
 			ctx.font = `700 ${30 * S}px ${FUENTE}`;
 			ctx.textAlign = "center";

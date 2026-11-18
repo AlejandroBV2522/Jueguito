@@ -115,8 +115,8 @@ window.PREGUNTAS_CUEVA = [
         pregunta: "¿Cuáles son los valores de Celaque?",
         opciones: [
           "Buenas Vibras, Logrador, Creatividad y Comunicación Directa.",
-          "Rapidez, Silencio, Obediencia y Rutina.",
-          "Competencia, Individualismo, Prisa y Perfección.",
+          "Buenas Vibras, Logrador, Creatividad y Trabajo en Equipo.",
+          "Respeto, Logrador, Innovación y Comunicación Directa.",
         ],
         correcta: 0,
       },

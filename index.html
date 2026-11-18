@@ -39,6 +39,7 @@
     <script defer src="juego/base/imagenes.js"></script>
     <script defer src="juego/camino/npcs-y-andamios.js"></script>
     <script defer src="juego/oficina/mision.js"></script>
+    <script defer src="juego/oficina/taller-ia.js"></script>
     <script defer src="juego/oficina/modulos.js"></script>
     <script defer src="juego/oficina/obra.js"></script>
     <script defer src="juego/oficina/fabrica.js"></script>
@@ -68,6 +69,7 @@
     <script defer src="juego/oficina/dibujo-obra.js"></script>
     <script defer src="juego/oficina/dibujo-fabrica.js"></script>
     <script defer src="juego/oficina/estaciones.js"></script>
+    <script defer src="juego/oficina/dibujo-taller-ia.js"></script>
     <script defer src="juego/oficina/virus.js"></script>
     <script defer src="juego/oficina/cafeteria.js"></script>
     <script defer src="juego/dibujo/coleccionables.js"></script>
@@ -101,6 +103,15 @@
             <p id="barra-nombre"></p>
             <canvas id="corazones-jugador" aria-hidden="true"></canvas>
         </div>
+    </div>
+
+    <!-- Las teclas para mover al personaje, debajo de la barrita (solo con teclado) -->
+    <div id="ayuda-teclas" hidden aria-label="Teclas del juego">
+        <p><kbd>←</kbd><kbd>→</kbd> Caminar</p>
+        <p><kbd>↑</kbd><kbd>Espacio</kbd> Saltar</p>
+        <p><kbd>↓</kbd> Agacharse</p>
+        <p><kbd>Q</kbd> Correr</p>
+        <p><kbd>E</kbd> Hablar</p>
     </div>
 
     <!-- Caja de diálogo (el texto se llena desde config.js) -->

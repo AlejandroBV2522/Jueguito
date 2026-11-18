@@ -110,11 +110,12 @@ function iniciarOficina(m) {
 	petalos = [];
 	oficinaActual = m;
 	virusOficina.oficina = null; // los virus (Seguridad) empiezan de cero
+	tallerIA.oficina = null; // el taller de prompts (IA) espera de nuevo, con las rondas ya hechas
 	// La obra de Proyectos: ya completa o en modo de pruebas, se repite desde el principio
 	if (m.oficina.exterior && (m.completo || modoPruebas())) reiniciarObra(m);
 	vidas = clamp(vidas, 1, vidasMax()); // los corazones vienen del mundo anterior
 	m.visitado = true;
-	m.saludoDj = false; // Heber vuelve a saludar en su terraza (cafeteria.js)
+	m.saludoDj = false; // Eber vuelve a saludar en su terraza (cafeteria.js)
 	if (m.aviso) avisos.push({ texto: m.aviso, t: 0 }); // mundo.js → aviso (la Cafetería no tiene quien te reciba)
 	m.terminalVisitada = m.completo; // ya completo: la computadora no se abre sola
 	heroe.x = m.oficina.x0 + 170; // fuera del alcance de la puerta: Espacio salta, no sale

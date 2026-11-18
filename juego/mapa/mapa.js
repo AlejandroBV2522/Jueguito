@@ -35,6 +35,7 @@ const mapa = {
 	dir: 1,
 	// Huevo de pascua: un delfín que salta del mar de vez en cuando
 	delfin: { t: -1, x: 0, y: 0, dir: 1, proxima: 6, cx: 0, cy: 0 },
+	bajoPuntero: null, // ave, delfín, nube o isla bajo el puntero (dibujo-mapa.js → punteroMapa)
 };
 // Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
 // los mundos, pero ninguno queda completado: se pueden jugar una y otra vez.
@@ -124,6 +125,7 @@ function reiniciarProgreso(todo) {
 		m.oficina.companeros.forEach((n) => (n.hablado = false));
 		reiniciarObra(m);
 		if (m.mision) reiniciarMision(m.mision);
+		reiniciarTallerIA(m);
 	});
 	nivel = 0;
 	vidas = VIDAS_BASE;
@@ -399,6 +401,7 @@ function abrirCarta(i) {
 						? `Escucha lo que te explica ${m.oficina.companeros[0].nombre}.`
 						: "Conversa con todo el equipo, que está aquí reunido.",
 				...(m.mision ? [`Lleva ${m.mision.objeto} del punto A al punto B.`] : []),
+				...(m.taller ? [`Arma ${m.taller.rondas.length} prompts en el taller: atrapa un Rol, unas Instrucciones, un Contexto y un Objetivo.`] : []),
 				...(m.mision && (m.mision.etapas || []).some((e) => (e.preguntas || []).length) ? ["En cada banderín de la torre responde unas preguntas: así se forman las nubes que siguen."] : []),
 				ESTACIONES[m.oficina.estacion].carta(preguntasDe(m).length, m),
 			];

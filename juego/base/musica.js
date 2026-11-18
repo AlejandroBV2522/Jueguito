@@ -28,7 +28,7 @@ const PISTAS_MUSICA = {
 			"C3 . G3 . C3 . G3 .  A2 . E3 . A2 . E3 .  F2 . C3 . F2 . C3 .  G2 . D3 . G2 . D3 .  " +
 			"C3 . G3 . C3 . G3 .  A2 . E3 . A2 . E3 .  F2 . C3 . F2 . C3 .  G2 . D3 . C3 - - .",
 	},
-	// El parlante de Heber en la Cafetería: más alegre
+	// El parlante de Eber en la Cafetería: más alegre
 	// Acordes: F · Dm · Bb · C | F · Dm · Bb · C-F
 	cafe: {
 		bpm: 126,
@@ -69,7 +69,7 @@ for (const p of Object.values(PISTAS_MUSICA)) {
 const musica = { permitida: false, pista: null, salida: null, partes: [], volumen: 1, agachadaHasta: 0 };
 
 // Qué pista va ahora y qué tan fuerte (0..1): en la Cafetería, la de
-// Heber, más fuerte cerca de su terraza
+// Eber, más fuerte cerca de su terraza
 function pistaActual() {
 	const of = oficinaActual && oficinaActual.oficina;
 	if (of && of.estacion === "cafe") {

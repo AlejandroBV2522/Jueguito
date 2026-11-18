@@ -43,7 +43,7 @@ Otras reglas:
 | `base/` | `utilidades.js` | `clamp`, `lerp`, `mezclar`, `conAlfa`, `crearAzar`… |
 | `base/` | `ajustes.js` | sonido y modo fácil del jugador (`ajustes`, `modoFacil`), guardados aparte del progreso |
 | `base/` | `sonido.js` | `sonar(nombre)`: el archivo propio del efecto si hay (`config.js → sonidos`, en `assets/sonidos/`), si no, el armado con Web Audio |
-| `base/` | `musica.js` | música 8 bits de fondo, compuesta para el juego y tocada con Web Audio (sin archivos); baja sola cuando suena un efecto; en la Cafetería, la del parlante de Heber |
+| `base/` | `musica.js` | música 8 bits de fondo, compuesta para el juego y tocada con Web Audio (sin archivos); baja sola cuando suena un efecto; en la Cafetería, la del parlante de Eber |
 | `base/` | `paleta.js` | de gris a color según el avance |
 | `base/` | `canvas.js` | el canvas, `ctx`, `S` y `redimensionar` |
 | `base/` | `imagenes.js` | `cargarImagen` y los edificios de llegada (Atlas) |
@@ -52,6 +52,7 @@ Otras reglas:
 | `oficina/` | `obra.js` | la obra al aire libre de Proyectos (`oficina.exterior`): zonas, riesgos que cierran el paso, sus preguntas (propias, no usan las de la Cueva), los peligros que se mueven, la zanja con su plataforma y la talanquera (`zonas[].peligro`), avance del edificio |
 | `oficina/` | `torre-preguntas.js` | las preguntas de los banderines de la torre de nubes (`mision.etapas[].preguntas`): se abren con E y, al acabarlas, se forman las nubes de la etapa siguiente; va después de `controles.js` |
 | `oficina/` | `fabrica.js` | los obstáculos de la fábrica de Procesos (`oficina.vista: "fabrica"`): la prensa y la cinta transportadora (`zonas[].peligro`); usa las zonas y los riesgos de `obra.js` |
+| `oficina/` | `taller-ia.js` | el taller de prompts de IA (`mundo.js → taller`): rondas en que un dron suelta piezas Rol, Instrucciones, Contexto y Objetivo y trampas que se esquivan; la cámara quieta en la ronda; va antes de `modulos.js` |
 | `oficina/` | `modulos.js` | `modulos` (un objeto por mundo), muebles, compañeros, `ESTACIONES` |
 | `camino/` | `letreros.js` | dónde van los letreros de obra |
 | `dibujo/` | `sprites-enemigos.js`, `sprites-personajes.js` | imágenes de enemigos, héroe y NPC |
@@ -75,8 +76,9 @@ Otras reglas:
 | `oficina/` | `dibujo-obra.js` | la obra: fondo, suelo, escena de cada zona, puertas, inauguración y los 5 riesgos |
 | `oficina/` | `dibujo-fabrica.js` | la fábrica: fondo, piso, escenas de las 5 zonas, sus 5 riesgos, la prensa, la cinta y la gran máquina (se suma a las tablas de `dibujo-obra.js`) |
 | `oficina/` | `estaciones.js` | robots de IA (tierra, aéreo, humanoide) y antivirus que se arman |
+| `oficina/` | `dibujo-taller-ia.js` | dibujo del taller de prompts: el dron (el robot aéreo de `estaciones.js`), las piezas, la pared de luz con la pantalla del modelo y el tablero RICO |
 | `oficina/` | `virus.js` | virus que cruzan la oficina y se esquivan agachándose o saltando (`oficina.virus`) y anzuelos de phishing que bajan del techo (`oficina.anzuelos`), en Seguridad |
-| `oficina/` | `cafeteria.js` | la Cafetería (mundo extra): la barra de café y su easter egg (`beberCafe`), la gente conversando al fondo y la terraza de Heber |
+| `oficina/` | `cafeteria.js` | la Cafetería (mundo extra): la barra de café y su easter egg (`beberCafe`), la gente conversando al fondo (sus pláticas de la Inducción, que se escuchan con E: `platicaCerca`, `abrirPlatica`), la barista, la azotea al atardecer (sol, nubes, guacamaya, palomas) y la terraza de Eber |
 | `dibujo/` | `coleccionables.js` | guacamayas ocultas en el aire (`mundo.js → coleccionables`), cómo se ven y se recogen; chispas (`lanzarChispas`) |
 | `camino/` | `dibujo-letreros.js` | dibujo de los letreros de obra |
 | `dibujo/` | `aves.js`, `guias.js`, `personajes.js` | aves, guías y enemigos, héroe y NPC |

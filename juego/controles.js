@@ -24,10 +24,15 @@ window.addEventListener("keydown", (e) => {
 	// Preguntas (antivalores de Talento, computadora de la oficina y repaso
 	// final): se responde con 1, 2, 3..., o se baja y sube con ↑ ↓ (o W, S)
 	// y se elige con Enter; también con clic
+	// Las preguntas de los riesgos de la obra y la fábrica tienen su propio
+	// listener (juego/oficina/obra.js): si también se respondieran aquí, una
+	// tecla equivocada contaría dos veces y quitaría 2 corazones
+	const preguntaDeObra = typeof preguntaObra !== "undefined" && preguntaObra.enemigo;
 	const opcionesAbiertas =
 		estado === "pregunta" && !ui.opciones.hidden ? ui.opciones : estado === "terminal" ? ui.terminalOpciones : estado === "repaso" ? uiRepaso.opciones : null;
 	if (opcionesAbiertas) {
 		if (/^[1-9]$/.test(e.key)) {
+			if (preguntaDeObra) return; // la responde obra.js
 			const btn = opcionesAbiertas.children[Number(e.key) - 1];
 			if (btn) btn.click();
 			return;
@@ -272,7 +277,16 @@ ui.carta.addEventListener("click", (e) => {
 // agua aleja la vista.
 canvas.addEventListener("click", (e) => {
 	if (estado !== "mapa" || mapa.carta) return;
-	if (delfinEnPantalla(e.clientX, e.clientY)) return avisoMapa("¡Encontraste al delfín de Celaque!");
+	// Animales, islas y nubes: suenan y se mueven (dibujo-mapa.js). Una
+	// nube sobre un mundo no le quita el clic al mundo.
+	const cosa = cosaEnMapa(e.clientX, e.clientY);
+	const animal = cosa === mapa.delfin || aves.includes(cosa);
+	if (cosa && (animal || mundoEnPantalla(e.clientX, e.clientY) < 0)) {
+		tocarCosaMapa(cosa, true);
+		mapa.bajoPuntero = cosa;
+		if (cosa === mapa.delfin) avisoMapa("¡Encontraste al delfín de Celaque!");
+		return;
+	}
 	const i = mundoEnPantalla(e.clientX, e.clientY);
 	if (mapa.foco >= 0 && mapa.zObjetivo === 1) {
 		if (i === mapa.foco) abrirCarta(i);
@@ -281,8 +295,10 @@ canvas.addEventListener("click", (e) => {
 	} else if (i >= 0) elegirMundo(i);
 });
 canvas.addEventListener("pointermove", (e) => {
-	mapa.hover = estado === "mapa" && !mapa.carta ? mundoEnPantalla(e.clientX, e.clientY) : -1;
-	canvas.style.cursor = mapa.hover >= 0 ? "pointer" : "";
+	const enMapa = estado === "mapa" && !mapa.carta;
+	mapa.hover = enMapa ? mundoEnPantalla(e.clientX, e.clientY) : -1;
+	const sobreCosa = enMapa && e.pointerType !== "touch" && punteroMapa(e.clientX, e.clientY);
+	canvas.style.cursor = mapa.hover >= 0 || sobreCosa ? "var(--cursor-mano)" : "";
 });
 ui.terminalSalir.addEventListener("click", cerrarTerminal);
 ui.dialogo.addEventListener("click", avanzarDialogo);

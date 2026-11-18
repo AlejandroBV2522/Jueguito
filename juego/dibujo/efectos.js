@@ -112,6 +112,7 @@ function dibujar(dt) {
 		dibujarObstaculos(oficinaActual.oficina.obstaculos);
 		dibujarMision(oficinaActual);
 		dibujarColeccionables();
+		dibujarTallerIA(oficinaActual); // el taller de prompts de IA (dibujo-taller-ia.js)
 		dibujarCompaneros(oficinaActual);
 		if (obra) dibujarRiesgosObra(oficinaActual);
 		dibujarHeroe(t);
