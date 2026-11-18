@@ -32,6 +32,41 @@ npx serve . -l 5500
 Luego abre `http://localhost:5500` en el navegador. (Si el puerto está
 ocupado, usa otro número, por ejemplo 5501.)
 
+## Desplegar a producción
+
+Es un sitio 100% estático (sin build ni `npm install`): para publicarlo
+alcanza con subir esta carpeta completa tal cual a donde vaya a vivir
+(subdominio, hosting estático, etc.). No hay nada que compilar.
+
+Lo único que **sí** hay que tocar antes de subirlo es apuntar el juego al
+backend correcto (por defecto apunta a `http://127.0.0.1:8000`, para
+desarrollo local). Son dos lugares, y tienen que decir exactamente lo mismo:
+
+1. `API_BASE` en [`juego/base/api.js`](juego/base/api.js#L10):
+   ```js
+   const API_BASE = "http://127.0.0.1:8000"; // cambiar por la URL real del backend
+   ```
+2. El `connect-src` del `Content-Security-Policy`, en la etiqueta `<meta>`
+   dentro del `<head>` de [`index.html`](index.html#L9):
+   ```html
+   content="... connect-src http://127.0.0.1:8000; ..."
+   ```
+   Este bloquea por defecto cualquier conexión que no sea a ese dominio
+   exacto (es justamente lo que evita cargar cosas de terceros). Si se
+   olvida cambiar aquí aunque ya se haya cambiado `API_BASE`, el navegador
+   bloquea igual las peticiones al backend.
+
+Y, del lado del backend (`Backend_Camino_a_Celaque/`, ver su propio
+`README.md`): agregar el dominio final de este frontend a `CORS_ORIGINS` en
+su `.env` — si no, el backend rechaza las peticiones aunque las dos cosas de
+arriba estén bien. No hace falta que el frontend ya esté publicado para
+hacer esto: alcanza con saber de antemano cuál va a ser su dominio.
+
+**Para confirmar que quedó bien conectado:** abrir el juego ya publicado,
+escribir nombre y correo y entrar a un mundo. Si aparece el diálogo "Sin
+conexión", algo de los tres puntos de arriba no coincide (revisar la consola
+del navegador: ahí se ve si el error es de CORS o de conexión rechazada).
+
 ## Controles
 
 | Acción                  | Teclado                   | Celular            |
