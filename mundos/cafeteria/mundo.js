@@ -36,6 +36,7 @@ window.MODULOS.push({
     terraza: 4, // la terraza alta queda sobre el 4.º mueble (una mesa)
     // ✏️ Borrador: frases de Eber, por revisar con él
     dj: {
+      id: 42, // tbl_personaje.id
       nombre: "Eber",
       cuerpo: "chico",
       frases: ["¡Qué bueno que subiste a la terraza! Aquí arriba suena mejor ♪", "¿Gustas sopita? ¡Está buenísima!", "Llegaste con energía de café, ¡eso!"],

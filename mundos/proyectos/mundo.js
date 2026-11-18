@@ -45,6 +45,7 @@ window.MODULOS.push({
           // ✏️ Revisar con Nazareth Gallardo
           preguntas: [
             {
+              id: 7, // tbl_pregunta.id
               pregunta: "Cada mes tu equipo prepara el mismo reporte de ventas. ¿Es un proyecto?",
               opciones: [
                 "Sí, porque requiere mucho esfuerzo y participa todo el equipo.",
@@ -56,6 +57,7 @@ window.MODULOS.push({
               explicacion: "Un proyecto tiene un inicio y un fin definidos, y busca un resultado único.",
             },
             {
+              id: 8, // tbl_pregunta.id
               pregunta: "¿Cuál de estas NO es una característica clave de un proyecto?",
               opciones: [
                 "Es temporal: tiene un inicio y un fin definidos.",
@@ -75,6 +77,7 @@ window.MODULOS.push({
         escena: "caseta",
         // Los compañeros de cada zona tienen nombres genéricos (✏️ se pueden cambiar por personas del equipo)
         companero: {
+          id: 13, // tbl_personaje.id
           nombre: "Estefanía",
           cuerpo: "chica",
           dialogo: [
@@ -92,6 +95,7 @@ window.MODULOS.push({
           color: "#3f9b5a",
           preguntas: [
             {
+              id: 9, // tbl_pregunta.id
               pregunta: "Tu área necesita un proyecto nuevo de Sistemas. ¿Cómo lo solicitas?",
               opciones: [
                 "Le escribo a alguien de Sistemas por WhatsApp o por correo para que lo anote.",
@@ -103,6 +107,7 @@ window.MODULOS.push({
               explicacion: "Se llenan todos los campos de la solicitud y se adjunta el requerimiento detallado del alcance.",
             },
             {
+              id: 10, // tbl_pregunta.id
               pregunta: "Además del nombre y el objetivo, ¿qué más pide el formulario «S - Nuevo Proyecto»?",
               opciones: [
                 "Solo el nombre del responsable; lo demás lo define Sistemas más adelante, en la reunión.",
@@ -123,6 +128,7 @@ window.MODULOS.push({
         // Una zanja muy ancha para saltarla y una plataforma sobre rieles que va y viene: hay que subirse, dejarse llevar y bajarse al otro lado
         peligro: { tipo: "zanja" },
         companero: {
+          id: 14, // tbl_personaje.id
           nombre: "Keydi",
           cuerpo: "chica",
           dialogo: [
@@ -138,6 +144,7 @@ window.MODULOS.push({
           color: "#d9b44a",
           preguntas: [
             {
+              id: 11, // tbl_pregunta.id
               pregunta: "¿Para qué sirven los criterios de aceptación del requerimiento?",
               opciones: [
                 "Decidir qué departamento va a pagar el proyecto completo.",
@@ -156,6 +163,7 @@ window.MODULOS.push({
         tema: "El flujo de la solicitud",
         escena: "reunion",
         companero: {
+          id: 15, // tbl_personaje.id
           nombre: "Carlos",
           cuerpo: "chico",
           dialogo: [
@@ -174,6 +182,7 @@ window.MODULOS.push({
           color: "#5aa86a",
           preguntas: [
             {
+              id: 12, // tbl_pregunta.id
               pregunta: "Ordena los primeros pasos de la solicitud de un proyecto.",
               orden: [
                 "El área solicitante crea la solicitud en Wrike",
@@ -185,6 +194,7 @@ window.MODULOS.push({
               explicacion: "Después Sistemas prepara los documentos, registra el proyecto, genera su ID y planifica el cronograma.",
             },
             {
+              id: 13, // tbl_pregunta.id
               pregunta: "Sistemas entrega su propuesta de solución y el área solicitante la rechaza. ¿Qué pasa?",
               opciones: [
                 "Se registra igual en el portafolio y se planifica el cronograma.",
@@ -205,6 +215,7 @@ window.MODULOS.push({
         // Una talanquera (compuerta de obra) que baja y sube: hay que esperar a que se abra
         peligro: { tipo: "talanquera" },
         companero: {
+          id: 16, // tbl_personaje.id
           nombre: "Líder de Calidad",
           cuerpo: "chico",
           dialogo: [
@@ -223,11 +234,13 @@ window.MODULOS.push({
           color: "#c0443a",
           preguntas: [
             {
+              id: 14, // tbl_pregunta.id
               pregunta: "Ordena las 5 fases de la gestión de un proyecto.",
               orden: ["Inicio", "Planificación", "Ejecución", "Monitoreo y control", "Cierre"],
               explicacion: "En cada fase se entregan cosas distintas: del alcance definido al acta de cierre.",
             },
             {
+              id: 15, // tbl_pregunta.id
               pregunta: "Durante las pruebas del proyecto, ¿qué se espera del área solicitante?",
               opciones: [
                 "Que esté atenta a las reuniones de seguimiento y participe en la ejecución de pruebas.",
@@ -239,6 +252,7 @@ window.MODULOS.push({
               explicacion: "También debe facilitar los insumos y realizar la revisión y aprobación por todos los niveles.",
             },
             {
+              id: 16, // tbl_pregunta.id
               pregunta: "¿Cómo se oficializa el cierre de un proyecto?",
               opciones: [
                 "Cuando el equipo deja de usar el sistema.",
@@ -255,6 +269,7 @@ window.MODULOS.push({
     ],
   },
   anfitrion: {
+    id: 12, // tbl_personaje.id
     nombre: "Nazareth Gallardo",
     cuerpo: "chica",
     // ✏️ Revisar con Nazareth Gallardo

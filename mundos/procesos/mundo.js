@@ -35,6 +35,7 @@ window.MODULOS.push({
           color: "#7a8f8c",
           preguntas: [
             {
+              id: 17, // tbl_pregunta.id
               pregunta: "¿En qué se dividen los procesos de Celaque?",
               opciones: [
                 "En fáciles y difíciles.",
@@ -45,6 +46,7 @@ window.MODULOS.push({
               explicacion: "Los secuenciales no tienen frecuencia: se activan cuando pasa un evento.", // lám. 4
             },
             {
+              id: 18, // tbl_pregunta.id
               pregunta: "Uno de los principios de los procesos es OHIO. ¿Qué significa?",
               opciones: [
                 "Hazlo solo una vez: no repetir trabajo que el proceso ya resuelve.",
@@ -63,6 +65,7 @@ window.MODULOS.push({
         escena: "moldes",
         peligro: { tipo: "prensa" },
         companero: {
+          id: 23, // tbl_personaje.id
           nombre: "Juan",
           cuerpo: "chico",
           dialogo: [
@@ -77,6 +80,7 @@ window.MODULOS.push({
           color: "#8a7f9a",
           preguntas: [
             {
+              id: 19, // tbl_pregunta.id
               pregunta: "Vas a duplicar una plantilla en Wrike. ¿Qué datos debes indicar?",
               opciones: [
                 "El nombre, la carpeta de archivo, el asignado (si no tiene) y la fecha.",
@@ -94,6 +98,7 @@ window.MODULOS.push({
         nombre: "Ventanilla de pedidos",
         escena: "ventanilla",
         companero: {
+          id: 24, // tbl_personaje.id
           nombre: "Encargada de Solicitudes", // ✏️ nombre genérico
           cuerpo: "chica",
           dialogo: [
@@ -108,6 +113,7 @@ window.MODULOS.push({
           color: "#b08a5a",
           preguntas: [
             {
+              id: 20, // tbl_pregunta.id
               pregunta: "¿Cuándo se genera una solicitud en Wrike?",
               opciones: [
                 "Cada mes, en una fecha fija.",
@@ -118,6 +124,7 @@ window.MODULOS.push({
               explicacion: "A diferencia de un proceso recurrente, la solicitud no se repite sola: la origina un evento.", // lám. 16
             },
             {
+              id: 21, // tbl_pregunta.id
               pregunta: "Ordena los pasos para emitir una solicitud en Wrike.",
               orden: [
                 "Clic en el signo + arriba a la derecha y elegir «Solicitud»",
@@ -135,6 +142,7 @@ window.MODULOS.push({
         escena: "etiquetado",
         peligro: { tipo: "cinta" },
         companero: {
+          id: 25, // tbl_personaje.id
           nombre: "Andrea",
           cuerpo: "chica",
           dialogo: [
@@ -149,6 +157,7 @@ window.MODULOS.push({
           color: "#6f8f9e",
           preguntas: [
             {
+              id: 22, // tbl_pregunta.id
               pregunta: "Arma el código de un proceso, como T-RH-4-1: ¿en qué orden van sus piezas?",
               orden: ["Departamento (T)", "Macroproceso (RH)", "Recurrencia (4)", "Nivel de revisión (1)"],
               explicacion: "T-RH-4-1: departamento, macroproceso, recurrencia y nivel de revisión.", // lám. 20
@@ -161,6 +170,7 @@ window.MODULOS.push({
         nombre: "Control de calidad",
         escena: "calidad",
         companero: {
+          id: 26, // tbl_personaje.id
           nombre: "Franklin",
           cuerpo: "chico",
           dialogo: [
@@ -176,6 +186,7 @@ window.MODULOS.push({
           escala: 1.15,
           preguntas: [
             {
+              id: 23, // tbl_pregunta.id
               pregunta: "Terminaste de ejecutar un proceso. ¿Cuál es la buena práctica?",
               opciones: [
                 "Marcarlo completado sin dejar nada escrito.",
@@ -186,6 +197,7 @@ window.MODULOS.push({
               explicacion: "La evidencia deja constancia de que el proceso se cumplió.", // lám. 24
             },
             {
+              id: 24, // tbl_pregunta.id
               pregunta: "Un proceso todavía tiene subtareas activas. ¿Lo puedes marcar como completado?",
               opciones: [
                 "Sí, si ya pasó su fecha.",
@@ -196,6 +208,7 @@ window.MODULOS.push({
               explicacion: "No se completan los procesos que tienen subtareas activas.", // lám. 25
             },
             {
+              id: 25, // tbl_pregunta.id
               pregunta: "Al correr un proceso, ¿cómo debe quedar su fecha?",
               opciones: [
                 "En un solo día específico (por ejemplo, 10 mar).",
@@ -211,6 +224,7 @@ window.MODULOS.push({
     ],
   },
   anfitrion: {
+    id: 22, // tbl_personaje.id
     nombre: "Astrid Coello",
     cuerpo: "chica",
     // ✏️ Revisar con Astrid Coello

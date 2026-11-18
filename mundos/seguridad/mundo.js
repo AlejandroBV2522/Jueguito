@@ -25,6 +25,7 @@ window.MODULOS.push({
   // empiezan cuando hablaste con todos, y el resto del camino es esquivar
   oficina: { vista: "montana", tema: "seguridad", estacion: "antivirus", virus: true, anzuelos: true, largo: 5200, companerosAlInicio: true, edificio: "Acacias San Ignacio" },
   anfitrion: {
+    id: 34, // tbl_personaje.id
     nombre: "Sergio Aguiriano",
     cuerpo: "chico",
     // ✏️ Borrador: revisar con Sergio Aguiriano
@@ -48,6 +49,7 @@ window.MODULOS.push({
   comentarios: [
     {
       // Nivel 1 · Personal: accesos
+      id: 35, // tbl_personaje.id
       nombre: "Mario",
       cuerpo: "chico",
       dialogo: [
@@ -58,6 +60,7 @@ window.MODULOS.push({
     },
     {
       // Nivel 2 · Local: tu equipo
+      id: 36, // tbl_personaje.id
       nombre: "Melida",
       cuerpo: "chica",
       dialogo: [
@@ -68,6 +71,7 @@ window.MODULOS.push({
     },
     {
       // Nivel 3 · Perimetral: la red
+      id: 37, // tbl_personaje.id
       nombre: "Allan",
       cuerpo: "chico",
       dialogo: [
@@ -82,6 +86,7 @@ window.MODULOS.push({
   preguntas: [
     {
       // ✏️ Borrador: revisar con Sergio Aguiriano · Nivel 1, personal
+      id: 36, // tbl_pregunta.id
       pregunta: "¿Dónde guardas tus contraseñas del trabajo?",
       opciones: [
         "En una nota pegada en el monitor.",
@@ -93,6 +98,7 @@ window.MODULOS.push({
     },
     {
       // ✏️ Borrador · Nivel 2, local
+      id: 37, // tbl_pregunta.id
       pregunta: "Necesitas un programa que no tienes en tu computadora. ¿Qué haces?",
       opciones: [
         "Lo pido: en el perfil corporativo solo se instalan aplicaciones con permiso.",
@@ -104,6 +110,7 @@ window.MODULOS.push({
     },
     {
       // ✏️ Borrador · Nivel 3, perimetral
+      id: 38, // tbl_pregunta.id
       pregunta: "Una página te pide tu usuario y contraseña. ¿Qué revisas primero?",
       opciones: [
         "Que cargue rápido y se vea profesional.",
@@ -115,6 +122,7 @@ window.MODULOS.push({
     },
     {
       // ✏️ Borrador · Nivel 3, perimetral (phishing)
+      id: 39, // tbl_pregunta.id
       pregunta: "Te llega un correo urgente pidiendo tu contraseña. ¿Qué haces?",
       opciones: [
         "La envío rápido: si es urgente, mejor no atrasar.",
@@ -126,6 +134,7 @@ window.MODULOS.push({
     },
     {
       // ✏️ Borrador · Nivel 1, personal (contraseñas)
+      id: 40, // tbl_pregunta.id
       pregunta: "¿Puedes usar la misma contraseña para el correo, Wrike y tu banco?",
       opciones: [
         "Sí, si es larga y difícil de adivinar.",

@@ -25,6 +25,7 @@
 
 window.NPCS = [
   {
+    id: 2, // tbl_personaje.id (coincide con bd/datos_mundos.sql)
     nombre: "Buena Vibra",
     posicion: 0.25, // justo después de la puerta de luz (zona de planos)
     apariencia: {
@@ -39,6 +40,7 @@ window.NPCS = [
     ],
   },
   {
+    id: 3, // tbl_personaje.id
     nombre: "Creativa",
     posicion: 0.42,
     apariencia: {
@@ -53,6 +55,7 @@ window.NPCS = [
     ],
   },
   {
+    id: 4, // tbl_personaje.id
     nombre: "Logrador",
     posicion: 0.57,
     apariencia: {
@@ -67,6 +70,7 @@ window.NPCS = [
     ],
   },
   {
+    id: 5, // tbl_personaje.id
     nombre: "Directo",
     posicion: 0.72,
     apariencia: {
@@ -82,6 +86,7 @@ window.NPCS = [
     ],
   },
   {
+    id: 6, // tbl_personaje.id
     nombre: "Valiente",
     posicion: 0.86,
     apariencia: {

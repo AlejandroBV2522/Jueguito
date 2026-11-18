@@ -37,6 +37,7 @@ window.PREGUNTAS_CUEVA = [
     // Colores tomados de la hoja de referencia (assets/edificios/GuardianEntrada.png)
     apariencia: { piel: "#F4C79A", ropa: "#3A3A3A", pantalon: "#1F2937", pelo: "#1F2937", sombrero: "#9CA3AF" },
     // Valor: Buenas Vibras
+    id: 1, // tbl_pregunta.id
     pregunta: "Un compañero llega desanimado porque algo le salió mal. ¿Qué haces?",
     opciones: [
       "Me quejo con él de todo lo que sale mal en la oficina.",
@@ -52,6 +53,7 @@ window.PREGUNTAS_CUEVA = [
     escala: 0.6, // el más débil: el más chico
     apariencia: { piel: "#7a6a8a", ropa: "#3a2a4a", pantalon: "#241a30", pelo: "#120c18", sombrero: null },
     // Valor: Comunicación Directa
+    id: 2, // tbl_pregunta.id
     pregunta: "No estás de acuerdo con cómo un compañero hizo una tarea. ¿Qué haces?",
     opciones: [
       "Se lo digo directamente a él, con respeto, y buscamos juntos cómo mejorarla.",
@@ -67,6 +69,7 @@ window.PREGUNTAS_CUEVA = [
     escala: 1.05,
     apariencia: { piel: "#d8d8d0", ropa: "#8a8a80", pantalon: "#5a5a50", pelo: "#e8e8e0", sombrero: null },
     // Valor: Creatividad
+    id: 3, // tbl_pregunta.id
     pregunta: "Ves que una tarea de tu área se podría hacer de una forma más sencilla. ¿Qué haces?",
     opciones: [
       "Nada: siempre se ha hecho así.",
@@ -83,6 +86,7 @@ window.PREGUNTAS_CUEVA = [
     factorFrente: 0.55, // se acerca más al pelear (ver anchoFrenteEnemigo en juego/camino/cueva.js)
     apariencia: { piel: "#8a7a6a", ropa: "#6a5a4a", pantalon: "#4a3e34", pelo: "#3a3028", sombrero: null },
     // Valor: Logrador (y los ORCs de la inducción)
+    id: 4, // tbl_pregunta.id
     pregunta: "Tienes un ORC difícil este trimestre. ¿Qué haría un Logrador?",
     opciones: [
       "Lo dejo para el final y entrego lo que salga.",
@@ -103,6 +107,7 @@ window.PREGUNTAS_CUEVA = [
     // El sueño y los 4 valores, tal como vienen en la inducción
     preguntas: [
       {
+        id: 5, // tbl_pregunta.id
         pregunta: "¿Cuál es el sueño de Celaque?",
         opciones: [
           "Construir el edificio más alto del país.",
@@ -112,6 +117,7 @@ window.PREGUNTAS_CUEVA = [
         correcta: 1,
       },
       {
+        id: 6, // tbl_pregunta.id
         pregunta: "¿Cuáles son los valores de Celaque?",
         opciones: [
           "Buenas Vibras, Logrador, Creatividad y Comunicación Directa.",

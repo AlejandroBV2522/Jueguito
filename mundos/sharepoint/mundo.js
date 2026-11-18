@@ -19,6 +19,7 @@ window.MODULOS.push({
   logo: "assets/logos/proyecto-atlas.png",
   oficina: { vista: "nubes", tema: "documentos", edificio: "Torre Atlas", piso: 40 },
   anfitrion: {
+    id: 32, // tbl_personaje.id
     nombre: "Luis Morán",
     cuerpo: "chico",
     // ✏️ Revisar con Luis Morán
@@ -62,6 +63,7 @@ window.MODULOS.push({
         texto: "SharePoint es la plataforma de Microsoft para almacenar, organizar, compartir y acceder a información desde cualquier dispositivo. Es el repositorio principal de Celaque: cada área tiene una carpeta por departamento.", // lám. 4
         preguntas: [
           {
+            id: 26, // tbl_pregunta.id
             pregunta: "¿Qué es SharePoint?",
             opciones: [
               "El programa de correo y calendario de Microsoft.",
@@ -80,6 +82,7 @@ window.MODULOS.push({
         texto: "Los documentos se guardan y se comparten en bibliotecas centralizadas, con control de versiones: puedes rastrear los cambios y recuperar una versión anterior.", // lám. 6
         preguntas: [
           {
+            id: 27, // tbl_pregunta.id
             pregunta: "¿Para qué sirve el historial de versiones de un documento?",
             opciones: [
               "Para bloquear el documento y que nadie lo edite.",
@@ -97,6 +100,7 @@ window.MODULOS.push({
         texto: "Su gran ventaja: los equipos trabajan juntos un mismo documento en tiempo real.", // lám. 8
         preguntas: [
           {
+            id: 28, // tbl_pregunta.id
             pregunta: "¿Cuál es una gran ventaja de SharePoint para el trabajo en equipo?",
             opciones: [
               "Que varias personas pueden trabajar juntas el mismo documento, en tiempo real.",
@@ -115,6 +119,7 @@ window.MODULOS.push({
         texto: "Se pueden separar sitios por empresa, cada uno con sus propios miembros, para compartir noticias y recursos y personalizarlo según lo que necesite.", // lám. 10
         preguntas: [
           {
+            id: 29, // tbl_pregunta.id
             pregunta: "Tienes documentos de empresas distintas. ¿Qué te permite SharePoint?",
             opciones: [
               "Mezclarlos en una sola biblioteca para que todos los vean.",
@@ -134,12 +139,14 @@ window.MODULOS.push({
         texto: "Letra Arial 10 u 11. Título en negrita, arriba a la izquierda y sin subrayar. Encabezados del cuadro en negrita y de color (el azul es buena opción). Sin cuadrícula, sin pestañas vacías y con comas en los valores mayores a mil.",
         preguntas: [
           {
+            id: 30, // tbl_pregunta.id
             pregunta: "¿Qué letra se usa en las hojas de Excel?",
             opciones: ["Times New Roman 14.", "Arial 10 u 11.", "Calibri 16."],
             correcta: 1,
             explicacion: "Arial 10 u 11 es el primer parámetro de formato de Excel.", // Parámetros Excel, 1
           },
           {
+            id: 31, // tbl_pregunta.id
             pregunta: "¿Cómo debe quedar el título de una hoja de Excel?",
             opciones: [
               "En negrita, en la esquina superior izquierda y sin subrayar.",
@@ -150,6 +157,7 @@ window.MODULOS.push({
             explicacion: "Después del título se dejan una o dos filas antes del cuadro.", // Parámetros Excel, 2 a 4
           },
           {
+            id: 32, // tbl_pregunta.id
             pregunta: "¿Cómo se ponen los encabezados del cuadro en Excel?",
             opciones: [
               "Con el mismo formato que los datos, sin resaltar.",
@@ -160,6 +168,7 @@ window.MODULOS.push({
             explicacion: "Así se distinguen del resto y la hoja se lee más fácil.", // Parámetros Excel, 10
           },
           {
+            id: 33, // tbl_pregunta.id
             pregunta: "¿Qué se hace con las pestañas de un archivo de Excel?",
             opciones: [
               "Se dejan todas, por si acaso.",
@@ -196,6 +205,7 @@ window.MODULOS.push({
   preguntasPorModulo: 2,
   preguntas: [
     {
+      id: 34, // tbl_pregunta.id
       pregunta: "¿Qué gestionas en tu correo empresarial de Outlook?",
       opciones: [
         "Los documentos y bibliotecas de tu departamento.",
@@ -206,6 +216,7 @@ window.MODULOS.push({
       explicacion: "En el calendario agendas tus reuniones y capacitaciones con un nuevo evento.", // lám. 12 y 13
     },
     {
+      id: 35, // tbl_pregunta.id
       pregunta: "Con la licencia también tienes Microsoft Teams. ¿Para qué sirve?",
       opciones: [
         "Para chatear, tener reuniones y hablar con colaboradores de tu departamento o de otro.",

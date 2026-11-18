@@ -14,6 +14,8 @@ const CLAVE_COLA_INTENTOS = "camino-a-celaque:cola-intentos";
 
 let jugadorAPI = null; // { id, correo }, una vez que el servidor lo confirma
 let catalogoAPI = null; // Map "Mundo|enunciado" -> { id, respuestas: [{id, orden}, ...] }
+let catalogoPersonajes = new Map(); // Map id (tbl_personaje) -> { id, nombre, dialogos: [texto, ...] }
+let catalogoPreguntas = new Map(); // Map id (tbl_pregunta) -> { id, enunciado, explicacion, respuestas: [{orden, texto, es_correcta, posicion_correcta}, ...] }
 let catalogoCargando = null;
 let conexionAPI = true; // se corrige con la primera verificarSalud()
 let mundoPendiente = -1; // mundo que se quiso abrir sin conexión, para retomarlo al reconectar
@@ -119,7 +121,13 @@ function cargarCatalogoAPI() {
 		.then((mundos) => {
 			if (!mundos) return null;
 			const mapa = new Map();
-			for (const m of mundos) for (const p of m.preguntas) mapa.set(`${m.nombre}|${p.enunciado}`, p);
+			for (const m of mundos) {
+				for (const p of m.preguntas) {
+					mapa.set(`${m.nombre}|${p.enunciado}`, p);
+					catalogoPreguntas.set(p.id, p);
+				}
+				for (const per of m.personajes || []) catalogoPersonajes.set(per.id, per);
+			}
 			catalogoAPI = mapa;
 			return mapa;
 		})
@@ -128,6 +136,73 @@ function cargarCatalogoAPI() {
 			catalogoCargando = null;
 		});
 	return catalogoCargando;
+}
+
+// Reemplaza nombre y diálogo de un NPC ya creado (visual/posición se quedan
+// como están en el archivo del mundo) con lo que diga tbl_personaje/tbl_dialogo,
+// por su id. Si no hay conexión o ese id no está en la base, el NPC se queda
+// con el texto fijo que ya tenía (no rompe nada).
+function sincronizarPersonaje(npc) {
+	if (npc.id == null) return;
+	cargarCatalogoAPI().then(() => {
+		const p = catalogoPersonajes.get(npc.id);
+		if (!p) return;
+		npc.nombre = p.nombre;
+		if (p.dialogos && p.dialogos.length) npc.dialogo = p.dialogos;
+	});
+}
+
+// npcs: la gente del camino de Talento (juego/camino/npcs-y-andamios.js, que
+// carga antes que este archivo).
+npcs.forEach(sincronizarPersonaje);
+
+// modulos: los otros 6 mundos (juego/oficina/modulos.js, que también carga
+// antes que este archivo). Cada uno tiene su anfitrión/compañeros en
+// oficina.companeros, y el de la Cafetería además su dj en djNpc.
+for (const m of modulos) {
+	m.oficina.companeros.forEach(sincronizarPersonaje);
+	if (m.djNpc) sincronizarPersonaje(m.djNpc);
+}
+
+// Reemplaza el enunciado, la explicación, el texto de las opciones (o el
+// texto y el orden correcto, en las de ordenar) y cuál es la correcta de
+// una pregunta ya creada, con lo que diga tbl_pregunta/tbl_respuesta, por su
+// id (no por el texto: así sigue encontrándola aunque el enunciado cambie
+// en la base). Si no hay conexión o ese id no está en la base, la pregunta
+// se queda con el texto fijo que ya tenía.
+function sincronizarPregunta(p) {
+	if (!p || p.id == null || (!p.opciones && !p.orden)) return;
+	cargarCatalogoAPI().then(() => {
+		const c = catalogoPreguntas.get(p.id);
+		if (!c || !c.respuestas || !c.respuestas.length) return;
+		p.pregunta = c.enunciado;
+		if (c.explicacion) p.explicacion = c.explicacion;
+		const ordenadas = [...c.respuestas].sort((a, b) => a.orden - b.orden);
+		if (p.orden) {
+			const nuevo = new Array(ordenadas.length);
+			const completo = ordenadas.every((r) => {
+				if (!r.posicion_correcta || r.posicion_correcta < 1 || r.posicion_correcta > ordenadas.length) return false;
+				nuevo[r.posicion_correcta - 1] = r.texto;
+				return true;
+			});
+			if (completo && nuevo.every(Boolean)) p.orden = nuevo;
+		} else {
+			p.opciones = ordenadas.map((r) => r.texto);
+			const correcta = ordenadas.findIndex((r) => r.es_correcta);
+			if (correcta >= 0) p.correcta = correcta;
+		}
+	});
+}
+
+// Preguntas de los 7 mundos: la Cueva de Talento (enemigos), las de ordenar
+// y las del jefe de cada obra (modulos[].oficina.enemigos), las de la torre
+// de nubes de Plataformas (modulos[].mision.etapas) y las de computadora
+// (modulos[].preguntas).
+enemigos.forEach((en) => en.preguntas.forEach(sincronizarPregunta));
+for (const m of modulos) {
+	(m.preguntas || []).forEach(sincronizarPregunta);
+	if (m.oficina.enemigos) m.oficina.enemigos.forEach((en) => en.preguntas.forEach(sincronizarPregunta));
+	if (m.mision && m.mision.etapas) m.mision.etapas.forEach((e) => (e.preguntas || []).forEach(sincronizarPregunta));
 }
 
 function leerColaIntentos() {
