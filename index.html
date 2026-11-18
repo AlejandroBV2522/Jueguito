@@ -155,6 +155,8 @@
             <button class="opcion" data-personaje="chico" role="radio"><canvas></canvas><span></span></button>
             <button class="opcion" data-personaje="chica" role="radio"><canvas></canvas><span></span></button>
         </div>
+        <!-- Con nombre y correo ya guardados, se oculta el formulario y se saluda (juego/mapa/mapa.js → sesionBloqueada) -->
+        <p id="saludo-jugador" hidden></p>
         <label id="nombre-etiqueta" class="campo-nombre" for="nombre-jugador">
             <span id="nombre-pregunta"></span>
             <input id="nombre-jugador" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Escribe tu nombre">

@@ -21,6 +21,7 @@ const ui = {
 	nombreEtiqueta: $("nombre-etiqueta"),
 	correoJugador: $("correo-jugador"),
 	correoEtiqueta: $("correo-etiqueta"),
+	saludoJugador: $("saludo-jugador"),
 	sinConexion: $("sin-conexion"),
 	sinConexionTexto: $("sin-conexion-texto"),
 	sinConexionReintentar: $("sin-conexion-reintentar"),

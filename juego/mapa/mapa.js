@@ -40,6 +40,10 @@ const mapa = {
 // Con el nombre de pruebas (config.js → nombrePruebas) se abren todos
 // los mundos, pero ninguno queda completado: se pueden jugar una y otra vez.
 const modoPruebas = () => !!CFG.nombrePruebas && nombreJugador.toLowerCase() === CFG.nombrePruebas.toLowerCase();
+// Una vez que ya entró a jugar (o volvió con progreso guardado), el nombre y
+// el correo se quedan fijos: se ocultan los campos y se saluda en su lugar.
+// Para jugar con otro nombre/correo está "Empezar de cero".
+let sesionBloqueada = false;
 // Los mundos extra (mundo.js → extra, como la Cafetería) son opcionales:
 // se abren al completar el de "abreDespues", no suben de nivel ni cuentan
 // para terminar la capacitación.
@@ -102,6 +106,7 @@ function cargarProgreso() {
 		ui.correoJugador.value = correoJugador;
 		if (correoJugador) crearJugadorAPI(); // recupera (o crea) el jugador en el servidor
 		if (modoPruebas()) modulos.forEach((m) => (m.completo = false));
+		sesionBloqueada = !!nombreJugador && (!!correoJugador || modoPruebas());
 	}
 	mapa.sel = mapa.heroeMundo = primerPendiente();
 }
@@ -116,6 +121,7 @@ function reiniciarProgreso(todo) {
 		ui.correoJugador.value = "";
 		jugadorAPI = null;
 		elegirPersonaje(CLAVES_PERSONAJE[0]);
+		sesionBloqueada = false;
 	}
 	modulos.forEach((m) => {
 		m.completo = false;
@@ -225,6 +231,10 @@ function ocultarMapaUI() {
 // arriba, solo con un mundo acercado.
 function actualizarPanelMapa() {
 	if (estado !== "mapa") return ocultarMapaUI();
+	ui.nombreEtiqueta.hidden = sesionBloqueada;
+	ui.correoEtiqueta.hidden = sesionBloqueada;
+	ui.saludoJugador.hidden = !sesionBloqueada;
+	if (sesionBloqueada) ui.saludoJugador.textContent = `¡Hola, ${nombreJugador}!`;
 	const general = mapa.foco < 0 && mapa.zObjetivo === 0;
 	ui.panel.classList.toggle("oculto", !general);
 	ui.mapaAyuda.hidden = !general;
@@ -312,6 +322,7 @@ async function elegirMundo(i) {
 	if (!desbloqueado(i)) return avisoCandado(i);
 	if (faltaNombre()) return;
 	if (modoPruebas()) {
+		sesionBloqueada = true;
 		mapa.heroeMundo = i;
 		mapa.foco = i;
 		mapa.zObjetivo = 1;
@@ -331,6 +342,7 @@ async function elegirMundo(i) {
 			return;
 		}
 	}
+	sesionBloqueada = true;
 	mapa.heroeMundo = i;
 	mapa.foco = i;
 	mapa.zObjetivo = 1;
