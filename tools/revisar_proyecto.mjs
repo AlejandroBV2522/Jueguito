@@ -148,18 +148,31 @@ npcs.forEach((n, i) => (!n.nombre || !Array.isArray(n.dialogo) || !n.dialogo.len
 cueva.forEach((e, i) => (e.preguntas || [e]).forEach((p, k) => revisarPregunta(p, `antivalor ${i + 1} (${e.nombre}), pregunta ${k + 1}`)));
 
 // 4. Nada externo y assets que existen. La única excepción es el backend:
-// API_BASE en juego/base/api.js, que tiene que ser exactamente la misma
-// dirección del connect-src de index.html (si no, el navegador bloquea cada pedido).
+// API_BASE en juego/base/api.js, y el connect-src de index.html tiene que
+// dejarlo pasar (si no, el navegador bloquea cada pedido). Si API_BASE tiene
+// ruta (ej. https://servidor/celaque-api), el connect-src va con la barra final
+// ("https://servidor/celaque-api/"): sin ella el navegador solo permite esa
+// ruta exacta y bloquea /celaque-api/salud. También vale el dominio solo.
 const API_JS = "juego/base/api.js";
 const apiBase = existsSync(join(RAIZ, API_JS)) ? (leer(API_JS).match(/const API_BASE = "([^"]+)"/) || [])[1] : null;
+let permitidasApi = [];
 if (apiBase) {
+	const origen = /^https?:\/\/[^/]+/.exec(apiBase)?.[0] || apiBase;
+	const tieneRuta = apiBase.length > origen.length && apiBase !== origen + "/";
+	const conBarra = apiBase.endsWith("/") ? apiBase : apiBase + "/";
+	permitidasApi = [apiBase, conBarra, origen];
 	const connectSrc = (leer("index.html").match(/connect-src\s+(https?:\/\/[^;"\s]+|'none')/) || [])[1] || "";
-	if (connectSrc !== apiBase) problemas.push(`index.html: connect-src (${connectSrc || "falta"}) debe ser igual a API_BASE de ${API_JS} (${apiBase})`);
+	const valido = connectSrc === origen || connectSrc === conBarra || (!tieneRuta && connectSrc === apiBase);
+	if (!valido)
+		problemas.push(
+			`index.html: connect-src (${connectSrc || "falta"}) no deja llegar a API_BASE de ${API_JS} (${apiBase}): debe ser ` +
+				(tieneRuta ? `"${conBarra}" (con la barra final) o "${origen}"` : `"${apiBase}"`)
+		);
 }
 for (const s of [...scripts, "index.html", "style.css"].filter((s) => existsSync(join(RAIZ, s)))) {
 	const texto = leer(s);
 	for (const m of texto.matchAll(/https?:\/\/[^\s"'`);]+/g)) {
-		if (apiBase && m[0] === apiBase && (s === API_JS || s === "index.html")) continue;
+		if (permitidasApi.includes(m[0]) && (s === API_JS || s === "index.html")) continue;
 		problemas.push(`${s}: dirección externa ${m[0]}`);
 	}
 	const sinComentarios = texto.replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, "").replace(/^\s*\/\/.*$|\s\/\/.*$/gm, "");

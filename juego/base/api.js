@@ -7,6 +7,10 @@
 
 // Cambiar esta URL al desplegar el backend en otro lado (y el connect-src del
 // Content-Security-Policy en index.html, que debe permitir esta misma dirección).
+// Con ruta, sin barra al final aquí y CON barra en el connect-src:
+//   API_BASE = "https://desarrollo.apps-celaque.net/celaque-api"
+//   connect-src https://desarrollo.apps-celaque.net/celaque-api/
+// (node tools/revisar_proyecto.mjs avisa si no coinciden).
 const API_BASE = "http://127.0.0.1:8000";
 
 const CLAVE_JUGADOR_API = "camino-a-celaque:jugador-api";
