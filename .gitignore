@@ -10,3 +10,8 @@ assets/marca/
 capturas/
 bd/
 CONTEXTO.md
+
+# Secretos: nunca al repositorio (el .env del backend va en Backend_camino_a_celaque)
+.env
+.env.*
+!.env.example
