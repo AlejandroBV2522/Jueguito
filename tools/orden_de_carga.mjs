@@ -114,6 +114,10 @@ function recorrer(nodo, cargado, visto, donde, locales = new Set(), evento = fal
 		if (esFuncion(c)) recorrer(c.body, cargado, visto, donde, localesDe(c, locales), evento); // (() => { … })()
 		recorrer(c, cargado, visto, donde, locales, evento);
 		const despues = correDespues(nodo);
+		// "DOMContentLoaded" y "load" llegan cuando ya corrieron todos los <script defer>:
+		// ahí ya está declarado todo, así que lo que registran no se revisa.
+		const primero = nodo.arguments[0];
+		if (despues && primero && primero.type === "Literal" && (primero.value === "DOMContentLoaded" || primero.value === "load")) return;
 		for (const a of nodo.arguments) {
 			if (esFuncion(a)) recorrer(a.body, cargado, visto, donde || (despues ? `${nodo.loc.start.line}` : ""), localesDe(a, locales), evento || despues);
 			else {

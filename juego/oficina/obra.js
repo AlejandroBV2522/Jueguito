@@ -149,13 +149,16 @@ function armarOrdenObra(p, enemigo) {
 		btn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			if (btn.disabled) return;
-			elegidos.push(k);
 			if (k !== siguiente) {
 				btn.classList.add("incorrecta");
 				setTimeout(() => btn.classList.remove("incorrecta"), 600);
-				resolverPreguntaObra(false, enemigo, null, elegidos.slice());
+				// El intento fallido es lo que llevaba bien más el paso equivocado. Ese
+				// paso no se guarda en elegidos: si no, la respuesta final llevaría ids
+				// repetidos y el servidor la rechazaría.
+				resolverPreguntaObra(false, enemigo, null, [...elegidos, k]);
 				return;
 			}
+			elegidos.push(k);
 			siguiente++;
 			btn.disabled = true;
 			btn.classList.add("correcta");

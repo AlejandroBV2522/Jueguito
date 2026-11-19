@@ -81,7 +81,7 @@ $("victoria-texto").textContent = CFG.textos.victoriaTexto;
 $("victoria-bienvenida").textContent = CFG.textos.bienvenida || "¡Ya eres parte de Celaque!";
 $("nombre-pregunta").textContent = CFG.textos.pideNombre || "Tu nombre";
 let nombreJugador = ""; // se pide en el mapa antes de entrar al primer mundo
-let correoJugador = ""; // opcional: si se llena, sincroniza el progreso con el servidor (juego/base/api.js)
+let correoJugador = ""; // obligatorio (menos con el nombre de pruebas): identifica al jugador en el servidor (juego/base/api.js)
 document.title = CFG.textos.titulo;
 
 const esTactil = window.matchMedia("(pointer: coarse)").matches;

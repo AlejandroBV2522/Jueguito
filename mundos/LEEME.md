@@ -32,6 +32,20 @@ por el ventanal (`oficina.vista`) y las estaciones del robot y el antivirus
 
 Lo marcado con `✏️ Borrador` todavía debe revisarlo el área responsable.
 
+## Los `id` de la base de datos
+
+Las preguntas y los personajes llevan `id: N, // tbl_pregunta.id` o
+`// tbl_personaje.id`: es su fila en la base del backend. Con él:
+
+- el juego reemplaza el texto local por el de la base (`/catalogo`), si existe;
+- cada respuesta se guarda en el servidor (`/intentos`) a nombre del jugador.
+
+Una pregunta **sin** `id`, o con un `id` que no está en la base, se juega
+igual, pero sus respuestas no llegan al servidor. Al agregar una pregunta o un
+personaje: ponerle un `id` nuevo (que no se repita en ninguna carpeta) y
+agregar su fila en `bd/datos_mundos.sql` del backend. Si se cambia un texto
+aquí, hay que cambiarlo también en la base: si no, gana el de la base.
+
 ## Agregar un mundo nuevo
 
 1. Copia la carpeta de un mundo parecido (por ejemplo `proyectos/`) con el

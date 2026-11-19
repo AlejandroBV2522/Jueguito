@@ -44,8 +44,7 @@ const nombreComparable = (n) => String(n || "").trim().replace(/\.$/, "").replac
 const modoPruebas = () => {
 	const n = nombreComparable(nombreJugador);
 	return !!n && [CFG.nombrePruebas, ...(CFG.superUsuarios || [])].some((s) => s && nombreComparable(s) === n);
-};
-// Una vez que ya entró a jugar (o volvió con progreso guardado), el nombre y
+};// Una vez que ya entró a jugar (o volvió con progreso guardado), el nombre y
 // el correo se quedan fijos: se ocultan los campos y se saluda en su lugar.
 // Para jugar con otro nombre/correo está "Empezar de cero".
 let sesionBloqueada = false;
@@ -124,7 +123,7 @@ function reiniciarProgreso(todo) {
 		ui.nombreJugador.value = "";
 		correoJugador = "";
 		ui.correoJugador.value = "";
-		jugadorAPI = null;
+		olvidarJugadorAPI(); // la llave y el correo de la persona anterior no quedan en el navegador
 		elegirPersonaje(CLAVES_PERSONAJE[0]);
 		sesionBloqueada = false;
 	}

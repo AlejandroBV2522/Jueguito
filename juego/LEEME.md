@@ -63,6 +63,7 @@ Otras reglas:
 | `interfaz/` | `estadisticas.js` | anota qué preguntas salen y cuáles se fallan; ventana de estadísticas (solo con el nombre de pruebas) |
 | `interfaz/` | `repaso.js` | repaso final (una pregunta por módulo) y la constancia para imprimir o guardar en PDF |
 | `interfaz/` | `coleccion.js` | guacamayas encontradas (guardadas en el navegador) y el apartado "Colección" del mapa; con el nombre de pruebas, todas desbloqueadas |
+| `base/` | `api.js` | conexión con el backend (`API_BASE`, que debe ser igual al `connect-src` de `index.html`): crea al jugador por su correo y guarda su llave, baja `/catalogo` y con él reemplaza los textos de las preguntas y los NPC que tienen `id`, manda cada respuesta a `/intentos` con la llave (cola en el navegador si no hay conexión) y bloquea con "Sin conexión" si el servidor no responde. El nombre de pruebas juega sin servidor. Ver `Backend_camino_a_celaque/SEGURIDAD.md` |
 | `oficina/` | `oficina.js` | entrar y salir de la oficina, la terminal y sus preguntas |
 | `mapa/` | `mapa.js` | progreso guardado, `completarModulo`, carta, `entrarMundo`, `volverAlMapa` |
 | `camino/` | `cueva.js` | tubos, colisiones, peleas con antivalores, `accion` |
@@ -93,6 +94,12 @@ Otras reglas:
 
 ```bash
 node tools/revisar_proyecto.mjs        # scripts, sintaxis, orden de carga, datos, assets
-node tools/probar_juego.mjs <escenario> # juega y saca capturas
+node tools/probar_juego.mjs <escenario> # juega y saca capturas (siempre sin sonido)
 node tools/comparar_capturas.mjs       # si el cambio NO debe verse distinto
 ```
+
+Los escenarios con un jugador normal llevan el correo `prueba@celaque.net`
+(cambiarlo con `CORREO=...`) y juegan contra el backend en `API_BASE`: hay que
+tenerlo levantado y con el origen del juego en su `CORS_ORIGINS`. Con
+`PUERTO_WEB=5650` el puerto del juego queda fijo (si no, es al azar entre 5600
+y 5899). Los escenarios con el nombre de pruebas no necesitan backend.

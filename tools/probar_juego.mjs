@@ -31,6 +31,8 @@
 //   recorridos  cruza cada oficina hasta su computadora (captura cada 2 s)
 //   edificios  todos los mundos abiertos: mapa general y cada edificio acercado
 //   correr    8 cuadros de caminar y 8 de correr de cada personaje (recortados al héroe)
+//   ordenar   Proyectos: se equivoca en una pregunta de ordenar y la completa (con backend:
+//             la respuesta llega sin ids repetidos y la cola queda vacía)
 //   cafeteria  mundo extra: se abre tras Proyectos, la ficha va por la calle, el café,
 //             la terraza de Heber y su mayita, corazones guardados y Talento con el teclado
 //
@@ -59,7 +61,12 @@ const W = Number(process.env.ANCHO || 1366);
 const H = Number(process.env.ALTO || 768);
 const DPR = Number(process.env.DPR || 1);
 const MOVIL = process.env.MOVIL === "1";
-const PUERTO_WEB = 5600 + Math.floor(Math.random() * 300);
+// PUERTO_WEB=5650 lo fija (para que el backend de prueba lo tenga en CORS_ORIGINS)
+const PUERTO_WEB = Number(process.env.PUERTO_WEB) || 5600 + Math.floor(Math.random() * 300);
+// El juego pide correo junto al nombre y, con correo, juega contra el backend
+// (API_BASE en juego/base/api.js): sin backend levantado se queda en "Sin conexión".
+// El nombre de pruebas (Kojima) no llama al backend.
+const CORREO = process.env.CORREO || "prueba@celaque.net";
 const PUERTO_CDP = 9400 + Math.floor(Math.random() * 300);
 const CLAVE = "camino-a-celaque:progreso";
 const FIJO = process.env.RELOJ !== "real";
@@ -70,6 +77,33 @@ mkdirSync(salida, { recursive: true });
 // cambia): reemplaza requestAnimationFrame, setTimeout, performance.now, Date
 // y Math.random por versiones que solo avanzan con window.__avanzar(ms).
 // Las animaciones CSS también se pausan y se adelantan a mano.
+// La música y los efectos siguen corriendo (se prueban igual), pero nada suena.
+const SILENCIO = `(() => {
+	const Base = window.BaseAudioContext || window.AudioContext;
+	const d = Base && Object.getOwnPropertyDescriptor(Base.prototype, "destination");
+	if (d && d.get) {
+		const mudos = new WeakMap();
+		Object.defineProperty(Base.prototype, "destination", {
+			configurable: true,
+			get() {
+				let g = mudos.get(this);
+				if (!g) {
+					g = this.createGain();
+					g.gain.value = 0;
+					g.connect(d.get.call(this));
+					mudos.set(this, g);
+				}
+				return g;
+			},
+		});
+	}
+	const play = HTMLMediaElement.prototype.play;
+	HTMLMediaElement.prototype.play = function () {
+		this.muted = true;
+		return play.apply(this, arguments);
+	};
+})();`;
+
 const RELOJ_FIJO = `(() => {
 	let reloj = 0;
 	let sig = 1;
@@ -159,7 +193,8 @@ if (!navegador) {
 }
 const perfil = join(tmpdir(), `celaque-prueba-${PUERTO_CDP}`);
 const web = spawn(process.platform === "win32" ? "python" : "python3", ["-m", "http.server", String(PUERTO_WEB), "--bind", "127.0.0.1"], { cwd: RAIZ, stdio: "ignore" });
-const chrome = spawn(navegador, ["--headless=new", `--remote-debugging-port=${PUERTO_CDP}`, `--user-data-dir=${perfil}`, "--no-first-run", "--disable-gpu", "about:blank"], { stdio: "ignore" });
+// --mute-audio: la música y los efectos corren igual (se prueban), pero no suenan por los parlantes
+const chrome = spawn(navegador, ["--headless=new", "--mute-audio", `--remote-debugging-port=${PUERTO_CDP}`, `--user-data-dir=${perfil}`, "--no-first-run", "--disable-gpu", "about:blank"], { stdio: "ignore" });
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 let ws;
@@ -253,6 +288,7 @@ async function tecla(key, tipo) {
 const visible = (sel) => evalua(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); return !!e && !e.hidden && getComputedStyle(e).display !== "none"; })()`);
 const texto = (sel) => evalua(`(document.querySelector(${JSON.stringify(sel)}) || {}).textContent`);
 async function conProgreso(datos) {
+	if (datos.nombre && !("correo" in datos)) datos = { ...datos, correo: CORREO };
 	await evalua(`localStorage.setItem(${JSON.stringify(CLAVE)}, ${JSON.stringify(JSON.stringify(datos))})`);
 	await evalua(`localStorage.setItem("camino-a-celaque:ayuda-vista", "1")`); // sin el "Cómo se juega"
 	await cmd("Page.reload");
@@ -592,6 +628,9 @@ try {
 	await cmd("Runtime.enable");
 	await cmd("Log.enable");
 	await cmd("Page.enable");
+	// Siempre en silencio (además de --mute-audio): todo lo que el juego mande a
+	// los parlantes pasa por una ganancia 0 y los <audio> salen con muted.
+	await cmd("Page.addScriptToEvaluateOnNewDocument", { source: SILENCIO });
 	if (FIJO) await cmd("Page.addScriptToEvaluateOnNewDocument", { source: RELOJ_FIJO });
 	if (MOVIL) await cmd("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 2 });
 	await cmd("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: DPR, mobile: MOVIL });
@@ -616,6 +655,7 @@ try {
 		}
 		console.log("al cerrar la ayuda, el foco va al campo del nombre:", (await evalua("document.activeElement.id")) === "nombre-jugador");
 		await cmd("Input.insertText", { text: "Prueba" });
+		await evalua(`(() => { const i = document.querySelector("#correo-jugador"); i.value = ${JSON.stringify(CORREO)}; i.dispatchEvent(new Event("input")); })()`);
 		await tecla("Enter");
 		await tecla("Enter");
 		await paso(1300);
@@ -1387,6 +1427,26 @@ try {
 		await foto("guias");
 		console.log(`mundo ${i + 1} completado:`, await jugarOficina(240000));
 		console.log("corazones al final:", await evalua("vidas"), "de", await evalua("vidasMax()"));
+	} else if (escenario === "ordenar") {
+		// Proyectos: se equivoca dos veces en una pregunta de ordenar (el mismo paso) y
+		// después la completa. Con el backend levantado, la respuesta final no debe llevar
+		// ids repetidos (el servidor la rechazaría) ni dejar nada en la cola.
+		await conProgreso({ completos: ["Talento"], nivel: 1, personaje: "chico", nombre: "Prueba" });
+		await entrarAlMundo(1);
+		const info = await evalua(`(() => { const ens = oficinaActual.oficina.enemigos; for (let a = 0; a < ens.length; a++) for (let b = 0; b < ens[a].preguntas.length; b++) if (ens[a].preguntas[b].orden) return [a, b, ens[a].preguntas[b].orden.length]; return null; })()`);
+		console.log("pregunta de ordenar (riesgo, pregunta, pasos):", info);
+		await evalua(`(() => { const en = oficinaActual.oficina.enemigos[${info[0]}]; en.preguntaActual = ${info[1]}; abrirPreguntaObra(en); })()`);
+		await paso(200);
+		await evalua(`(() => { const b = [...document.querySelectorAll("#dialogo-opciones button")].find((b) => b.dataset.paso === "1"); b.click(); b.click(); })()`);
+		await paso(700);
+		for (let k = 0; k < info[2]; k++) {
+			await evalua(`[...document.querySelectorAll("#dialogo-opciones button")].find((b) => b.dataset.paso === "${k}").click()`);
+			await paso(100);
+		}
+		await espera(2500);
+		await foto("tras-orden");
+		console.log("sin conexión visible:", await visible("#sin-conexion"));
+		console.log("cola de intentos:", await evalua(`localStorage.getItem("camino-a-celaque:cola-intentos") || "[]"`));
 	} else if (escenario === "correr") {
 		// Un ciclo de correr (y uno de caminar) de cada personaje, cuadro por cuadro
 		for (const personaje of ["chico", "chica"]) {

@@ -11,8 +11,15 @@ const API_BASE = "http://127.0.0.1:8000";
 
 const CLAVE_JUGADOR_API = "camino-a-celaque:jugador-api";
 const CLAVE_COLA_INTENTOS = "camino-a-celaque:cola-intentos";
+const ESPERA_API_MS = 8000; // si el servidor no contesta en este tiempo, cuenta como "sin conexión"
 
-let jugadorAPI = null; // { id, correo }, una vez que el servidor lo confirma
+// Una página https no puede hablar con una API http (el navegador lo bloquea
+// como contenido mixto y el juego quedaría para siempre en "Sin conexión").
+if (location.protocol === "https:" && API_BASE.startsWith("http:")) {
+	console.error(`API_BASE (${API_BASE}) es http y el juego se sirve por https: el navegador va a bloquear cada pedido.`);
+}
+
+let jugadorAPI = null; // { id, correo, token, api }, una vez que el servidor lo confirma
 let catalogoAPI = null; // Map "Mundo|enunciado" -> { id, respuestas: [{id, orden}, ...] }
 let catalogoPersonajes = new Map(); // Map id (tbl_personaje) -> { id, nombre, dialogos: [texto, ...] }
 let catalogoPreguntas = new Map(); // Map id (tbl_pregunta) -> { id, enunciado, explicacion, respuestas: [{orden, texto, es_correcta, posicion_correcta}, ...] }
@@ -37,6 +44,20 @@ function guardarJugadorAPI(j) {
 	}
 }
 
+// "Empezar de cero": que la siguiente persona no quede con la llave ni el
+// correo de la anterior en este navegador (sus intentos pendientes sí se
+// envían a su nombre, porque cada uno guarda su dueño).
+function olvidarJugadorAPI() {
+	jugadorAPI = null;
+	try {
+		localStorage.removeItem(CLAVE_JUGADOR_API);
+	} catch (e) {
+		/* sin almacenamiento */
+	}
+}
+
+const correoNormal = (c) => String(c || "").trim().toLowerCase();
+
 // ---------- Diálogo "Sin conexión" ----------
 function mostrarSinConexion() {
 	if (!ui.sinConexion.hidden) return;
@@ -57,46 +78,71 @@ function marcarConectado() {
 
 function marcarDesconectado() {
 	conexionAPI = false;
-	mostrarSinConexion();
+	// El nombre de pruebas juega sin servidor: no se le bloquea el juego.
+	if (!modoPruebas()) mostrarSinConexion();
+}
+
+// El servidor no aceptó el correo (mal escrito, o de un dominio no permitido:
+// CORREO_DOMINIOS en el backend). Se vuelve a mostrar el campo para corregirlo.
+function avisarCorreoRechazado() {
+	sesionBloqueada = false;
+	actualizarPanelMapa();
+	ui.correoEtiqueta.classList.remove("falta");
+	void ui.correoEtiqueta.offsetWidth; // reinicia la sacudida
+	ui.correoEtiqueta.classList.add("falta");
+	ui.correoJugador.focus();
+	avisoMapa("El servidor no aceptó ese correo: usa tu correo de Celaque");
 }
 
 // fetch con seguimiento de conexión: una respuesta (aunque sea 4xx, como un
-// correo mal escrito) cuenta como "conectado"; solo la falta de red o un error
-// del propio servidor (5xx) cuentan como "sin conexión".
-async function llamarAPI(url, opciones) {
+// correo mal escrito) cuenta como "conectado"; solo la falta de red, un
+// servidor que no contesta en ESPERA_API_MS o un error del propio servidor
+// (5xx) cuentan como "sin conexión".
+async function llamarAPI(url, opciones = {}, marcarSiResponde = true) {
 	let resp;
+	const corte = new AbortController();
+	const reloj = setTimeout(() => corte.abort(), ESPERA_API_MS);
 	try {
-		resp = await fetch(url, opciones);
+		resp = await fetch(url, { ...opciones, signal: corte.signal });
 	} catch (e) {
 		marcarDesconectado();
 		return null;
+	} finally {
+		clearTimeout(reloj);
 	}
 	if (resp.status >= 500) marcarDesconectado();
-	else marcarConectado();
+	else if (marcarSiResponde) marcarConectado();
 	return resp;
 }
 
 // Pregunta al servidor si está disponible. Se llama al cargar la página, cada
 // pocos segundos mientras tanto, y al tocar "Reintentar".
 async function verificarSalud() {
-	const resp = await llamarAPI(`${API_BASE}/salud`);
-	if (!resp || !resp.ok) return false;
-	const datos = await resp.json().catch(() => null);
+	// No marca "conectado" hasta saber que también responde la base (si no, el
+	// diálogo se cierra y se vuelve a abrir: parpadea).
+	const resp = await llamarAPI(`${API_BASE}/salud`, {}, false);
+	const datos = resp && resp.ok ? await resp.json().catch(() => null) : null;
 	if (!datos || datos.bd !== "ok") {
 		marcarDesconectado();
 		return false;
 	}
+	marcarConectado();
 	return true;
 }
 
 // Crea (o recupera) al jugador en el servidor a partir de su correo. Devuelve
 // true si quedó listo para jugar (o si es el nombre de pruebas, que no
 // depende del servidor).
+// El guardado vale solo si es de este correo, de este servidor y trae su llave.
+const jugadorVigente = (j, correo) =>
+	!!j && j.correo === correo && j.api === API_BASE && Number.isInteger(j.id) && typeof j.token === "string";
+
 async function crearJugadorAPI() {
 	if (modoPruebas()) return true;
-	if (!correoJugador) return false;
+	const correo = correoNormal(correoJugador);
+	if (!correo) return false;
 	const guardado = leerJugadorAPI();
-	if (guardado && guardado.correo === correoJugador) {
+	if (jugadorVigente(guardado, correo)) {
 		jugadorAPI = guardado;
 		marcarConectado();
 		return true;
@@ -104,10 +150,13 @@ async function crearJugadorAPI() {
 	const resp = await llamarAPI(`${API_BASE}/jugadores`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ correo: correoJugador, nombre: nombreJugador || "Sin nombre" }),
+		body: JSON.stringify({ correo, nombre: nombreJugador || "Sin nombre" }),
 	});
+	if (resp && resp.status === 422) avisarCorreoRechazado();
 	if (!resp || !resp.ok) return false; // sin conexión, o correo rechazado por el servidor
-	guardarJugadorAPI(await resp.json());
+	const j = await resp.json().catch(() => null);
+	if (!j || !Number.isInteger(j.id) || typeof j.token !== "string") return false;
+	guardarJugadorAPI({ id: j.id, correo, token: j.token, api: API_BASE });
 	return true;
 }
 
@@ -152,16 +201,16 @@ function sincronizarPersonaje(npc) {
 	});
 }
 
-// npcs: la gente del camino de Talento (juego/camino/npcs-y-andamios.js, que
-// carga antes que este archivo).
-npcs.forEach(sincronizarPersonaje);
-
-// modulos: los otros 6 mundos (juego/oficina/modulos.js, que también carga
-// antes que este archivo). Cada uno tiene su anfitrión/compañeros en
-// oficina.companeros, y el de la Cafetería además su dj en djNpc.
-for (const m of modulos) {
-	m.oficina.companeros.forEach(sincronizarPersonaje);
-	if (m.djNpc) sincronizarPersonaje(m.djNpc);
+// npcs: la gente del camino de Talento (juego/camino/npcs-y-andamios.js).
+// modulos: los otros 6 mundos (juego/oficina/modulos.js). Cada uno tiene su
+// anfitrión/compañeros en oficina.companeros, y el de la Cafetería además su
+// dj en djNpc. Corre al terminar de cargar la página (ver el final del archivo).
+function sincronizarPersonajes() {
+	npcs.forEach(sincronizarPersonaje);
+	for (const m of modulos) {
+		m.oficina.companeros.forEach(sincronizarPersonaje);
+		if (m.djNpc) sincronizarPersonaje(m.djNpc);
+	}
 }
 
 // Reemplaza el enunciado, la explicación, el texto de las opciones (o el
@@ -197,12 +246,14 @@ function sincronizarPregunta(p) {
 // Preguntas de los 7 mundos: la Cueva de Talento (enemigos), las de ordenar
 // y las del jefe de cada obra (modulos[].oficina.enemigos), las de la torre
 // de nubes de Plataformas (modulos[].mision.etapas) y las de computadora
-// (modulos[].preguntas).
-enemigos.forEach((en) => en.preguntas.forEach(sincronizarPregunta));
-for (const m of modulos) {
-	(m.preguntas || []).forEach(sincronizarPregunta);
-	if (m.oficina.enemigos) m.oficina.enemigos.forEach((en) => en.preguntas.forEach(sincronizarPregunta));
-	if (m.mision && m.mision.etapas) m.mision.etapas.forEach((e) => (e.preguntas || []).forEach(sincronizarPregunta));
+// (modulos[].preguntas). Corre al terminar de cargar la página.
+function sincronizarPreguntas() {
+	enemigos.forEach((en) => en.preguntas.forEach(sincronizarPregunta));
+	for (const m of modulos) {
+		(m.preguntas || []).forEach(sincronizarPregunta);
+		if (m.oficina.enemigos) m.oficina.enemigos.forEach((en) => en.preguntas.forEach(sincronizarPregunta));
+		if (m.mision && m.mision.etapas) m.mision.etapas.forEach((e) => (e.preguntas || []).forEach(sincronizarPregunta));
+	}
 }
 
 function leerColaIntentos() {
@@ -227,26 +278,51 @@ function encolarIntento(intento) {
 	guardarColaIntentos(cola);
 }
 
+// Respuestas que vale la pena reintentar más tarde: sin red, el servidor no
+// contestó a tiempo (408), pidió calma (429) o falló él mismo (5xx). Las demás
+// (403, 404, 413, 422...) no se arreglan reintentando: se descartan.
+const reintentable = (resp) => !resp || resp.status === 408 || resp.status === 429 || resp.status >= 500;
+
 // Intenta enviar un intento ya resuelto contra el catálogo; si algo falla (sin
 // conexión, catálogo todavía no cargado, pregunta no encontrada), lo encola.
-async function enviarUnIntento(intento) {
+// Cada intento lleva su dueño (correo y, si ya lo tenía, su jugador con la
+// llave): así nunca se envía a nombre de otra persona que use el mismo navegador.
+async function enviarUnIntento(intento, reintento = false) {
+	const correoActual = correoNormal(correoJugador);
+	if (!intento.correo) intento.correo = correoActual; // intentos encolados antes de este cambio
+	let dueno = intento.jugador;
+	if (!dueno && jugadorAPI && intento.correo === jugadorAPI.correo) dueno = jugadorAPI;
+	if (!dueno && intento.correo !== correoActual) return; // de otra persona y sin su llave: no se puede atribuir
+	if (dueno && dueno.api !== API_BASE) return; // de otro servidor
 	const catalogo = await cargarCatalogoAPI();
-	const p = catalogo && catalogo.get(`${intento.mundo}|${intento.enunciado}`);
-	if (!jugadorAPI || !p) {
-		encolarIntento(intento);
+	if (!dueno || !catalogo) {
+		encolarIntento(intento); // todavía sin jugador o sin catálogo: se envía al reconectar
 		return;
 	}
-	const seleccion = intento.indices.map((i) => (p.respuestas.find((r) => r.orden === i + 1) || {}).id).filter(Boolean);
-	if (seleccion.length !== intento.indices.length) {
-		encolarIntento(intento); // el catálogo no coincidió con lo jugado: mejor no perderlo
+	const p = catalogo.get(`${intento.mundo}|${intento.enunciado}`);
+	const seleccion = p ? intento.indices.map((i) => (p.respuestas.find((r) => r.orden === i + 1) || {}).id).filter(Boolean) : [];
+	if (!p || seleccion.length !== intento.indices.length) {
+		// La pregunta no está en la base (no tiene id en mundos/*.js) o sus opciones no
+		// coinciden: reintentar no lo arregla y solo llenaría la cola. Ver mundos/LEEME.md.
+		console.warn("Respuesta sin pareja en la base, no se guarda:", intento.enunciado);
 		return;
 	}
 	const resp = await llamarAPI(`${API_BASE}/intentos`, {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ jugador_id: jugadorAPI.id, pregunta_id: p.id, seleccion, origen: intento.origen }),
+		headers: { "Content-Type": "application/json", Authorization: `Bearer ${dueno.token}` },
+		body: JSON.stringify({ jugador_id: dueno.id, pregunta_id: p.id, seleccion, origen: intento.origen }),
 	});
-	if (!resp || !resp.ok) encolarIntento(intento);
+	if (resp && resp.ok) return;
+	const esDelActual = intento.correo === correoActual;
+	if (resp && resp.status === 401 && !reintento && esDelActual) {
+		// La llave ya no vale (el servidor cambió su SECRET_KEY): se pide otra y se reenvía una vez.
+		olvidarJugadorAPI();
+		if (await crearJugadorAPI()) return enviarUnIntento({ ...intento, jugador: null }, true);
+	}
+	// Lo del jugador actual se reencola sin llave (toma la vigente al reenviarse);
+	// lo de otra persona conserva la suya.
+	if (reintentable(resp) || resp.status === 401) encolarIntento({ ...intento, jugador: esDelActual ? null : dueno });
+	else console.warn(`Intento descartado (${resp.status}):`, intento.enunciado);
 }
 
 let vaciandoCola = false;
@@ -269,7 +345,9 @@ async function vaciarColaIntentos() {
 // trae mundo.js (p.opciones o p.orden).
 function enviarIntentoJuego(mundo, enunciado, indices, origen = "mundo") {
 	if (modoPruebas() || !correoJugador) return;
-	enviarUnIntento({ mundo, enunciado, indices, origen });
+	const correo = correoNormal(correoJugador);
+	const jugador = jugadorAPI && jugadorAPI.correo === correo ? jugadorAPI : null;
+	enviarUnIntento({ mundo, enunciado, indices, origen, correo, jugador });
 }
 
 // Si el backend vuelve a responder (y, si hacía falta, el jugador quedó
@@ -291,7 +369,14 @@ async function reintentarConexion() {
 // Validación mínima: no manda nada hasta que el correo tenga forma de correo.
 const pareceCorreo = (c) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c);
 
-// Se revisa al cargar la página y cada 15s mientras se juega, para notar si el
-// servidor se cae a mitad de partida (el diálogo "Sin conexión" bloquea todo).
-verificarSalud();
-setInterval(verificarSalud, 15000);
+// Todo lo que habla con el servidor arranca cuando ya cargaron todos los
+// scripts (DOMContentLoaded): así ninguna respuesta llega antes de que existan
+// mapa.js (modoPruebas) y el progreso guardado. Después la salud se revisa
+// cada 15 s, para notar si el servidor se cae a mitad de partida (el diálogo
+// "Sin conexión" bloquea todo).
+document.addEventListener("DOMContentLoaded", () => {
+	sincronizarPersonajes();
+	sincronizarPreguntas();
+	verificarSalud();
+	setInterval(verificarSalud, 15000);
+});

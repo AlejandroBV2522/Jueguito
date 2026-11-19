@@ -147,10 +147,21 @@ mundos.forEach((m, i) => {
 npcs.forEach((n, i) => (!n.nombre || !Array.isArray(n.dialogo) || !n.dialogo.length) && problemas.push(`NPC ${i + 1} (${n.nombre || "sin nombre"}): falta nombre o diálogo`));
 cueva.forEach((e, i) => (e.preguntas || [e]).forEach((p, k) => revisarPregunta(p, `antivalor ${i + 1} (${e.nombre}), pregunta ${k + 1}`)));
 
-// 4. Nada externo y assets que existen
+// 4. Nada externo y assets que existen. La única excepción es el backend:
+// API_BASE en juego/base/api.js, que tiene que ser exactamente la misma
+// dirección del connect-src de index.html (si no, el navegador bloquea cada pedido).
+const API_JS = "juego/base/api.js";
+const apiBase = existsSync(join(RAIZ, API_JS)) ? (leer(API_JS).match(/const API_BASE = "([^"]+)"/) || [])[1] : null;
+if (apiBase) {
+	const connectSrc = (leer("index.html").match(/connect-src\s+(https?:\/\/[^;"\s]+|'none')/) || [])[1] || "";
+	if (connectSrc !== apiBase) problemas.push(`index.html: connect-src (${connectSrc || "falta"}) debe ser igual a API_BASE de ${API_JS} (${apiBase})`);
+}
 for (const s of [...scripts, "index.html", "style.css"].filter((s) => existsSync(join(RAIZ, s)))) {
 	const texto = leer(s);
-	for (const m of texto.matchAll(/https?:\/\/[^\s"'`)]+/g)) problemas.push(`${s}: dirección externa ${m[0]}`);
+	for (const m of texto.matchAll(/https?:\/\/[^\s"'`);]+/g)) {
+		if (apiBase && m[0] === apiBase && (s === API_JS || s === "index.html")) continue;
+		problemas.push(`${s}: dirección externa ${m[0]}`);
+	}
 	const sinComentarios = texto.replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, "").replace(/^\s*\/\/.*$|\s\/\/.*$/gm, "");
 	for (const m of sinComentarios.matchAll(/assets\/[\w./-]+\.(png|jpg|jpeg|webp|svg|ttf|mp3|ogg|wav)/g)) if (!existsSync(join(RAIZ, m[0]))) problemas.push(`${s}: ${m[0]} no existe`);
 }

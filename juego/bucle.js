@@ -10,7 +10,8 @@ function bucle(ahora) {
 	const dt = Math.min(0.05, (ahora - ultimo) / 1000);
 	ultimo = ahora;
 	tiempo += dt;
-	actualizar(dt);
+	// Con "Sin conexión" en pantalla el juego queda en pausa (nadie pierde corazones detrás del diálogo)
+	if (ui.sinConexion.hidden) actualizar(dt);
 	dibujar(dt);
 	if (estado === "mapa" && mapa.foco < 0) dibujarVistasPrevias();
 	actualizarBarraJugador(dt);
