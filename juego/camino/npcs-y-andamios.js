@@ -20,6 +20,7 @@ const npcs = [
 	...(ANFITRION_TALENTO
 		? [
 				{
+					id: ANFITRION_TALENTO.id,
 					nombre: ANFITRION_TALENTO.nombre,
 					posicion: ANFITRION_TALENTO.posicion ?? 0.08,
 					dialogo: ANFITRION_TALENTO.dialogo || [`¡Hola! Soy ${ANFITRION_TALENTO.nombre}.`],
@@ -87,7 +88,7 @@ const enemigos = window.PREGUNTAS_CUEVA
 		// La mayoría trae 1 sola pregunta (pregunta/opciones/correcta en el
 		// nivel de arriba); si trae "preguntas" (varias, ej. el jefe final),
 		// hay que responderlas todas en orden para vencerlo.
-		preguntas: d.preguntas || [{ pregunta: d.pregunta, opciones: d.opciones, correcta: d.correcta }],
+		preguntas: d.preguntas || [{ id: d.id, pregunta: d.pregunta, opciones: d.opciones, correcta: d.correcta }],
 		preguntaActual: 0,
 		derrotado: false,
 		atacando: false,

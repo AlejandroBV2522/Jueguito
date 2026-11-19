@@ -128,7 +128,7 @@ function abrirPreguntaObra(enemigo) {
 			btn.textContent = texto;
 			btn.addEventListener("click", (e) => {
 				e.stopPropagation(); // no debe disparar el clic de la caja (avanzarPreguntaObra)
-				resolverPreguntaObra(i === p.correcta, enemigo, btn);
+				resolverPreguntaObra(i === p.correcta, enemigo, btn, [i]);
 			});
 			ui.opciones.appendChild(btn);
 		});
@@ -139,6 +139,7 @@ function abrirPreguntaObra(enemigo) {
 
 function armarOrdenObra(p, enemigo) {
 	let siguiente = 0;
+	const elegidos = []; // los pasos que se van tocando, en el orden en que se tocan
 	const semilla = enemigo.zona * 7 + enemigo.preguntaActual * 3 + p.orden.length;
 	for (const k of mezclaFija(p.orden.length, semilla)) {
 		const btn = document.createElement("button");
@@ -148,10 +149,11 @@ function armarOrdenObra(p, enemigo) {
 		btn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			if (btn.disabled) return;
+			elegidos.push(k);
 			if (k !== siguiente) {
 				btn.classList.add("incorrecta");
 				setTimeout(() => btn.classList.remove("incorrecta"), 600);
-				resolverPreguntaObra(false, enemigo);
+				resolverPreguntaObra(false, enemigo, null, elegidos.slice());
 				return;
 			}
 			siguiente++;
@@ -159,14 +161,15 @@ function armarOrdenObra(p, enemigo) {
 			btn.classList.add("correcta");
 			btn.textContent = `${siguiente}. ${p.orden[k]}`;
 			sonar("pieza");
-			if (siguiente === p.orden.length) resolverPreguntaObra(true, enemigo);
+			if (siguiente === p.orden.length) resolverPreguntaObra(true, enemigo, null, elegidos.slice());
 		});
 		ui.opciones.appendChild(btn);
 	}
 }
 
-function resolverPreguntaObra(acierto, enemigo, btn) {
+function resolverPreguntaObra(acierto, enemigo, btn, indices) {
 	const p = enemigo.preguntas[enemigo.preguntaActual];
+	enviarIntentoJuego(oficinaActual.nombre, p.pregunta, indices);
 	if (acierto) {
 		sonar("acierto");
 		// Como en la computadora del final: la pregunta y las opciones se quedan, la correcta se

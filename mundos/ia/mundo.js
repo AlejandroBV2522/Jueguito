@@ -19,6 +19,7 @@ window.MODULOS.push({
   // arma con 2 preguntas, en este orden (config.js → robots)
   oficina: { vista: "ciudad", tema: "ia", estacion: "robot", robots: ["tierra", "aereo", "humanoide"], edificio: "Zorzales del Merendón" },
   anfitrion: {
+    id: 38, // tbl_personaje.id
     nombre: "Gracia Hidalgo",
     cuerpo: "chica",
     // ✏️ Revisar con Gracia
@@ -118,6 +119,7 @@ window.MODULOS.push({
   intro: ["Te damos la bienvenida al módulo de IA.", "La inteligencia artificial nos ayuda a trabajar mejor, si la usamos con criterio."],
   comentarios: [
     {
+      id: 39, // tbl_personaje.id
       nombre: "Keidy",
       cuerpo: "chica",
       dialogo: [
@@ -127,6 +129,7 @@ window.MODULOS.push({
       ],
     },
     {
+      id: 40, // tbl_personaje.id
       nombre: "James",
       cuerpo: "chico",
       dialogo: [
@@ -136,6 +139,7 @@ window.MODULOS.push({
       ],
     },
     {
+      id: 41, // tbl_personaje.id
       nombre: "Cristian",
       cuerpo: "chico",
       dialogo: [
@@ -150,6 +154,7 @@ window.MODULOS.push({
   // Las de prompts, información y por dónde empezar van como situación.
   preguntas: [
     {
+      id: 41, // tbl_pregunta.id
       pregunta: "¿Qué es un LLM (Large Language Model), como los de ChatGPT, Claude o Gemini?",
       opciones: [
         "Un modelo diseñado para entender y generar texto humano.",
@@ -159,6 +164,7 @@ window.MODULOS.push({
       correcta: 0,
     },
     {
+      id: 42, // tbl_pregunta.id
       pregunta: "Si necesitas crear una imagen a partir de un texto, ¿qué tipo de IA usas?",
       opciones: [
         "Texto a audio, como ElevenLabs.",
@@ -168,6 +174,7 @@ window.MODULOS.push({
       correcta: 1,
     },
     {
+      id: 43, // tbl_pregunta.id
       pregunta: "¿Qué elementos lleva un buen prompt?",
       opciones: [
         "Solo una pregunta corta, como en Google.",
@@ -178,6 +185,7 @@ window.MODULOS.push({
       explicacion: "Por ejemplo: «Eres un experto en selección de personal…», los pasos, quiénes somos y qué resultado quieres.",
     },
     {
+      id: 44, // tbl_pregunta.id
       pregunta: "Le pides a ChatGPT «hazme un correo» y la respuesta sale genérica. ¿Qué haces?",
       opciones: [
         "Le das rol, instrucciones, contexto y objetivo, y vuelves a intentar.",
@@ -188,6 +196,7 @@ window.MODULOS.push({
       explicacion: "La calidad del prompt determina la calidad del resultado: aporta contexto, refina las instrucciones y experimenta.",
     },
     {
+      id: 45, // tbl_pregunta.id
       pregunta: "Vas a pedirle a la IA que resuma un documento con datos de un cliente. ¿Qué haces antes?",
       opciones: [
         "Lo pegas tal cual en cualquier herramienta gratuita, para ganar tiempo.",
@@ -198,6 +207,7 @@ window.MODULOS.push({
       explicacion: "También ayuda usar el modo incógnito.",
     },
     {
+      id: 46, // tbl_pregunta.id
       pregunta: "Tu equipo se siente abrumado con tantas herramientas de IA. ¿Por dónde empiezan?",
       opciones: [
         "Por la herramienta de moda, y luego le buscan un uso.",

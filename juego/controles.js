@@ -10,6 +10,8 @@ const TECLAS_SALTAR = ["ArrowUp", "w", "W"];
 const TECLAS_AGACHAR = ["ArrowDown", "s", "S"];
 
 window.addEventListener("keydown", (e) => {
+	// Sin conexión con el servidor: todo el juego se bloquea (Enter, el botón "Reintentar" enfocado)
+	if (!ui.sinConexion.hidden) return;
 	// Estadísticas o colección abiertas: Esc las cierra (Enter y Espacio, el botón enfocado)
 	if (!uiEstadisticas.ventana.hidden) {
 		if (e.key === "Escape") cerrarEstadisticas();
@@ -49,9 +51,9 @@ window.addEventListener("keydown", (e) => {
 		}
 		return;
 	}
-	// Escribiendo el nombre: las teclas son para el campo (Enter o Esc lo cierran)
-	if (e.target === ui.nombreJugador) {
-		if (e.key === "Enter" || e.key === "Escape") ui.nombreJugador.blur();
+	// Escribiendo el nombre o el correo: las teclas son para el campo (Enter o Esc lo cierran)
+	if (e.target === ui.nombreJugador || e.target === ui.correoJugador) {
+		if (e.key === "Enter" || e.key === "Escape") e.target.blur();
 		return;
 	}
 	if (e.key === "Escape") {
@@ -255,6 +257,16 @@ ui.nombreJugador.addEventListener("input", () => {
 	guardarProgreso();
 	actualizarPanelMapa();
 });
+// Correo obligatorio: el servidor lo necesita para guardar el progreso (juego/base/api.js)
+ui.correoJugador.addEventListener("input", () => {
+	correoJugador = ui.correoJugador.value.trim();
+	ui.correoEtiqueta.classList.remove("falta");
+	guardarProgreso();
+});
+ui.correoJugador.addEventListener("blur", () => {
+	if (pareceCorreo(correoJugador)) crearJugadorAPI();
+});
+ui.sinConexionReintentar.addEventListener("click", reintentarConexion);
 $("btn-mapa-volver").addEventListener("click", alejarMapa);
 ui.cartaEntrar.addEventListener("click", () => entrarMundo(mapa.foco));
 ui.cartaVolver.addEventListener("click", cerrarCarta);

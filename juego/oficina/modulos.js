@@ -176,6 +176,7 @@ function companeroOficina(d, i, k, x0, lugares) {
 	if (k === 0 && d.anfitrion) {
 		// El personaje fijo del mundo es quien te recibe
 		return {
+			id: d.anfitrion.id,
 			nombre: d.anfitrion.nombre,
 			x: x0 + lugares[0],
 			alto: 0,
@@ -189,6 +190,7 @@ function companeroOficina(d, i, k, x0, lugares) {
 	const datos = k === 0 ? d.companero || {} : d.comentarios[k - 1];
 	const cuerpo = datos.cuerpo || ((i + k) % 2 ? "chica" : "chico");
 	return {
+		id: datos.id,
 		nombre: datos.nombre || `Equipo de ${d.nombre}`,
 		x: x0 + lugares[k],
 		alto: 0,
@@ -225,6 +227,7 @@ function companerosObra(d, i, x0) {
 		const x = inicioZonaObra(d, x0, k) + OBRA.companero;
 		if (k === 0 && d.anfitrion) {
 			return {
+				id: d.anfitrion.id,
 				nombre: d.anfitrion.nombre,
 				x,
 				alto: 0,
@@ -237,6 +240,7 @@ function companerosObra(d, i, x0) {
 		}
 		const c = z.companero || {};
 		return {
+			id: c.id,
 			nombre: c.nombre || `Equipo de ${d.nombre}`,
 			x,
 			alto: 0,
@@ -398,7 +402,7 @@ modulos.forEach((m) => {
 	m.anfitrionNpc = m.completoAlSalirDeLaCueva ? npcs.find((n) => n.importante) || null : primero && primero.importante ? primero : null;
 	// Quien pone la música en la terraza (mundo.js → oficina.dj, cafeteria.js)
 	const dj = m.oficina.terraza && MODULOS_DATOS[m.indice].oficina.dj;
-	m.djNpc = dj ? { nombre: dj.nombre, apariencia: aparienciaAnfitrion(dj, m.indice), dialogo: dj.frases && dj.frases.length ? dj.frases : ["♪"] } : null;
+	m.djNpc = dj ? { id: dj.id, nombre: dj.nombre, apariencia: aparienciaAnfitrion(dj, m.indice), dialogo: dj.frases && dj.frases.length ? dj.frases : ["♪"] } : null;
 });
 // Oficina en la que está el héroe (null = afuera)
 let oficinaActual = null;

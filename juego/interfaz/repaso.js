@@ -66,6 +66,7 @@ function mostrarPreguntaRepaso() {
 function responderRepaso(indice, btn) {
 	if (btn.disabled) return;
 	const { modulo, p } = repasoFinal.lista[repasoFinal.actual];
+	enviarIntentoJuego(modulo.nombre, p.pregunta, [indice], "repaso_final");
 	if (indice !== p.correcta) {
 		btn.classList.add("incorrecta");
 		btn.disabled = true;

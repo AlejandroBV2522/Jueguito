@@ -91,6 +91,7 @@ function responderPreguntaTorre(indice, btn) {
 	const mi = oficinaActual.mision;
 	const k = preguntaTorre.etapa;
 	const p = mi.etapas[k].preguntas[mi.preguntaDe[k]];
+	enviarIntentoJuego(oficinaActual.nombre, p.pregunta, [indice]);
 	if (indice !== p.correcta) {
 		btn.classList.add("incorrecta");
 		btn.disabled = true;

@@ -45,6 +45,10 @@ const modoPruebas = () => {
 	const n = nombreComparable(nombreJugador);
 	return !!n && [CFG.nombrePruebas, ...(CFG.superUsuarios || [])].some((s) => s && nombreComparable(s) === n);
 };
+// Una vez que ya entró a jugar (o volvió con progreso guardado), el nombre y
+// el correo se quedan fijos: se ocultan los campos y se saluda en su lugar.
+// Para jugar con otro nombre/correo está "Empezar de cero".
+let sesionBloqueada = false;
 // Los mundos extra (mundo.js → extra, como la Cafetería) son opcionales:
 // se abren al completar el de "abreDespues", no suben de nivel ni cuentan
 // para terminar la capacitación.
@@ -86,7 +90,7 @@ function guardarProgreso() {
 		const nivelGuardado = antes ? Number(antes.nivel) || 0 : nivel;
 		// Los corazones que lleva acumulados (normales y dorados)
 		const corazonesGuardados = antes ? { vidas: antes.vidas, doradas: antes.doradas } : { vidas, doradas: vidasDoradas };
-		localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel: nivelGuardado, ...corazonesGuardados, personaje, nombre: nombreJugador }));
+		localStorage.setItem(CLAVE_PROGRESO, JSON.stringify({ completos, nivel: nivelGuardado, ...corazonesGuardados, personaje, nombre: nombreJugador, correo: correoJugador }));
 	} catch (e) {
 		/* sin almacenamiento */
 	}
@@ -103,7 +107,11 @@ function cargarProgreso() {
 		if (CFG.personajes[d.personaje]) elegirPersonaje(d.personaje);
 		nombreJugador = typeof d.nombre === "string" ? d.nombre.slice(0, 24) : "";
 		ui.nombreJugador.value = nombreJugador;
+		correoJugador = typeof d.correo === "string" ? d.correo.slice(0, 120) : "";
+		ui.correoJugador.value = correoJugador;
+		if (correoJugador) crearJugadorAPI(); // recupera (o crea) el jugador en el servidor
 		if (modoPruebas()) modulos.forEach((m) => (m.completo = false));
+		sesionBloqueada = !!nombreJugador && (!!correoJugador || modoPruebas());
 	}
 	mapa.sel = mapa.heroeMundo = primerPendiente();
 }
@@ -114,7 +122,11 @@ function reiniciarProgreso(todo) {
 	if (todo) {
 		nombreJugador = "";
 		ui.nombreJugador.value = "";
+		correoJugador = "";
+		ui.correoJugador.value = "";
+		jugadorAPI = null;
 		elegirPersonaje(CLAVES_PERSONAJE[0]);
+		sesionBloqueada = false;
 	}
 	modulos.forEach((m) => {
 		m.completo = false;
@@ -224,6 +236,10 @@ function ocultarMapaUI() {
 // arriba, solo con un mundo acercado.
 function actualizarPanelMapa() {
 	if (estado !== "mapa") return ocultarMapaUI();
+	ui.nombreEtiqueta.hidden = sesionBloqueada;
+	ui.correoEtiqueta.hidden = sesionBloqueada;
+	ui.saludoJugador.hidden = !sesionBloqueada;
+	if (sesionBloqueada) ui.saludoJugador.textContent = `¡Hola, ${nombreJugador}!`;
 	const general = mapa.foco < 0 && mapa.zObjetivo === 0;
 	ui.panel.classList.toggle("oculto", !general);
 	ui.mapaAyuda.hidden = !general;
@@ -267,6 +283,17 @@ function faltaNombre() {
 	return true;
 }
 
+// Sin correo tampoco: el servidor lo necesita para guardar el progreso
+function faltaCorreo() {
+	if (pareceCorreo(correoJugador)) return false;
+	ui.correoEtiqueta.classList.remove("falta");
+	void ui.correoEtiqueta.offsetWidth;
+	ui.correoEtiqueta.classList.add("falta");
+	ui.correoJugador.focus();
+	avisoMapa("Escribe tu correo para empezar");
+	return true;
+}
+
 // Cómo se juega: se abre sola la primera vez (se recuerda en el navegador)
 const CLAVE_AYUDA = "camino-a-celaque:ayuda-vista";
 function abrirAyuda() {
@@ -291,11 +318,36 @@ function ayudaYaVista() {
 }
 
 // Elegir un mundo: con candado se sacude; abierto, el mapa se acerca.
-function elegirMundo(i) {
+// Con el nombre de pruebas no depende del servidor; el resto sí: sin correo
+// no entra, y sin conexión con el backend se bloquea con "Sin conexión"
+// (juego/base/api.js) hasta que el jugador quede creado o recuperado ahí.
+async function elegirMundo(i) {
 	if (i < 0 || i >= modulos.length) return;
 	mapa.sel = i;
 	if (!desbloqueado(i)) return avisoCandado(i);
 	if (faltaNombre()) return;
+	if (modoPruebas()) {
+		sesionBloqueada = true;
+		mapa.heroeMundo = i;
+		mapa.foco = i;
+		mapa.zObjetivo = 1;
+		actualizarPanelMapa();
+		return;
+	}
+	if (faltaCorreo()) return;
+	if (!conexionAPI) {
+		mundoPendiente = i;
+		mostrarSinConexion();
+		return;
+	}
+	if (!jugadorAPI) {
+		const listo = await crearJugadorAPI();
+		if (!listo) {
+			mundoPendiente = i; // crearJugadorAPI ya mostró "Sin conexión" si hacía falta
+			return;
+		}
+	}
+	sesionBloqueada = true;
 	mapa.heroeMundo = i;
 	mapa.foco = i;
 	mapa.zObjetivo = 1;

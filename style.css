@@ -325,6 +325,23 @@ input[type="text"] {
 	}
 }
 
+/* ---------- Sin conexión con el servidor ---------- */
+#sin-conexion {
+	position: fixed;
+	inset: 0;
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(4, 37, 35, 0.6);
+	animation: aparecer 0.3s ease-out;
+}
+
+.sin-conexion-carta {
+	text-align: center;
+}
+
 /* ---------- Cómo se juega ---------- */
 #btn-ayuda {
 	position: fixed;

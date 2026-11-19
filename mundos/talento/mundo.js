@@ -17,6 +17,7 @@ window.MODULOS.push({
   color: "#488478", // verde institucional
   completoAlSalirDeLaCueva: true, // el camino + la Cueva son este módulo
   anfitrion: {
+    id: 1, // tbl_personaje.id (coincide con bd/datos_mundos.sql)
     nombre: "Nancy Larios",
     cuerpo: "chica",
     posicion: 0.08, // al inicio del camino, en la zona de planos
