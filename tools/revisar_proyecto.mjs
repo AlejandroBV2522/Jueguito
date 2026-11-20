@@ -154,19 +154,21 @@ cueva.forEach((e, i) => (e.preguntas || [e]).forEach((p, k) => revisarPregunta(p
 // ("https://servidor/celaque-api/"): sin ella el navegador solo permite esa
 // ruta exacta y bloquea /celaque-api/salud. También vale el dominio solo.
 const API_JS = "juego/base/api.js";
-const apiBase = existsSync(join(RAIZ, API_JS)) ? (leer(API_JS).match(/const API_BASE = "([^"]+)"/) || [])[1] : null;
+// Las direcciones del backend: API_BASE fija, o API_LOCAL y API_SERVIDOR (el juego elige según dónde se abre)
+const apis = existsSync(join(RAIZ, API_JS)) ? [...leer(API_JS).matchAll(/const API_(?:BASE|LOCAL|SERVIDOR) = "([^"]+)"/g)].map((m) => m[1]) : [];
+const csp = (leer("index.html").match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/) || [])[1] || "";
+const fuentesConnect = ((csp.match(/connect-src\s+([^;]+)/) || [])[1] || "").trim().split(/\s+/).filter(Boolean);
 let permitidasApi = [];
-if (apiBase) {
-	const origen = /^https?:\/\/[^/]+/.exec(apiBase)?.[0] || apiBase;
-	const tieneRuta = apiBase.length > origen.length && apiBase !== origen + "/";
-	const conBarra = apiBase.endsWith("/") ? apiBase : apiBase + "/";
-	permitidasApi = [apiBase, conBarra, origen];
-	const connectSrc = (leer("index.html").match(/connect-src\s+(https?:\/\/[^;"\s]+|'none')/) || [])[1] || "";
-	const valido = connectSrc === origen || connectSrc === conBarra || (!tieneRuta && connectSrc === apiBase);
+for (const api of apis) {
+	const origen = /^https?:\/\/[^/]+/.exec(api)?.[0] || api;
+	const tieneRuta = api.length > origen.length && api !== origen + "/";
+	const conBarra = api.endsWith("/") ? api : api + "/";
+	permitidasApi.push(api, conBarra, origen);
+	const valido = fuentesConnect.some((f) => f === origen || f === conBarra || (!tieneRuta && f === api));
 	if (!valido)
 		problemas.push(
-			`index.html: connect-src (${connectSrc || "falta"}) no deja llegar a API_BASE de ${API_JS} (${apiBase}): debe ser ` +
-				(tieneRuta ? `"${conBarra}" (con la barra final) o "${origen}"` : `"${apiBase}"`)
+			`index.html: connect-src (${fuentesConnect.join(" ") || "falta"}) no deja llegar a ${api} (${API_JS}): debe incluir ` +
+				(tieneRuta ? `"${conBarra}" (con la barra final) o "${origen}"` : `"${api}"`)
 		);
 }
 for (const s of [...scripts, "index.html", "style.css"].filter((s) => existsSync(join(RAIZ, s)))) {

@@ -5,13 +5,16 @@
    depende del servidor. Ver juego/LEEME.md y Backend_Camino_a_Celaque/README.md. */
 "use strict";
 
-// Cambiar esta URL al desplegar el backend en otro lado (y el connect-src del
-// Content-Security-Policy en index.html, que debe permitir esta misma dirección).
-// Con ruta, sin barra al final aquí y CON barra en el connect-src, ej. para el
-// servidor de desarrollo: aquí ".../celaque-api" y en index.html ".../celaque-api/"
-// (sin la barra, el navegador bloquea .../celaque-api/salud). Detalle en
-// Backend_camino_a_celaque/SEGURIDAD.md; node tools/revisar_proyecto.mjs avisa si no coinciden.
-const API_BASE = "http://127.0.0.1:8000";
+// A qué backend habla el juego, según dónde se abre:
+//   en esta PC (doble clic, localhost o 127.0.0.1) → el backend local de pruebas;
+//   publicado en el servidor → el backend del servidor.
+// El connect-src de index.html debe permitir las dos; la del servidor CON barra
+// final (sin ella el navegador bloquea .../celaque-api/salud). Si cambia el
+// servidor, cambiar las dos cosas: node tools/revisar_proyecto.mjs avisa si no
+// coinciden. Detalle en Backend_camino_a_celaque/SEGURIDAD.md.
+const API_LOCAL = "http://127.0.0.1:8000";
+const API_SERVIDOR = "https://desarrollo.apps-celaque.net/celaque-api";
+const API_BASE = location.protocol === "file:" || ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname) ? API_LOCAL : API_SERVIDOR;
 
 const CLAVE_JUGADOR_API = "camino-a-celaque:jugador-api";
 const CLAVE_COLA_INTENTOS = "camino-a-celaque:cola-intentos";
