@@ -166,6 +166,7 @@ window.MODULOS.push({
               explicacion: "T-RH-4-1: departamento, macroproceso, recurrencia y nivel de revisión.", // lám. 20
             },
             {
+              id: 47, // tbl_pregunta.id (sql/2026-11-20_produccion_cristian.sql del backend)
               pregunta: "Vas a crear un proceso que se hace cada trimestre. ¿Qué número de recurrencia lleva su código?",
               opciones: ["El 3", "El 4", "El 5", "El 7"],
               correcta: 2,
@@ -230,6 +231,7 @@ window.MODULOS.push({
               explicacion: "Los procesos se corren en un día específico, no en un rango de días.", // lám. 26
             },
             {
+              id: 48, // tbl_pregunta.id (sql/2026-11-20_produccion_cristian.sql del backend)
               pregunta: "Estás escribiendo los pasos de un proceso. ¿Cuál está bien escrito?",
               opciones: [
                 "«Avisarle a Pamela cuando termine».",
